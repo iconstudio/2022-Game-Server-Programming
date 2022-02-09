@@ -1,16 +1,17 @@
 ﻿#include "pch.h"
+#include "ServerFramework.h"
 
 constexpr int PORT = 40000;
 
 
-void _Server_start(promise<bool>&);
+void _Server_start(promise<bool>*&);
 void _Server_update();
 
 int main() {
 	std::cout << "Server initiated.\n";
 
-	auto initiator = promise<bool>();
-	auto awaiter = initiator.get_future();
+	auto initiator = new promise<bool>();
+	auto awaiter = initiator->get_future();
 
 	auto init_worker = thread(_Server_start, initiator);
 	
@@ -34,17 +35,17 @@ int main() {
 	init_worker.join();
 }
 
-void _Server_start(promise<bool>& result) {
+void _Server_start(promise<bool>*& result) {
 	WSADATA wsadata;
 
 	try {
 		auto status = WSAStartup(MAKEWORD(2, 2), &wsadata);
 		if (0 != status) {
-			result.set_exception(make_exception_ptr("Startup error!"));
+			result->set_exception(make_exception_ptr("Startup error!"));
 		} else {
-			result.set_value(true);
+			result->set_value(true);
 		}
 	} catch (...) {
-		result.set_exception(std::current_exception());
+		result->set_exception(std::current_exception());
 	}
 }
