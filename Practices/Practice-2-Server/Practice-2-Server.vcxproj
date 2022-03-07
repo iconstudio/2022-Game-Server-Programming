@@ -21,7 +21,7 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{d72b2c03-2c8b-4de2-9e74-74e0b1c59729}</ProjectGuid>
+    <ProjectGuid>{D0ED278E-A994-4C55-8D7A-0991F5624186}</ProjectGuid>
     <RootNamespace>Practice2Client</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
     <ProjectName>Practice-2-Server</ProjectName>

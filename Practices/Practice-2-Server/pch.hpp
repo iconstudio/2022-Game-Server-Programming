@@ -22,3 +22,4 @@
 #include <fstream>
 
 #define var auto
+#define SZ_BUFF 512

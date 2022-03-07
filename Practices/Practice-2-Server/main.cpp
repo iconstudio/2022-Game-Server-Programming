@@ -7,7 +7,6 @@ NetworkServer server;
 
 int main() {
 	server.Start();
-	server.SetActiveAccept(true);
 
 	return 0;
 }
