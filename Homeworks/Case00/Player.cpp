@@ -13,7 +13,7 @@ void Player::Update(float delta_time)
 
 void Player::Render(HDC canvas)
 {
-	Draw::Rect(canvas, x, y, x + 50, y + 50);
+	Draw::Ellipse(canvas, x - 16, y - 16, x + 16, y + 16);
 }
 
 void Player::MoveLT()

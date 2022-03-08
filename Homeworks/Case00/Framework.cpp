@@ -24,6 +24,9 @@ void Framework::Start()
 	Draw::Attach(Board_canvas, filler);
 	Draw::Clear(Board_canvas, BOARD_W, BOARD_H, 0);
 
+	m_Player.x = BOARD_X + BOARD_W * 0.5 - CELL_W * 0.5;
+	m_Player.y = BOARD_Y + BOARD_H * 0.5 - CELL_H * 0.5;
+
 	for (int i = 0; i < CELLS_LENGTH; ++i)
 	{
 		auto cell = std::make_shared<Cell>();
@@ -80,7 +83,7 @@ void Framework::Render(HWND window)
 
 	// 파이프라인
 	BitBlt(surface_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
-	//m_Player.Render()
+	m_Player.Render(surface_double);
 
 	// 이중 버퍼 -> 백 버퍼
 	BitBlt(surface_back, 0, 0, WND_SZ_W, WND_SZ_H, surface_double, 0, 0, SRCCOPY);

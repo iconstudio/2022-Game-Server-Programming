@@ -104,10 +104,15 @@ void Draw::Clear(HDC canvas, int width, int height, COLORREF color)
 
 BOOL Draw::SizedRect(HDC canvas, int x, int y, int w, int h)
 {
-	return Rectangle(canvas, x, y, x + w, y + h);
+	return ::Rectangle(canvas, x, y, x + w, y + h);
 }
 
 BOOL Draw::Rect(HDC canvas, int x1, int y1, int x2, int y2)
 {
-	return Rectangle(canvas, x1, y1, x2, y2);
+	return ::Rectangle(canvas, x1, y1, x2, y2);
+}
+
+BOOL Draw::Ellipse(HDC canvas, int x1, int y1, int x2, int y2)
+{
+	return ::Ellipse(canvas, x1, y1, x2, y2);
 }

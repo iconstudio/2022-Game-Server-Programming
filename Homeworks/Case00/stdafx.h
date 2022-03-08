@@ -32,4 +32,5 @@ namespace Draw
 	void Clear(HDC canvas, int width, int height, COLORREF color);
 	BOOL SizedRect(HDC canvas, int x, int y, int w, int h);
 	BOOL Rect(HDC canvas, int x1, int y1, int x2, int y2);
+	BOOL Ellipse(HDC canvas, int x1, int y1, int x2, int y2);
 }
