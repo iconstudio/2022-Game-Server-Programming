@@ -17,13 +17,21 @@ void Player::Render(HDC canvas)
 }
 
 void Player::MoveLT()
-{}
+{
+	x -= 32;
+}
 
 void Player::MoveRT()
-{}
+{
+	x += 32;
+}
 
 void Player::MoveUP()
-{}
+{
+	y -= 32;
+}
 
 void Player::MoveDW()
-{}
+{
+	y += 32;
+}
