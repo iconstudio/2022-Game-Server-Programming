@@ -1,15 +1,36 @@
-﻿// header.h: 표준 시스템 포함 파일
-// 또는 프로젝트 특정 포함 파일이 들어 있는 포함 파일입니다.
-//
-
 #pragma once
 
-#include "targetver.h"
-#define WIN32_LEAN_AND_MEAN             // 거의 사용되지 않는 내용을 Windows 헤더에서 제외합니다.
-// Windows 헤더 파일
-#include <windows.h>
-// C 런타임 헤더 파일입니다.
-#include <stdlib.h>
-#include <malloc.h>
-#include <memory.h>
-#include <tchar.h>
+class Player
+{
+public:
+	int x, y;
+};
+
+struct Cell
+{
+	COLORREF color = C_WHITE;
+};
+
+class Framework
+{
+public:
+	Framework();
+
+	void Start();
+	void Update(float delta_time);
+	void Render(HWND window);
+
+	void DrawEnd(HDC canvas, HGDIOBJ object_old, HGDIOBJ object_new);
+	void DrawClear(HDC canvas, int width, int height, COLORREF color);
+	BOOL DrawRect(HDC canvas, int x1, int y1, int x2, int y2);
+
+	COLORREF background_color = C_WHITE;
+
+private:
+	const size_t SZ_W = 10;
+	const size_t SZ_H = 10;
+	const size_t LENGTH = SZ_W * SZ_H;
+
+	Player m_Player;
+	std::vector<std::shared_ptr<Cell>> m_Cells;
+};
