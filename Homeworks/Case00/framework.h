@@ -1,13 +1,5 @@
 #pragma once
-
-class Player
-{
-public:
-	void Update(float delta_time);
-	void Render(HDC canvas);
-
-	int x, y;
-};
+#include "Player.h"
 
 struct Cell
 {
@@ -38,12 +30,5 @@ private:
 	const size_t CELLS_CNT_H = 8;
 	const size_t CELLS_CNT_V = 8;
 	const size_t CELLS_LENGTH = CELLS_CNT_H * CELLS_CNT_V;
+	const size_t BOARD_W, BOARD_H, BOARD_X, BOARD_Y;
 };
-
-namespace Draw
-{
-	HGDIOBJ Attach(HDC canvas, HGDIOBJ object);
-	void Detach(HDC canvas, HGDIOBJ object_old, HGDIOBJ object_new);
-	void Clear(HDC canvas, int width, int height, COLORREF color);
-	BOOL Rect(HDC canvas, int x1, int y1, int x2, int y2);
-}

@@ -1,7 +1,11 @@
 #include "stdafx.h"
 #include "Framework.h"
 
-Framework::Framework() : m_Player{}, m_Cells { CELLS_LENGTH }
+Framework::Framework()
+	: m_Player(), m_Cells(CELLS_LENGTH)
+	, Board_canvas(), Board_image()
+	, BOARD_W(CELL_W * CELLS_CNT_H), BOARD_H(CELL_H * CELLS_CNT_V)
+	, BOARD_X((WND_SZ_W - BOARD_W) * 0.5), BOARD_Y((WND_SZ_H - BOARD_H) * 0.5)
 {}
 
 void Framework::Start()
@@ -10,21 +14,47 @@ void Framework::Start()
 
 	auto hdc = GetDC(NULL);
 	Board_canvas = CreateCompatibleDC(hdc);
-	Board_image = CreateCompatibleBitmap(Board_canvas, WND_SZ_W, WND_SZ_H);
+	Board_image = CreateCompatibleBitmap(hdc, BOARD_W, BOARD_H);
 	Draw::Attach(Board_canvas, Board_image);
+
+	bool fill_flag = false;
+	auto outliner = CreatePen(PS_NULL, 1, C_BLACK); // 외곽선은 검정 색으로	
+	auto filler = CreateSolidBrush(C_WHITE); // 칠은 흰색으로
+	Draw::Attach(Board_canvas, outliner);
+	Draw::Attach(Board_canvas, filler);
+	Draw::Clear(Board_canvas, BOARD_W, BOARD_H, 0);
 
 	for (int i = 0; i < CELLS_LENGTH; ++i)
 	{
 		auto cell = std::make_shared<Cell>();
-		if (i % 2 == 1) cell->color = C_BLACK;
 
-		auto sort_ratio = (i / CELLS_CNT_H);
-		cell->x = (i - sort_ratio) * CELL_W;
-		cell->y = sort_ratio * CELL_W;
+		int sort_ratio = static_cast<int>(i / CELLS_CNT_H);
+		int x = (i - sort_ratio * CELLS_CNT_H) * CELL_W;
+		int y = sort_ratio * CELL_H;
 
+		if (fill_flag)
+		{
+			cell->color = C_BLACK;
+
+			auto blk_filler = static_cast<HBRUSH>(CreateSolidBrush(C_BLACK));
+			auto white_filler = Draw::Attach(Board_canvas, blk_filler);
+			Draw::SizedRect(Board_canvas, x, y, CELL_W, CELL_H);
+			Draw::Detach(Board_canvas, white_filler, blk_filler);
+		}
+		else
+		{
+			Draw::SizedRect(Board_canvas, x, y, CELL_W, CELL_H);
+		}
+
+		if ((CELLS_CNT_H - 1) * CELL_W != x) // 마지막 칸
+		{
+			fill_flag = !fill_flag;
+		}
+
+		cell->x = x;
+		cell->y = y;
 		m_Cells.push_back(std::move(cell));
 	}
-
 }
 
 void Framework::Update(float delta_time)
@@ -49,7 +79,8 @@ void Framework::Render(HWND window)
 	Draw::Clear(surface_double, WND_SZ_W, WND_SZ_H, background_color);
 
 	// 파이프라인
-	m_Player.Render(surface_double);
+	BitBlt(surface_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
+	//m_Player.Render()
 
 	// 이중 버퍼 -> 백 버퍼
 	BitBlt(surface_back, 0, 0, WND_SZ_W, WND_SZ_H, surface_double, 0, 0, SRCCOPY);
@@ -65,42 +96,4 @@ void Framework::Render(HWND window)
 	ReleaseDC(window, surface_app);
 
 	EndPaint(window, &ps);
-}
-
-
-void Player::Update(float delta_time)
-{
-
-}
-
-void Player::Render(HDC canvas)
-{
-	Draw::Rect(canvas, x, y, x + 50, y + 50);
-}
-
-HGDIOBJ Draw::Attach(HDC canvas, HGDIOBJ object)
-{
-	return SelectObject(canvas, object);
-}
-
-void Draw::Detach(HDC canvas, HGDIOBJ object_old, HGDIOBJ object_new)
-{
-	Attach(canvas, object_old);
-	DeleteObject(object_new);
-}
-
-void Draw::Clear(HDC canvas, int width, int height, COLORREF color)
-{
-	auto m_hPen = CreatePen(PS_NULL, 1, color);
-	auto m_oldhPen = static_cast<HPEN>(Attach(canvas, m_hPen));
-	auto m_hBR = CreateSolidBrush(color);
-	auto m_oldhBR = static_cast<HBRUSH>(Attach(canvas, m_hBR));
-	Rect(canvas, 0, 0, width, height);
-	Detach(canvas, m_oldhBR, m_hBR);
-	Detach(canvas, m_oldhPen, m_hPen);
-}
-
-BOOL Draw::Rect(HDC canvas, int x1, int y1, int x2, int y2)
-{
-	return Rectangle(canvas, x1, y1, x2, y2);
 }
