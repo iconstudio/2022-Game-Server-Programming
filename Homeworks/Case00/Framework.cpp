@@ -11,7 +11,7 @@ void Framework::Start()
 	auto hdc = GetDC(NULL);
 	Board_canvas = CreateCompatibleDC(hdc);
 	Board_image = CreateCompatibleBitmap(Board_canvas, WND_SZ_W, WND_SZ_H);
-	Draw::
+	Draw::Attach(Board_canvas, Board_image);
 
 	for (int i = 0; i < CELLS_LENGTH; ++i)
 	{
@@ -24,8 +24,6 @@ void Framework::Start()
 
 		m_Cells.push_back(std::move(cell));
 	}
-
-
 
 }
 
@@ -41,11 +39,11 @@ void Framework::Render(HWND window)
 
 	HDC surface_double = CreateCompatibleDC(surface_app);
 	HBITMAP m_hBit = CreateCompatibleBitmap(surface_app, WND_SZ_W, WND_SZ_H);
-	HBITMAP m_oldhBit = reinterpret_cast<HBITMAP>(Attach(surface_double, m_hBit));
+	HBITMAP m_oldhBit = reinterpret_cast<HBITMAP>(Draw::Attach(surface_double, m_hBit));
 
 	HDC surface_back = CreateCompatibleDC(surface_app);
 	HBITMAP m_newBit = CreateCompatibleBitmap(surface_app, WND_SZ_W, WND_SZ_H);
-	HBITMAP m_newoldBit = reinterpret_cast<HBITMAP>(Attach(surface_back, m_newBit));
+	HBITMAP m_newoldBit = reinterpret_cast<HBITMAP>(Draw::Attach(surface_back, m_newBit));
 
 	// √ ±‚»≠
 	Draw::Clear(surface_double, WND_SZ_W, WND_SZ_H, background_color);
