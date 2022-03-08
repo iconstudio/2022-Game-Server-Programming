@@ -27,6 +27,7 @@ void Framework::Start()
 	m_Player.x = BOARD_X + BOARD_W * 0.5 - CELL_W * 0.5;
 	m_Player.y = BOARD_Y + BOARD_H * 0.5 - CELL_H * 0.5;
 
+	// 보드판 만들기
 	for (int i = 0; i < CELLS_LENGTH; ++i)
 	{
 		auto cell = std::make_shared<Cell>();
