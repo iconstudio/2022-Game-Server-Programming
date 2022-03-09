@@ -13,5 +13,3 @@ public:
 
 	int x, y;
 };
-
-

@@ -3,7 +3,7 @@
 
 struct Cell
 {
-	int x, y;
+	int x = 0, y = 0;
 	COLORREF color = C_WHITE;
 };
 
@@ -18,17 +18,18 @@ public:
 
 	COLORREF background_color = C_WHITE;
 
+	static const int BOARD_W, BOARD_H, BOARD_X, BOARD_Y;
+
 private:
 	Player m_Player;
-	std::vector<std::shared_ptr<Cell>> m_Cells;
 
 	HDC Board_canvas;
 	HBITMAP Board_image;
+	std::vector<std::shared_ptr<Cell>> m_Cells;
 
-	const size_t CELL_W = 32;
-	const size_t CELL_H = 32;
-	const size_t CELLS_CNT_H = 8;
-	const size_t CELLS_CNT_V = 8;
-	const size_t CELLS_LENGTH = CELLS_CNT_H * CELLS_CNT_V;
-	const size_t BOARD_W, BOARD_H, BOARD_X, BOARD_Y;
+	const int CELL_W = CELL_SIZE;
+	const int CELL_H = CELL_SIZE;
+	const int CELLS_CNT_H = 8;
+	const int CELLS_CNT_V = 8;
+	const int CELLS_LENGTH = CELLS_CNT_H * CELLS_CNT_V;
 };

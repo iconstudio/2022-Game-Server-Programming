@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Player.h"
+#include "Framework.h"
 
 void Player::Update(float delta_time)
 {
@@ -44,20 +45,40 @@ void Player::Render(HDC canvas)
 
 void Player::MoveLT()
 {
-	x -= 32;
+	auto bd = Framework::BOARD_X;
+
+	if (bd + CELL_SIZE < x)
+	{
+		x -= CELL_SIZE;
+	}
 }
 
 void Player::MoveRT()
 {
-	x += 32;
+	auto bd = Framework::BOARD_X + Framework::BOARD_W;
+
+	if (x < bd - CELL_SIZE)
+	{
+		x += CELL_SIZE;
+	}
 }
 
 void Player::MoveUP()
 {
-	y -= 32;
+	auto bd = Framework::BOARD_Y;
+
+	if (bd + CELL_SIZE < y)
+	{
+		y -= CELL_SIZE;
+	}
 }
 
 void Player::MoveDW()
 {
-	y += 32;
+	auto bd = Framework::BOARD_Y + Framework::BOARD_H;
+
+	if (y < bd - CELL_SIZE)
+	{
+		y += CELL_SIZE;
+	}
 }

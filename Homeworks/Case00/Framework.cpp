@@ -4,8 +4,8 @@
 Framework::Framework()
 	: m_Player(), m_Cells(CELLS_LENGTH)
 	, Board_canvas(), Board_image()
-	, BOARD_W(CELL_W * CELLS_CNT_H), BOARD_H(CELL_H * CELLS_CNT_V)
-	, BOARD_X((WND_SZ_W - BOARD_W) * 0.5), BOARD_Y((WND_SZ_H - BOARD_H) * 0.5)
+	//, BOARD_W(CELL_W * CELLS_CNT_H), BOARD_H(CELL_H * CELLS_CNT_V)
+	//, BOARD_X((WND_SZ_W - BOARD_W) * 0.5), BOARD_Y((WND_SZ_H - BOARD_H - 20) * 0.5)
 {}
 
 void Framework::Start()
@@ -18,7 +18,7 @@ void Framework::Start()
 	Draw::Attach(Board_canvas, Board_image);
 
 	bool fill_flag = false;
-	auto outliner = CreatePen(PS_NULL, 1, C_BLACK); // ¿Ü°û¼±Àº °ËÁ¤ »öÀ¸·Î	
+	auto outliner = CreatePen(PS_NULL, 1, C_BLACK);
 	auto filler = CreateSolidBrush(C_WHITE); // Ä¥Àº Èò»öÀ¸·Î
 	Draw::Attach(Board_canvas, outliner);
 	Draw::Attach(Board_canvas, filler);
@@ -40,7 +40,7 @@ void Framework::Start()
 		{
 			cell->color = C_BLACK;
 
-			auto blk_filler = static_cast<HBRUSH>(CreateSolidBrush(C_BLACK));
+			auto blk_filler = CreateSolidBrush(C_BLACK);
 			auto white_filler = Draw::Attach(Board_canvas, blk_filler);
 			Draw::SizedRect(Board_canvas, x, y, CELL_W, CELL_H);
 			Draw::Detach(Board_canvas, white_filler, blk_filler);
