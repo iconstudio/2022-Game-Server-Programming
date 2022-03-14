@@ -49,7 +49,46 @@ void Framework::Render(HWND window)
 
 void Framework::Init()
 {
-	WSADATA wsa;
+	WSADATA wsadata{};
+	if (0 != WSAStartup(MAKEWORD(2, 2), &wsadata))
+	{
+		//ErrorAbort("WSAStartup()");
+		return;
+	}
+	
+	m_Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+	if (INVALID_SOCKET == m_Socket)
+	{
+		//ErrorAbort("socket()");
+		return;
+	}
+
+	BOOL option = TRUE;
+	if (SOCKET_ERROR == setsockopt(m_Socket, SOL_SOCKET, SO_REUSEADDR
+		, reinterpret_cast<char*>(&option), sizeof(option)))
+	{
+		//ErrorAbort("setsockopt()");
+		return;
+	}
+
+	sz_Address = sizeof(m_Address);
+	ZeroMemory(&m_Address, sz_Address);
+	m_Address.sin_family = AF_INET;
+	m_Address.sin_addr.s_addr = htonl(INADDR_ANY);
+	m_Address.sin_port = htons(6000);
+
+	if (SOCKET_ERROR == bind(m_Socket, reinterpret_cast<SOCKADDR*>(&m_Address), sz_Address))
+	{
+		//ErrorAbort("bind()");
+		return;
+	}
+
+	if (SOCKET_ERROR == listen(m_Socket, SOMAXCONN))
+	{
+		//ErrorAbort("listen()");
+		return;
+	}
+
 }
 
 void Framework::Bind()

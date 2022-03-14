@@ -22,10 +22,10 @@ public:
 	static const int BOARD_W, BOARD_H, BOARD_X, BOARD_Y;
 
 private:
-	SOCKET socket;
-	SOCKADDR_IN address;
-	int sz_address;
-	u_short port;
+	SOCKET m_Socket;
+	SOCKADDR_IN m_Address;
+	USHORT m_Port;
+	int sz_Address;
 
 	void Init();
 	void Bind();
