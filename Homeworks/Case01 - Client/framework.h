@@ -1,12 +1,6 @@
 #pragma once
 #include "Player.h"
 
-struct Cell
-{
-	int x = 0, y = 0;
-	COLORREF color = C_WHITE;
-};
-
 class Framework
 {
 public:
@@ -25,7 +19,6 @@ private:
 
 	HDC Board_canvas;
 	HBITMAP Board_image;
-	std::vector<std::shared_ptr<Cell>> m_Cells;
 
 	const int CELL_W = CELL_SIZE;
 	const int CELL_H = CELL_SIZE;

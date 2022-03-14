@@ -2,7 +2,7 @@
 #include "Framework.h"
 
 Framework::Framework()
-	: m_Player(), m_Cells(CELLS_LENGTH)
+	: m_Player()
 	, Board_canvas(), Board_image()
 	//, BOARD_W(CELL_W * CELLS_CNT_H), BOARD_H(CELL_H * CELLS_CNT_V)
 	//, BOARD_X((WND_SZ_W - BOARD_W) * 0.5), BOARD_Y((WND_SZ_H - BOARD_H - 20) * 0.5)
@@ -30,16 +30,12 @@ void Framework::Start()
 	// 보드판 만들기
 	for (int i = 0; i < CELLS_LENGTH; ++i)
 	{
-		auto cell = std::make_shared<Cell>();
-
 		int sort_ratio = static_cast<int>(i / CELLS_CNT_H);
 		int x = (i - sort_ratio * CELLS_CNT_H) * CELL_W;
 		int y = sort_ratio * CELL_H;
 
 		if (fill_flag)
 		{
-			cell->color = C_BLACK;
-
 			auto blk_filler = CreateSolidBrush(C_BLACK);
 			auto white_filler = Draw::Attach(Board_canvas, blk_filler);
 			Draw::SizedRect(Board_canvas, x, y, CELL_W, CELL_H);
@@ -54,10 +50,6 @@ void Framework::Start()
 		{
 			fill_flag = !fill_flag;
 		}
-
-		cell->x = x;
-		cell->y = y;
-		m_Cells.push_back(std::move(cell));
 	}
 }
 
