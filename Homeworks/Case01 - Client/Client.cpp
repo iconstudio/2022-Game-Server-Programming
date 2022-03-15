@@ -1,5 +1,5 @@
 ﻿#include "stdafx.h"
-#include "main.h"
+#include "client.h"
 #include "WindowsForm.h"
 #include "Framework.h"
 

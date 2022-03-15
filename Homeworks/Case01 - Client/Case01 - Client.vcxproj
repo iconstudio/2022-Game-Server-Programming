@@ -149,7 +149,7 @@
   <ItemGroup>
     <ClInclude Include="..\Case01\Network.h" />
     <ClInclude Include="Framework.h" />
-    <ClInclude Include="main.h" />
+    <ClInclude Include="Client.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="Resource.h" />
@@ -158,7 +158,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Framework.cpp" />
-    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Client.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="WindowsForm.cpp" />
   </ItemGroup>
