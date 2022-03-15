@@ -1,10 +1,5 @@
 #include "stdafx.h"
 #include "Player.h"
-#include "Framework.h"
-
-void Player::Update(float delta_time)
-{
-}
 
 void Player::Render(HDC canvas)
 {

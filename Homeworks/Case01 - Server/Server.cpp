@@ -1,12 +1,8 @@
 #include "Server.h"
 
-using namespace std;
-
 SOCKET m_Socket;
 SOCKADDR_IN m_Address;
 INT sz_Address;
-
-void ErrorDisplay(const char* title);
 
 int main()
 {
@@ -14,14 +10,14 @@ int main()
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsadata))
 	{
 		ErrorDisplay("WSAStartup()");
-		return;
+		return 0;
 	}
 
 	m_Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, 0);
 	if (INVALID_SOCKET == m_Socket)
 	{
 		ErrorDisplay("WSASocket()");
-		return;
+		return 0;
 	}
 
 	sz_Address = sizeof(m_Address);
@@ -33,30 +29,110 @@ int main()
 	if (SOCKET_ERROR == bind(m_Socket, (SOCKADDR*)(&m_Address), sz_Address))
 	{
 		ErrorDisplay("bind()");
-		return;
+		return 0;
 	}
 
 	if (SOCKET_ERROR == listen(m_Socket, SOMAXCONN))
 	{
 		ErrorDisplay("listen()");
-		return;
+		return 0;
 	}
 
-	cout << "Server opened\n";
-	SOCKET Client = accept(m_Socket, (SOCKADDR*)(&m_Address), &sz_Address);
+	cout << "Server opened.\n";
+	SOCKET client_socket = WSAAccept(m_Socket, (SOCKADDR*)(&m_Address), &sz_Address, NULL, NULL);
+	if (INVALID_SOCKET == client_socket)
+	{
+		ErrorDisplay("WSAAccept()");
+		return 0;
+	}
+
+	SOCKADDR_IN client_addr;
+	INT cl_addr_size = sizeof(client_addr);
+	ZeroMemory(&client_addr, cl_addr_size);
+	getpeername(m_Socket, reinterpret_cast<SOCKADDR*>(&client_addr), &cl_addr_size);
+	cout << "Client is connected: (" << inet_ntoa(client_addr.sin_addr) << ")\n";
 
 	int result = 0;
+
+	char recv_store[BUFFSIZE];
 	WSABUF buffer{};
-	DWORD sz_recv = 0;
+	DWORD recv_size = 0;
+	DWORD recv_flag = 0;
+	DWORD send_size = 0;
+
+	ZeroMemory(recv_store, BUFFSIZE);
+	buffer.buf = recv_store;
+	buffer.len = BUFFSIZE;
+
+	result = WSARecv(client_socket, &buffer, 1, &recv_size, &recv_flag, NULL, NULL); // recv 1
+	if (SOCKET_ERROR == result)
+	{
+		ErrorDisplay("WSARecv 1");
+		return 0;
+	}
+
+	auto player_pos = reinterpret_cast<Position*>(&recv_store);
+	Position player{ player_pos->x, player_pos->y };
+
 	while (true)
 	{
-		result = WSARecv(Client, &buffer, 1, &sz_recv, 0, NULL, NULL);
+		ZeroMemory(recv_store, BUFFSIZE);
+		buffer.buf = recv_store;
+		buffer.len = BUFFSIZE;
+
+		result = WSARecv(client_socket, &buffer, 1, &recv_size, &recv_flag, NULL, NULL); // recv 2
 		if (SOCKET_ERROR == result)
 		{
-			ErrorDisplay("WSARecv");
+			ErrorDisplay("WSARecv 2");
 			break;
 		}
-	}
+
+		if (0 < recv_size)
+		{
+			cout << "Received: " << recv_store << " (" << recv_size << "Bytes)\n";
+
+			int received = reinterpret_cast<int>(recv_store);
+
+			switch (received)
+			{
+				case VK_LEFT:
+				{
+					player.x -= 32;
+				}
+				break;
+
+				case VK_RIGHT:
+				{
+					player.x += 32;
+				}
+				break;
+
+				case VK_UP:
+				{
+					player.y -= 32;
+				}
+				break;
+
+				case VK_DOWN:
+				{
+					player.y += 32;
+				}
+				break;
+
+				default:
+				break;
+			}
+
+			buffer.buf = reinterpret_cast<char*>(&player);
+			buffer.len = sizeof(player);
+			result = WSASend(client_socket, &buffer, 1, &send_size, NULL, NULL, NULL); // send 2
+			if (SOCKET_ERROR == result)
+			{
+				ErrorDisplay("WSASend 2");
+				break;
+			}
+		} // if (0 < recv_size)
+	} // while (true)
 
 	return 0;
 }
@@ -71,7 +147,7 @@ void ErrorDisplay(const char* title)
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(LPTSTR)&lpMsgBuf, 0, NULL);
 
-	cerr << title << "에러: " << lpMsgBuf << endl;
+	cerr << title << " -> 오류: " << lpMsgBuf << endl;
 
 	LocalFree(lpMsgBuf);
 }
