@@ -55,8 +55,7 @@ void Framework::Init()
 			auto white_filler = Draw::Attach(Board_canvas, blk_filler);
 			Draw::SizedRect(Board_canvas, x, y, CELL_W, CELL_H);
 			Draw::Detach(Board_canvas, white_filler, blk_filler);
-		}
-		else
+		} else
 		{
 			Draw::SizedRect(Board_canvas, x, y, CELL_W, CELL_H);
 		}
@@ -77,6 +76,8 @@ void Framework::Start()
 		return;
 	}
 
+	//result = ioctlsocket(m_Socket, NONBLOC)
+
 	m_Player.x = BOARD_X + BOARD_W * 0.5 - CELL_W * 0.5;
 	m_Player.y = BOARD_Y + BOARD_H * 0.5 - CELL_H * 0.5;
 
@@ -90,32 +91,6 @@ void Framework::Start()
 	{
 		ErrorDisplay("WSASend 1");
 		return;
-	}
-
-	char recv_store[BUFFSIZE];
-	DWORD recv_size = 0;
-	DWORD recv_flag = 0;
-
-	while (true)
-	{
-		ZeroMemory(recv_store, BUFFSIZE);
-		buffer.buf = recv_store;
-		buffer.len = BUFFSIZE;
-
-		result = WSARecv(m_Socket, &buffer, 1, &recv_size, &recv_flag, 0, 0); // recv 1
-		if (SOCKET_ERROR == result)
-		{
-			ErrorDisplay("WSARecv 1");
-			return;
-		}
-
-		if (0 < recv_size)
-		{
-			auto position = reinterpret_cast<Position*>(recv_store);
-
-			m_Player.x = position->x;
-			m_Player.y = position->y;
-		}
 	}
 }
 
@@ -131,6 +106,39 @@ void Framework::SendKey(INT key)
 	{
 		ErrorDisplay("WSASend 2");
 		return;
+	}
+}
+
+void Framework::Update()
+{
+	int result = 0;
+
+	char recv_store[BUFFSIZE];
+	DWORD recv_size = 0;
+	DWORD recv_flag = 0;
+
+	ZeroMemory(recv_store, BUFFSIZE);
+	buffer.buf = recv_store;
+	buffer.len = BUFFSIZE;
+
+	result = WSARecv(m_Socket, &buffer, 1, &recv_size, &recv_flag, 0, 0); // recv 1
+	if (SOCKET_ERROR == result)
+	{
+		int error = WSAGetLastError();
+		if (WSAEWOULDBLOCK != error)
+		{
+			ErrorDisplay("WSARecv 1");
+			return;
+		}
+	}
+
+	auto want_size = sizeof(Position);
+	if (0 < recv_size && want_size <= recv_size)
+	{
+		auto position = reinterpret_cast<Position*>(recv_store);
+
+		m_Player.x = position->x;
+		m_Player.y = position->y;
 	}
 }
 

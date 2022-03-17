@@ -24,6 +24,7 @@ public:
 	void Init();
 	void Start();
 	void SendKey(INT key);
+	void Update();
 	void Render(HWND window);
 
 	COLORREF background_color = C_WHITE;
