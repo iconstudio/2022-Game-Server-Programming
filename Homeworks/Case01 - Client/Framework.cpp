@@ -116,6 +116,8 @@ void Framework::Start()
 			m_Player.x = position->x;
 			m_Player.y = position->y;
 		}
+
+		InvalidateRect(NULL, NULL, FALSE);
 	}
 }
 

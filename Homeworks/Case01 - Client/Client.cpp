@@ -23,8 +23,6 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
-	framework.Init();
-
 	MSG msg;
 	while (true)
 	{
@@ -49,13 +47,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		case WM_CREATE:
 		{
+			framework.Init();
 			framework.Start();
 		}
 		break;
 
 		case WM_TIMER:
 		{
-			InvalidateRect(hWnd, NULL, FALSE);
 		}
 		break;
 
