@@ -16,7 +16,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_ int       nCmdShow)
 {
 	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
-	LoadStringW(hInstance, IDS_APP_ID, szWindowClass, MAX_LOADSTRING);
+	LoadStringW(hInstance, IDC_CASE00, szWindowClass, MAX_LOADSTRING);
 
 	if (!window.Initialize(hInstance, WndProc, szTitle, szWindowClass, nCmdShow))
 	{
