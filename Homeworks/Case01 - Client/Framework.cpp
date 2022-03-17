@@ -5,10 +5,13 @@
 Framework::Framework()
 	: m_Player(), m_Buffer()
 	, Board_canvas(), Board_image()
+	, Board_rect{ BOARD_X, BOARD_Y, BOARD_X + BOARD_W, BOARD_Y + BOARD_H }
 {}
 
-void Framework::Init()
+void Framework::Init(HWND window)
 {
+	Window = window;
+
 	WSADATA wsadata{};
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsadata))
 	{
@@ -31,7 +34,12 @@ void Framework::Init()
 	}
 
 	background_color = C_GREEN;
-	auto hdc = GetDC(NULL);
+
+	auto hdc = GetDC(Window);
+	DC_double = CreateCompatibleDC(hdc);
+	Surface_double = CreateCompatibleBitmap(hdc, WND_SZ_W, WND_SZ_H);
+	Draw::Attach(DC_double, Surface_double);
+
 	Board_canvas = CreateCompatibleDC(hdc);
 	Board_image = CreateCompatibleBitmap(hdc, BOARD_W, BOARD_H);
 	Draw::Attach(Board_canvas, Board_image);
@@ -42,6 +50,7 @@ void Framework::Init()
 	Draw::Attach(Board_canvas, outliner);
 	Draw::Attach(Board_canvas, filler);
 	Draw::Clear(Board_canvas, BOARD_W, BOARD_H, 0);
+	ReleaseDC(Window, hdc);
 
 	for (int i = 0; i < CELLS_LENGTH; ++i)
 	{
@@ -111,6 +120,7 @@ DWORD WINAPI Communicate(PVOID param)
 	auto& m_Socket = framework->m_Socket;
 	auto& m_Player = framework->m_Player;
 	auto& m_sEvent = framework->Event_send;
+	auto* m_bdRect = &framework->Board_rect;
 
 	int result = 0;
 
@@ -127,15 +137,12 @@ DWORD WINAPI Communicate(PVOID param)
 		buffer.buf = recv_store;
 		buffer.len = BUFFSIZE;
 
-		result = WSARecv(m_Socket, &buffer, 1, &recv_size, &recv_flag, 0, 0); // recv 1
+		// recv 1
+		result = WSARecv(m_Socket, &buffer, 1, &recv_size, &recv_flag, 0, 0);
 		if (SOCKET_ERROR == result)
 		{
-			int error = WSAGetLastError();
-			if (WSAEWOULDBLOCK != error)
-			{
-				ErrorDisplay("WSARecv 1");
-				break;
-			}
+			ErrorDisplay("WSARecv 1");
+			break;
 		}
 
 		if (0 < recv_size)
@@ -144,7 +151,7 @@ DWORD WINAPI Communicate(PVOID param)
 
 			m_Player.x = position->x;
 			m_Player.y = position->y;
-			InvalidateRect(NULL, NULL, TRUE);
+			InvalidateRect(NULL, m_bdRect, FALSE);
 		}
 	}
 
@@ -152,42 +159,22 @@ DWORD WINAPI Communicate(PVOID param)
 	return 0;
 }
 
-void Framework::Update()
-{}
-
 void Framework::Render(HWND window)
 {
 	PAINTSTRUCT ps;
 	HDC surface_app = BeginPaint(window, &ps);
 
-	HDC surface_double = CreateCompatibleDC(surface_app);
-	HBITMAP m_hBit = CreateCompatibleBitmap(surface_app, WND_SZ_W, WND_SZ_H);
-	HBITMAP m_oldhBit = reinterpret_cast<HBITMAP>(Draw::Attach(surface_double, m_hBit));
-
-	HDC surface_back = CreateCompatibleDC(surface_app);
-	HBITMAP m_newBit = CreateCompatibleBitmap(surface_app, WND_SZ_W, WND_SZ_H);
-	HBITMAP m_newoldBit = reinterpret_cast<HBITMAP>(Draw::Attach(surface_back, m_newBit));
-
-	// 초기화
-	Draw::Clear(surface_double, WND_SZ_W, WND_SZ_H, background_color);
+	Draw::Clear(DC_double, WND_SZ_W, WND_SZ_H, background_color);
 
 	// 파이프라인
-	BitBlt(surface_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
-	m_Player.Render(surface_double);
+	BitBlt(DC_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
+	m_Player.Render(DC_double);
 
-	// 이중 버퍼 -> 백 버퍼
-	BitBlt(surface_back, 0, 0, WND_SZ_W, WND_SZ_H, surface_double, 0, 0, SRCCOPY);
-	Draw::Detach(surface_double, m_oldhBit, m_hBit);
-
-	// 백 버퍼 -> 화면 버퍼
+	// 후면 버퍼 -> 화면 버퍼
 	StretchBlt(surface_app, 0, 0, WND_SZ_W, WND_SZ_H
-		, surface_back, 0, 0, WND_SZ_W, WND_SZ_H, SRCCOPY);
-	Draw::Detach(surface_back, m_newoldBit, m_newBit);
+		, DC_double, 0, 0, WND_SZ_W, WND_SZ_H, SRCCOPY);
 
-	DeleteDC(surface_back);
-	DeleteDC(surface_double);
 	ReleaseDC(window, surface_app);
-
 	EndPaint(window, &ps);
 }
 

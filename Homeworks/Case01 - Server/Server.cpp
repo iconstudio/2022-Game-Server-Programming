@@ -78,7 +78,7 @@ int main()
 	}
 
 	auto player_pos = reinterpret_cast<Position*>(&recv_store);
-	Position player{ player_pos->x, player_pos->y };
+	Player player{ player_pos->x, player_pos->y };
 	cout << "플레이어 좌표: (" << player_pos->x << ", " << player_pos->y << ")\n";
 
 	while (true)
@@ -97,33 +97,34 @@ int main()
 
 		if (0 < recv_size)
 		{
-			cout << "키 받음: " << recv_store << " (" << recv_size << " Bytes)\n";
-
-			auto received = reinterpret_cast<WPARAM>(&recv_store);
+			cout << "키 받음: " << recv_store << " (" << recv_size << " 바이트)\n";
+			
+			WPARAM received = 0;// = reinterpret_cast<WPARAM>(recv_store);
+			memcpy_s(&received, sizeof(received), recv_store, recv_size);
 
 			switch (received)
 			{
 				case VK_LEFT:
 				{
-					player.x -= 32;
+					player.MoveLT();
 				}
 				break;
 
 				case VK_RIGHT:
 				{
-					player.x += 32;
+					player.MoveRT();
 				}
 				break;
 
 				case VK_UP:
 				{
-					player.y -= 32;
+					player.MoveUP();
 				}
 				break;
 
 				case VK_DOWN:
 				{
-					player.y += 32;
+					player.MoveDW();
 				}
 				break;
 
@@ -140,10 +141,6 @@ int main()
 				ErrorDisplay("WSASend 1");
 				break;
 			}
-
-			auto position = reinterpret_cast<Position*>(buffer.buf);
-
-			cout << "위치 보냄: (" << position->x << ", " << position->y << ")\n";
 		} // if (0 < recv_size)
 	} // while (true)
 
@@ -151,6 +148,46 @@ int main()
 	WSACleanup();
 
 	return 0;
+}
+
+void Player::MoveLT()
+{
+	auto bd = BOARD_X;
+
+	if (bd + CELL_SIZE < x)
+	{
+		x -= CELL_SIZE;
+	}
+}
+
+void Player::MoveRT()
+{
+	auto bd = BOARD_X + BOARD_W;
+
+	if (x < bd - CELL_SIZE)
+	{
+		x += CELL_SIZE;
+	}
+}
+
+void Player::MoveUP()
+{
+	auto bd = BOARD_Y;
+
+	if (bd + CELL_SIZE < y)
+	{
+		y -= CELL_SIZE;
+	}
+}
+
+void Player::MoveDW()
+{
+	auto bd = BOARD_Y + BOARD_H;
+
+	if (y < bd - CELL_SIZE)
+	{
+		y += CELL_SIZE;
+	}
 }
 
 void ErrorDisplay(const char* title)

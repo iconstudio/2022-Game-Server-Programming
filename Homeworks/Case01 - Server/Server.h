@@ -26,3 +26,12 @@ struct Position
 {
 	int x, y;
 };
+
+class Player : public Position
+{
+public:
+	void MoveLT();
+	void MoveRT();
+	void MoveUP();
+	void MoveDW();
+};

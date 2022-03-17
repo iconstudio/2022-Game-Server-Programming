@@ -9,10 +9,9 @@ class Framework
 public:
 	Framework();
 
-	void Init();
+	void Init(HWND window);
 	void Start();
 	friend DWORD WINAPI Communicate(PVOID param);
-	void Update();
 	void Render(HWND window);
 	void SendKey(WPARAM key);
 
@@ -21,8 +20,12 @@ public:
 private:
 	Player m_Player;
 
+	HWND Window;
+	HDC DC_double;
+	HBITMAP Surface_double;
 	HDC Board_canvas;
 	HBITMAP Board_image;
+	RECT Board_rect;
 
 	SOCKET m_Socket;
 	SOCKADDR_IN m_Server_address;
