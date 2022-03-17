@@ -11,6 +11,7 @@
 
 #include <vector>
 #include <memory>
+#include <thread>
 #include <algorithm>
 
 constexpr COLORREF C_BLACK = RGB(0, 0, 0);

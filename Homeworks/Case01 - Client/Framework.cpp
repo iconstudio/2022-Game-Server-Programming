@@ -3,7 +3,7 @@
 #include "Player.h"
 
 Framework::Framework()
-	: m_Player(), buffer()
+	: m_Player(), m_Buffer()
 	, Board_canvas(), Board_image()
 {}
 
@@ -23,14 +23,14 @@ void Framework::Init()
 		return;
 	}
 
-	sz_Address = sizeof(m_Server_address);
-	ZeroMemory(&m_Server_address, sz_Address);
-	m_Server_address.sin_family = AF_INET;
-	m_Server_address.sin_port = htons(6000);
-	inet_pton(AF_INET, SERVER_IP, &m_Server_address.sin_addr);
+	Event_send = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (0 == Event_send)
+	{
+		ErrorDisplay("CreateEvent()");
+		return;
+	}
 
 	background_color = C_GREEN;
-
 	auto hdc = GetDC(NULL);
 	Board_canvas = CreateCompatibleDC(hdc);
 	Board_image = CreateCompatibleBitmap(hdc, BOARD_W, BOARD_H);
@@ -55,7 +55,8 @@ void Framework::Init()
 			auto white_filler = Draw::Attach(Board_canvas, blk_filler);
 			Draw::SizedRect(Board_canvas, x, y, CELL_W, CELL_H);
 			Draw::Detach(Board_canvas, white_filler, blk_filler);
-		} else
+		}
+		else
 		{
 			Draw::SizedRect(Board_canvas, x, y, CELL_W, CELL_H);
 		}
@@ -69,78 +70,90 @@ void Framework::Init()
 
 void Framework::Start()
 {
+	sz_Address = sizeof(m_Server_address);
+	ZeroMemory(&m_Server_address, sz_Address);
+	m_Server_address.sin_family = AF_INET;
+	m_Server_address.sin_port = htons(6000);
+	inet_pton(AF_INET, SERVER_IP, &m_Server_address.sin_addr);
+
 	int result = WSAConnect(m_Socket, reinterpret_cast<SOCKADDR*>(&m_Server_address), sz_Address, NULL, NULL, NULL, NULL);
 	if (SOCKET_ERROR == result)
 	{
 		ErrorDisplay("WSAConnect()");
 		return;
 	}
-
-	//result = ioctlsocket(m_Socket, NONBLOC)
-
 	m_Player.x = BOARD_X + BOARD_W * 0.5 - CELL_W * 0.5;
 	m_Player.y = BOARD_Y + BOARD_H * 0.5 - CELL_H * 0.5;
 
 	DWORD send_size = 0;
 	Position player_pos{ m_Player.x, m_Player.y };
-	buffer.buf = reinterpret_cast<char*>(&player_pos);
-	buffer.len = sizeof(player_pos);
+	m_Buffer.buf = reinterpret_cast<char*>(&player_pos);
+	m_Buffer.len = sizeof(player_pos);
 
-	result = WSASend(m_Socket, &buffer, 1, &send_size, 0, NULL, NULL); // send 1
+	result = WSASend(m_Socket, &m_Buffer, 1, &send_size, 0, NULL, NULL); // send 1
 	if (SOCKET_ERROR == result)
 	{
 		ErrorDisplay("WSASend 1");
 		return;
 	}
-}
 
-void Framework::SendKey(INT key)
-{
-	DWORD send_size = 0;
-
-	buffer.buf = reinterpret_cast<char*>(&key);
-	buffer.len = sizeof(key);
-
-	int result = WSASend(m_Socket, &buffer, 1, &send_size, 0, NULL, NULL); // send 2
-	if (SOCKET_ERROR == result)
+	auto th = CreateThread(NULL, 0, &Communicate, this, 0, NULL);
+	if (0 == th)
 	{
-		ErrorDisplay("WSASend 2");
+		ErrorDisplay("CreateThread");
 		return;
 	}
 }
 
-void Framework::Update()
+DWORD WINAPI Communicate(PVOID param)
 {
+	auto framework = reinterpret_cast<Framework*>(param);
+	auto& m_Socket = framework->m_Socket;
+	auto& m_Player = framework->m_Player;
+	auto& m_sEvent = framework->Event_send;
+
 	int result = 0;
 
-	char recv_store[BUFFSIZE];
+	WSABUF buffer{};
+	char recv_store[BUFFSIZE + 1];
 	DWORD recv_size = 0;
 	DWORD recv_flag = 0;
 
-	ZeroMemory(recv_store, BUFFSIZE);
-	buffer.buf = recv_store;
-	buffer.len = BUFFSIZE;
-
-	result = WSARecv(m_Socket, &buffer, 1, &recv_size, &recv_flag, 0, 0); // recv 1
-	if (SOCKET_ERROR == result)
+	while (true)
 	{
-		int error = WSAGetLastError();
-		if (WSAEWOULDBLOCK != error)
+		WaitForSingleObject(m_sEvent, INFINITE);
+
+		ZeroMemory(recv_store, BUFFSIZE + 1);
+		buffer.buf = recv_store;
+		buffer.len = BUFFSIZE;
+
+		result = WSARecv(m_Socket, &buffer, 1, &recv_size, &recv_flag, 0, 0); // recv 1
+		if (SOCKET_ERROR == result)
 		{
-			ErrorDisplay("WSARecv 1");
-			return;
+			int error = WSAGetLastError();
+			if (WSAEWOULDBLOCK != error)
+			{
+				ErrorDisplay("WSARecv 1");
+				break;
+			}
+		}
+
+		if (0 < recv_size)
+		{
+			auto position = reinterpret_cast<Position*>(recv_store);
+
+			m_Player.x = position->x;
+			m_Player.y = position->y;
+			InvalidateRect(NULL, NULL, TRUE);
 		}
 	}
 
-	auto want_size = sizeof(Position);
-	if (0 < recv_size && want_size <= recv_size)
-	{
-		auto position = reinterpret_cast<Position*>(recv_store);
-
-		m_Player.x = position->x;
-		m_Player.y = position->y;
-	}
+	closesocket(m_Socket);
+	return 0;
 }
+
+void Framework::Update()
+{}
 
 void Framework::Render(HWND window)
 {
@@ -178,15 +191,33 @@ void Framework::Render(HWND window)
 	EndPaint(window, &ps);
 }
 
+void Framework::SendKey(WPARAM key)
+{
+	DWORD send_size = 0;
+
+	m_Buffer.buf = reinterpret_cast<char*>(&key);
+	m_Buffer.len = sizeof(key);
+
+	// send 2
+	int result = WSASend(m_Socket, &m_Buffer, 1, &send_size, 0, NULL, NULL);
+	if (SOCKET_ERROR == result)
+	{
+		ErrorDisplay("WSASend 2");
+		return;
+	}
+
+	SetEvent(Event_send);
+}
+
 void ErrorDisplay(const char* title)
 {
-	TCHAR* lpMsgBuf;
+	WCHAR* lpMsgBuf;
 	FormatMessage(
 		FORMAT_MESSAGE_ALLOCATE_BUFFER |
 		FORMAT_MESSAGE_FROM_SYSTEM,
 		NULL, WSAGetLastError(),
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR)&lpMsgBuf, 0, NULL);
+		(LPWSTR)&lpMsgBuf, 0, NULL);
 
 	MessageBox(NULL, lpMsgBuf, L"¿À·ù!", MB_OK);
 

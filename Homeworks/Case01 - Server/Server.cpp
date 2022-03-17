@@ -38,7 +38,7 @@ int main()
 		return 0;
 	}
 
-	cout << "Server opened.\n";
+	cout << "서버 시작\n";
 	SOCKET client_socket = WSAAccept(m_Socket, (SOCKADDR*)(&m_Address), &sz_Address, NULL, NULL);
 	if (INVALID_SOCKET == client_socket)
 	{
@@ -47,24 +47,30 @@ int main()
 	}
 
 	SOCKADDR_IN client_addr;
-	INT cl_addr_size = sizeof(client_addr);
+	int cl_addr_size = sizeof(client_addr);
 	ZeroMemory(&client_addr, cl_addr_size);
-	getpeername(m_Socket, reinterpret_cast<SOCKADDR*>(&client_addr), &cl_addr_size);
-	cout << "Client is connected: (" << inet_ntoa(client_addr.sin_addr) << ")\n";
+	if (SOCKET_ERROR == getpeername(client_socket, reinterpret_cast<SOCKADDR*>(&client_addr), &cl_addr_size))
+	{
+		ErrorDisplay("getpeername()");
+		return 0;
+	}
+	cout << "클라이언트 접속: (" << inet_ntoa(client_addr.sin_addr)
+		<< "), 핸들: " << client_socket << "\n";
 
 	int result = 0;
 
-	char recv_store[BUFFSIZE];
+	char recv_store[BUFFSIZE + 1];
 	WSABUF buffer{};
 	DWORD recv_size = 0;
 	DWORD recv_flag = 0;
 	DWORD send_size = 0;
 
-	ZeroMemory(recv_store, BUFFSIZE);
+	ZeroMemory(recv_store, BUFFSIZE + 1);
 	buffer.buf = recv_store;
 	buffer.len = BUFFSIZE;
 
-	result = WSARecv(client_socket, &buffer, 1, &recv_size, &recv_flag, NULL, NULL); // recv 1
+	cout << "recv 1\n";
+	result = WSARecv(client_socket, &buffer, 1, &recv_size, &recv_flag, NULL, NULL);
 	if (SOCKET_ERROR == result)
 	{
 		ErrorDisplay("WSARecv 1");
@@ -73,6 +79,7 @@ int main()
 
 	auto player_pos = reinterpret_cast<Position*>(&recv_store);
 	Position player{ player_pos->x, player_pos->y };
+	cout << "플레이어 좌표: (" << player_pos->x << ", " << player_pos->y << ")\n";
 
 	while (true)
 	{
@@ -80,7 +87,8 @@ int main()
 		buffer.buf = recv_store;
 		buffer.len = BUFFSIZE;
 
-		result = WSARecv(client_socket, &buffer, 1, &recv_size, &recv_flag, NULL, NULL); // recv 2
+		cout << "recv 2\n";
+		result = WSARecv(client_socket, &buffer, 1, &recv_size, &recv_flag, NULL, NULL);
 		if (SOCKET_ERROR == result)
 		{
 			ErrorDisplay("WSARecv 2");
@@ -89,9 +97,9 @@ int main()
 
 		if (0 < recv_size)
 		{
-			cout << "Received: " << recv_store << " (" << recv_size << "Bytes)\n";
+			cout << "키 받음: " << recv_store << " (" << recv_size << " Bytes)\n";
 
-			int received = reinterpret_cast<int>(recv_store);
+			auto received = reinterpret_cast<WPARAM>(&recv_store);
 
 			switch (received)
 			{
@@ -123,31 +131,39 @@ int main()
 				break;
 			}
 
+			cout << "send 1\n";
 			buffer.buf = reinterpret_cast<char*>(&player);
 			buffer.len = sizeof(player);
-			result = WSASend(client_socket, &buffer, 1, &send_size, NULL, NULL, NULL); // send 2
+			result = WSASend(client_socket, &buffer, 1, &send_size, NULL, NULL, NULL);
 			if (SOCKET_ERROR == result)
 			{
-				ErrorDisplay("WSASend 2");
+				ErrorDisplay("WSASend 1");
 				break;
 			}
+
+			auto position = reinterpret_cast<Position*>(buffer.buf);
+
+			cout << "위치 보냄: (" << position->x << ", " << position->y << ")\n";
 		} // if (0 < recv_size)
 	} // while (true)
+
+	closesocket(m_Socket);
+	WSACleanup();
 
 	return 0;
 }
 
 void ErrorDisplay(const char* title)
 {
-	CHAR* lpMsgBuf;
+	TCHAR* lpMsgBuf;
 	FormatMessage(
 		FORMAT_MESSAGE_ALLOCATE_BUFFER |
 		FORMAT_MESSAGE_FROM_SYSTEM,
 		NULL, WSAGetLastError(),
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPTSTR)&lpMsgBuf, 0, NULL);
+		(LPWSTR)&lpMsgBuf, 0, NULL);
 
-	cerr << title << " -> 오류: " << lpMsgBuf << endl;
+	wcout << title << " -> 오류: " << lpMsgBuf << endl;
 
 	LocalFree(lpMsgBuf);
 }

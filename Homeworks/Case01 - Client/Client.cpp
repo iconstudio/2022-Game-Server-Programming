@@ -49,17 +49,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		{
 			framework.Init();
 			framework.Start();
+			//SetTimer(hWnd, 0, window.frames * 1000, NULL);
 		}
 		break;
 
 		case WM_TIMER:
 		{
+			//InvalidateRect(hWnd, NULL, TRUE);
 		}
 		break;
 
 		case WM_KEYDOWN:
 		{
-			framework.SendKey(static_cast<INT>(wParam));
+			framework.SendKey((wParam));
 		}
 		break;
 

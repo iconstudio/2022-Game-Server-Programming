@@ -5,6 +5,7 @@
 #include <iostream>
 
 using namespace std;
+using std::cout;
 
 constexpr UINT BUFFSIZE = 512;
 constexpr SIZE_T WND_SZ_W = 800, WND_SZ_H = 600; // Ã¢ Å©±â
@@ -18,7 +19,6 @@ constexpr int BOARD_W = CELL_W * CELLS_CNT_H;
 constexpr int BOARD_H = CELL_H * CELLS_CNT_V;
 constexpr int BOARD_X = (WND_SZ_W - BOARD_W) * 0.5;
 constexpr int BOARD_Y = (WND_SZ_H - BOARD_H - 20) * 0.5;
-
 
 void ErrorDisplay(const char* title);
 
