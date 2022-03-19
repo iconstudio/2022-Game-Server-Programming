@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice-2-Client", "Practi
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice-2-Server", "Practice-2-Server\Practice-2-Server.vcxproj", "{D0ED278E-A994-4C55-8D7A-0991F5624186}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Overlapped 2 - Server", "Overlapped 2 - Server\Overlapped 2 - Server.vcxproj", "{3ED74627-4F01-4FDA-AAC4-F34D9B09F16F}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -51,6 +53,14 @@ Global
 		{D0ED278E-A994-4C55-8D7A-0991F5624186}.Release|x64.Build.0 = Release|x64
 		{D0ED278E-A994-4C55-8D7A-0991F5624186}.Release|x86.ActiveCfg = Release|Win32
 		{D0ED278E-A994-4C55-8D7A-0991F5624186}.Release|x86.Build.0 = Release|Win32
+		{3ED74627-4F01-4FDA-AAC4-F34D9B09F16F}.Debug|x64.ActiveCfg = Debug|x64
+		{3ED74627-4F01-4FDA-AAC4-F34D9B09F16F}.Debug|x64.Build.0 = Debug|x64
+		{3ED74627-4F01-4FDA-AAC4-F34D9B09F16F}.Debug|x86.ActiveCfg = Debug|Win32
+		{3ED74627-4F01-4FDA-AAC4-F34D9B09F16F}.Debug|x86.Build.0 = Debug|Win32
+		{3ED74627-4F01-4FDA-AAC4-F34D9B09F16F}.Release|x64.ActiveCfg = Release|x64
+		{3ED74627-4F01-4FDA-AAC4-F34D9B09F16F}.Release|x64.Build.0 = Release|x64
+		{3ED74627-4F01-4FDA-AAC4-F34D9B09F16F}.Release|x86.ActiveCfg = Release|Win32
+		{3ED74627-4F01-4FDA-AAC4-F34D9B09F16F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
