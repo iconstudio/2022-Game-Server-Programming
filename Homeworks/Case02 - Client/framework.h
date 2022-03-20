@@ -3,6 +3,7 @@
 
 #define WM_SOCKET (WM_USER + 1)
 
+void ErrorAbort(const wchar_t* title);
 void ErrorDisplay(const wchar_t* title);
 
 class Framework

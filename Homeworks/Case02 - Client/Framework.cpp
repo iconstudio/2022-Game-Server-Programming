@@ -15,21 +15,21 @@ void Framework::Init(HWND window)
 	WSADATA wsadata{};
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsadata))
 	{
-		ErrorDisplay(L"WSAStartup()");
+		ErrorAbort(L"WSAStartup()");
 		return;
 	}
 
 	Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, 0);
 	if (INVALID_SOCKET == Socket)
 	{
-		ErrorDisplay(L"WSASocket()");
+		ErrorAbort(L"WSASocket()");
 		return;
 	}
 
 	auto options = FD_CONNECT | FD_CLOSE | FD_READ | FD_WRITE;
 	if (SOCKET_ERROR == WSAAsyncSelect(Socket, Window, WM_SOCKET, options))
 	{
-		ErrorDisplay(L"WSAAsyncSelect()");
+		ErrorAbort(L"WSAAsyncSelect()");
 		return;
 	}
 
@@ -93,7 +93,7 @@ void Framework::Start()
 	{
 		if (WSAGetLastError() != WSAEWOULDBLOCK)
 		{
-			ErrorDisplay(L"WSAConnect()");
+			ErrorAbort(L"WSAConnect()");
 			return;
 		}
 	}
@@ -125,12 +125,12 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 			Buffer.len = sizeof(player_pos);
 
 			// send 1
-			result = WSASend(Socket, &Buffer, 1, &send_size, 0, NULL, NULL); 
+			result = WSASend(Socket, &Buffer, 1, &send_size, 0, NULL, NULL);
 			if (SOCKET_ERROR == result)
 			{
 				if (WSAGetLastError() != WSAEWOULDBLOCK)
 				{
-					ErrorDisplay(L"WSASend 1");
+					ErrorAbort(L"WSASend 1");
 					return;
 				}
 			}
@@ -221,6 +221,27 @@ void Framework::SendKey(WPARAM key)
 	PostMessage(Window, WM_SOCKET, Socket, FD_WRITE);
 }
 
+void ErrorAbort(const wchar_t* title)
+{
+	WCHAR* lpMsgBuf;
+	auto error = WSAGetLastError();
+
+	FormatMessage(
+		FORMAT_MESSAGE_ALLOCATE_BUFFER |
+		FORMAT_MESSAGE_FROM_SYSTEM,
+		NULL, error,
+		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+		(LPWSTR)&lpMsgBuf, 0, NULL);
+
+	WCHAR wtitle[512];
+	wsprintf(wtitle, L"오류: %s", title);
+
+	MessageBox(NULL, lpMsgBuf, wtitle, MB_ICONERROR | MB_OK);
+
+	LocalFree(lpMsgBuf);
+	exit(error);
+}
+
 void ErrorDisplay(const wchar_t* title)
 {
 	WCHAR* lpMsgBuf;
@@ -234,7 +255,7 @@ void ErrorDisplay(const wchar_t* title)
 	WCHAR wtitle[512];
 	wsprintf(wtitle, L"오류: %s", title);
 
-	MessageBox(NULL, lpMsgBuf, wtitle, MB_OK);
+	MessageBox(NULL, lpMsgBuf, wtitle, MB_ICONERROR | MB_OK);
 
 	LocalFree(lpMsgBuf);
 }
