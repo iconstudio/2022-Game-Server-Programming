@@ -12,7 +12,7 @@ public:
 
 	void Init(HWND window);
 	void Start();
-	DWORD WINAPI Communicate(UINT msg, WPARAM sock, LPARAM state);
+	void WINAPI Communicate(UINT msg, WPARAM sock, LPARAM state);
 	void Render(HWND window);
 	void SendKey(WPARAM key);
 

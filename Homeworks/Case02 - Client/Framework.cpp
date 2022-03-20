@@ -99,14 +99,14 @@ void Framework::Start()
 	}
 }
 
-DWORD WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
+void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 {
 	auto error = WSAGETSELECTERROR(state);
 	if (error)
 	{
 		ErrorDisplay(L"WSASelection");
 		closesocket(sock);
-		return 0;
+		return;
 	}
 
 	int result = 0;
@@ -131,7 +131,7 @@ DWORD WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 				if (WSAGetLastError() != WSAEWOULDBLOCK)
 				{
 					ErrorDisplay(L"WSASend 1");
-					return 0;
+					return;
 				}
 			}
 		}
@@ -183,7 +183,7 @@ DWORD WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 					if (WSAGetLastError() != WSAEWOULDBLOCK)
 					{
 						ErrorDisplay(L"WSASend 2");
-						return 0;
+						return;
 					}
 				}
 			}
@@ -194,8 +194,6 @@ DWORD WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 		{}
 		break;
 	}
-
-	return 0;
 }
 
 void Framework::Render(HWND window)
