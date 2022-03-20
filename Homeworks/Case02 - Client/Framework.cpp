@@ -15,21 +15,21 @@ void Framework::Init(HWND window)
 	WSADATA wsadata{};
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsadata))
 	{
-		ErrorDisplay("WSAStartup()");
+		ErrorDisplay(L"WSAStartup()");
 		return;
 	}
 
 	Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, 0);
 	if (INVALID_SOCKET == Socket)
 	{
-		ErrorDisplay("WSASocket()");
+		ErrorDisplay(L"WSASocket()");
 		return;
 	}
 
-	Event_send = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (0 == Event_send)
+	auto options = FD_CONNECT | FD_CLOSE | FD_READ | FD_WRITE;
+	if (SOCKET_ERROR == WSAAsyncSelect(Socket, Window, WM_SOCKET, options))
 	{
-		ErrorDisplay("CreateEvent()");
+		ErrorDisplay(L"WSAAsyncSelect()");
 		return;
 	}
 
@@ -51,6 +51,9 @@ void Framework::Init(HWND window)
 	Draw::Attach(Board_canvas, filler);
 	Draw::Clear(Board_canvas, BOARD_W, BOARD_H, 0);
 	ReleaseDC(Window, hdc);
+
+	m_Player.x = BOARD_X + BOARD_W * 0.5 - CELL_W * 0.5;
+	m_Player.y = BOARD_Y + BOARD_H * 0.5 - CELL_H * 0.5;
 
 	for (int i = 0; i < CELLS_LENGTH; ++i)
 	{
@@ -88,79 +91,110 @@ void Framework::Start()
 	int result = WSAConnect(Socket, reinterpret_cast<SOCKADDR*>(&Server_address), sz_Address, NULL, NULL, NULL, NULL);
 	if (SOCKET_ERROR == result)
 	{
-		ErrorDisplay("WSAConnect()");
-		return;
-	}
-	m_Player.x = BOARD_X + BOARD_W * 0.5 - CELL_W * 0.5;
-	m_Player.y = BOARD_Y + BOARD_H * 0.5 - CELL_H * 0.5;
-
-	DWORD send_size = 0;
-	Position player_pos{ m_Player.x, m_Player.y };
-	Buffer.buf = reinterpret_cast<char*>(&player_pos);
-	Buffer.len = sizeof(player_pos);
-
-	result = WSASend(Socket, &Buffer, 1, &send_size, 0, NULL, NULL); // send 1
-	if (SOCKET_ERROR == result)
-	{
-		ErrorDisplay("WSASend 1");
-		return;
-	}
-
-	auto th = CreateThread(NULL, 0, &Worker, this, 0, NULL);
-	if (0 == th)
-	{
-		ErrorDisplay("CreateThread");
-		return;
+		if (WSAGetLastError() != WSAEWOULDBLOCK)
+		{
+			ErrorDisplay(L"WSAConnect()");
+			return;
+		}
 	}
 }
 
 DWORD WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 {
-	return 0;
-}
-
-DWORD WINAPI Worker(PVOID param)
-{
-	auto framework = reinterpret_cast<Framework*>(param);
-	auto& Socket = framework->Socket;
-	auto& m_Player = framework->m_Player;
-	auto& m_sEvent = framework->Event_send;
-	auto* m_bdRect = &framework->Board_rect;
+	auto error = WSAGETSELECTERROR(state);
+	if (error)
+	{
+		ErrorDisplay(L"WSASelection");
+		closesocket(sock);
+		return 0;
+	}
 
 	int result = 0;
-
-	WSABUF buffer{};
 	char recv_store[BUFFSIZE + 1];
 	DWORD recv_size = 0;
 	DWORD recv_flag = 0;
+	DWORD send_size = 0;
 
-	while (true)
+	auto event = WSAGETSELECTEVENT(state);
+	switch (event)
 	{
-		WaitForSingleObject(m_sEvent, INFINITE);
-
-		ZeroMemory(recv_store, BUFFSIZE + 1);
-		buffer.buf = recv_store;
-		buffer.len = BUFFSIZE;
-
-		// recv 1
-		result = WSARecv(Socket, &buffer, 1, &recv_size, &recv_flag, 0, 0);
-		if (SOCKET_ERROR == result)
+		case FD_CONNECT:
 		{
-			ErrorDisplay("WSARecv 1");
-			break;
-		}
+			Position player_pos{ m_Player.x, m_Player.y };
+			Buffer.buf = reinterpret_cast<char*>(&player_pos);
+			Buffer.len = sizeof(player_pos);
 
-		if (0 < recv_size)
+			// send 1
+			result = WSASend(Socket, &Buffer, 1, &send_size, 0, NULL, NULL); 
+			if (SOCKET_ERROR == result)
+			{
+				if (WSAGetLastError() != WSAEWOULDBLOCK)
+				{
+					ErrorDisplay(L"WSASend 1");
+					return 0;
+				}
+			}
+		}
+		break;
+
+		case FD_READ:
 		{
-			auto position = reinterpret_cast<Position*>(recv_store);
+			ZeroMemory(recv_store, BUFFSIZE + 1);
+			Buffer.buf = recv_store;
+			Buffer.len = BUFFSIZE;
 
-			m_Player.x = position->x;
-			m_Player.y = position->y;
-			InvalidateRect(NULL, m_bdRect, FALSE);
+			// recv 1
+			result = WSARecv(Socket, &Buffer, 1, &recv_size, &recv_flag, 0, 0);
+			if (SOCKET_ERROR == result)
+			{
+				if (WSAGetLastError() != WSAEWOULDBLOCK)
+				{
+					ErrorDisplay(L"WSARecv 1");
+					break;
+				}
+			}
+
+			if (0 < recv_size)
+			{
+				auto position = reinterpret_cast<Position*>(recv_store);
+
+				m_Player.x = position->x;
+				m_Player.y = position->y;
+				InvalidateRect(NULL, &Board_rect, FALSE);
+			}
 		}
+		break;
+
+		case FD_WRITE:
+		{
+			if (0 != Lastkey)
+			{
+				DWORD send_size = 0;
+				WPARAM key = Lastkey;
+				Lastkey = 0;
+
+				Buffer.buf = reinterpret_cast<char*>(&key);
+				Buffer.len = sizeof(key);
+
+				// send 2
+				int result = WSASend(Socket, &Buffer, 1, &send_size, 0, NULL, NULL);
+				if (SOCKET_ERROR == result)
+				{
+					if (WSAGetLastError() != WSAEWOULDBLOCK)
+					{
+						ErrorDisplay(L"WSASend 2");
+						return 0;
+					}
+				}
+			}
+		}
+		break;
+
+		case FD_CLOSE:
+		{}
+		break;
 	}
 
-	closesocket(Socket);
 	return 0;
 }
 
@@ -185,23 +219,11 @@ void Framework::Render(HWND window)
 
 void Framework::SendKey(WPARAM key)
 {
-	DWORD send_size = 0;
-
-	Buffer.buf = reinterpret_cast<char*>(&key);
-	Buffer.len = sizeof(key);
-
-	// send 2
-	int result = WSASend(Socket, &Buffer, 1, &send_size, 0, NULL, NULL);
-	if (SOCKET_ERROR == result)
-	{
-		ErrorDisplay("WSASend 2");
-		return;
-	}
-
-	SetEvent(Event_send);
+	Lastkey = key;
+	PostMessage(Window, WM_SOCKET, Socket, FD_WRITE);
 }
 
-void ErrorDisplay(const char* title)
+void ErrorDisplay(const wchar_t* title)
 {
 	WCHAR* lpMsgBuf;
 	FormatMessage(
@@ -211,7 +233,10 @@ void ErrorDisplay(const char* title)
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(LPWSTR)&lpMsgBuf, 0, NULL);
 
-	MessageBox(NULL, lpMsgBuf, L"오류!", MB_OK);
+	WCHAR wtitle[512];
+	wsprintf(wtitle, L"오류: %s", title);
+
+	MessageBox(NULL, lpMsgBuf, wtitle, MB_OK);
 
 	LocalFree(lpMsgBuf);
 }

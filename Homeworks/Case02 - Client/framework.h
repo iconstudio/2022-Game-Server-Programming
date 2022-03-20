@@ -1,8 +1,9 @@
 #pragma once
 #include "Player.h"
 
-void ErrorDisplay(const char* title);
-DWORD WINAPI Worker(PVOID param);
+#define WM_SOCKET (WM_USER + 1)
+
+void ErrorDisplay(const wchar_t* title);
 
 class Framework
 {
@@ -12,7 +13,6 @@ public:
 	void Init(HWND window);
 	void Start();
 	DWORD WINAPI Communicate(UINT msg, WPARAM sock, LPARAM state);
-	friend DWORD WINAPI Worker(PVOID param);
 	void Render(HWND window);
 	void SendKey(WPARAM key);
 
@@ -33,7 +33,7 @@ private:
 	SOCKADDR_IN Server_address;
 	INT sz_Address;
 	WSABUF Buffer;
-	HANDLE Event_send;
+	WPARAM Lastkey;
 
 	const char* SERVER_IP = "127.0.0.1";
 };

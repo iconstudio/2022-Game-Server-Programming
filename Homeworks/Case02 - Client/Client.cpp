@@ -52,6 +52,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		}
 		break;
 
+		case WM_SOCKET:
+		{
+			framework.Communicate(message, wParam, lParam);
+		}
+		break;
+
 		case WM_KEYDOWN:
 		{
 			framework.SendKey(wParam);
