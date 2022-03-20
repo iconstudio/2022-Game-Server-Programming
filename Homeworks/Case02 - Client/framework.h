@@ -39,11 +39,6 @@ private:
 	const char* SERVER_IP = "127.0.0.1";
 };
 
-struct Position
-{
-	int x, y;
-};
-
 constexpr UINT BUFFSIZE = 512;
 constexpr SIZE_T WND_SZ_W = 800, WND_SZ_H = 600; // Ã¢ Å©±â
 constexpr SIZE_T CELL_SIZE = 64;
