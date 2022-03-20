@@ -30,8 +30,8 @@ struct Position
 class Player : public Position
 {
 public:
-	void MoveLT();
-	void MoveRT();
-	void MoveUP();
-	void MoveDW();
+	bool TryMoveLT();
+	bool TryMoveRT();
+	bool TryMoveUP();
+	bool TryMoveDW();
 };

@@ -102,29 +102,30 @@ int main()
 			WPARAM received = 0;// = reinterpret_cast<WPARAM>(recv_store);
 			memcpy_s(&received, sizeof(received), recv_store, recv_size);
 
+			bool moved = false;
 			switch (received)
 			{
 				case VK_LEFT:
 				{
-					player.MoveLT();
+					moved = player.TryMoveLT();
 				}
 				break;
 
 				case VK_RIGHT:
 				{
-					player.MoveRT();
+					moved = player.TryMoveRT();
 				}
 				break;
 
 				case VK_UP:
 				{
-					player.MoveUP();
+					moved = player.TryMoveUP();
 				}
 				break;
 
 				case VK_DOWN:
 				{
-					player.MoveDW();
+					moved = player.TryMoveDW();
 				}
 				break;
 
@@ -132,14 +133,21 @@ int main()
 				break;
 			}
 
-			cout << "send 1\n";
-			buffer.buf = reinterpret_cast<char*>(&player);
-			buffer.len = sizeof(player);
-			result = WSASend(client_socket, &buffer, 1, &send_size, NULL, NULL, NULL);
-			if (SOCKET_ERROR == result)
+			if (moved)
 			{
-				ErrorDisplay("WSASend 1");
-				break;
+				cout << "send 1\n";
+				buffer.buf = reinterpret_cast<char*>(&player);
+				buffer.len = sizeof(player);
+				result = WSASend(client_socket, &buffer, 1, &send_size, NULL, NULL, NULL);
+				if (SOCKET_ERROR == result)
+				{
+					ErrorDisplay("WSASend 1");
+					break;
+				}
+			}
+			else
+			{
+				cout << "플레이어 움직이지 않음.\n";
 			}
 		} // if (0 < recv_size)
 	} // while (true)
@@ -150,44 +158,48 @@ int main()
 	return 0;
 }
 
-void Player::MoveLT()
+bool Player::TryMoveLT()
 {
 	auto bd = BOARD_X;
-
 	if (bd + CELL_SIZE < x)
 	{
 		x -= CELL_SIZE;
+		return true;
 	}
+	return false;
 }
 
-void Player::MoveRT()
+bool Player::TryMoveRT()
 {
 	auto bd = BOARD_X + BOARD_W;
-
 	if (x < bd - CELL_SIZE)
 	{
 		x += CELL_SIZE;
+		return true;
 	}
+	return false;
 }
 
-void Player::MoveUP()
+bool Player::TryMoveUP()
 {
 	auto bd = BOARD_Y;
-
 	if (bd + CELL_SIZE < y)
 	{
 		y -= CELL_SIZE;
+		return true;
 	}
+	return false;
 }
 
-void Player::MoveDW()
+bool Player::TryMoveDW()
 {
 	auto bd = BOARD_Y + BOARD_H;
-
 	if (y < bd - CELL_SIZE)
 	{
 		y += CELL_SIZE;
+		return true;
 	}
+	return false;
 }
 
 void ErrorDisplay(const char* title)
