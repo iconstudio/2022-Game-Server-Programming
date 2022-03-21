@@ -24,7 +24,7 @@
     <ProjectGuid>{92f62320-82e8-406a-94f6-c9605cb53f2f}</ProjectGuid>
     <RootNamespace>Practice03OverlappedIO</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>Practice03 - Overlapped IO Server</ProjectName>
+    <ProjectName>Practice 03 - Overlapped IO Server</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">

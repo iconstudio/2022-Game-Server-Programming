@@ -10,7 +10,7 @@
 #include <WS2tcpip.h>
 
 #include <vector>
-#include <memory>
+#include <string>
 #include <thread>
 #include <algorithm>
 

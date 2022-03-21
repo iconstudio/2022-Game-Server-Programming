@@ -4,6 +4,12 @@
 void ErrorDisplay(const char* title);
 DWORD WINAPI Communicate(PVOID param);
 
+enum class States : int
+{
+	Begin = 0,
+	Game = 1
+};
+
 class Framework
 {
 public:
@@ -13,11 +19,14 @@ public:
 	void Start();
 	friend DWORD WINAPI Communicate(PVOID param);
 	void Render(HWND window);
+	void InputEvent(WPARAM key);
+	void EnterIpChar(WPARAM key);
 	void SendKey(WPARAM key);
 
 	COLORREF background_color = C_WHITE;
 
 private:
+	States Status = States::Begin;
 	Player m_Player;
 
 	HWND Window;
@@ -33,7 +42,7 @@ private:
 	WSABUF m_Buffer;
 	HANDLE Event_send;
 
-	const char* SERVER_IP = "127.0.0.1";
+	std::string SERVER_IP;
 };
 
 struct Position

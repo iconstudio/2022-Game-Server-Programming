@@ -6,6 +6,7 @@ Framework::Framework()
 	: m_Player(), m_Buffer()
 	, Board_canvas(), Board_image()
 	, Board_rect{ BOARD_X, BOARD_Y, BOARD_X + BOARD_W, BOARD_Y + BOARD_H }
+	, SERVER_IP("127.0.0.1")
 {}
 
 void Framework::Init(HWND window)
@@ -33,7 +34,7 @@ void Framework::Init(HWND window)
 		return;
 	}
 
-	background_color = C_GREEN;
+	background_color = C_WHITE;
 
 	auto hdc = GetDC(Window);
 	DC_double = CreateCompatibleDC(hdc);
@@ -79,11 +80,13 @@ void Framework::Init(HWND window)
 
 void Framework::Start()
 {
+	background_color = C_GREEN;
+
 	sz_Address = sizeof(m_Server_address);
 	ZeroMemory(&m_Server_address, sz_Address);
 	m_Server_address.sin_family = AF_INET;
 	m_Server_address.sin_port = htons(6000);
-	inet_pton(AF_INET, SERVER_IP, &m_Server_address.sin_addr);
+	inet_pton(AF_INET, SERVER_IP.c_str(), &m_Server_address.sin_addr);
 
 	int result = WSAConnect(m_Socket, reinterpret_cast<SOCKADDR*>(&m_Server_address), sz_Address, NULL, NULL, NULL, NULL);
 	if (SOCKET_ERROR == result)
@@ -151,7 +154,7 @@ DWORD WINAPI Communicate(PVOID param)
 
 			m_Player.x = position->x;
 			m_Player.y = position->y;
-			InvalidateRect(NULL, m_bdRect, FALSE);
+			InvalidateRect(NULL, m_bdRect, TRUE);
 		}
 	}
 
@@ -167,8 +170,41 @@ void Framework::Render(HWND window)
 	Draw::Clear(DC_double, WND_SZ_W, WND_SZ_H, background_color);
 
 	// 파이프라인
-	BitBlt(DC_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
-	m_Player.Render(DC_double);
+	switch (Status)
+	{
+		case States::Begin:
+		{
+			auto filler = CreateSolidBrush(C_BLACK);
+			auto old_filler = Draw::Attach(DC_double, filler);
+
+			auto xpos = WND_SZ_W * 0.5;
+			auto ypos = WND_SZ_H * 0.5;
+			auto old_align = SetTextAlign(DC_double, TA_CENTER);
+			constexpr auto notification = L"접속할 서버의 IP 주소를 입력해주세요.";
+			auto noti_len = lstrlen(notification);
+
+			size_t ip_size = 16;
+			WCHAR ip_address[17];
+			mbstowcs_s(&ip_size, ip_address, SERVER_IP.c_str(), 16);
+
+			TextOut(DC_double, xpos, ypos - 70, notification, noti_len);
+			TextOut(DC_double, xpos, ypos, ip_address, lstrlen(ip_address));
+
+			SetTextAlign(DC_double, old_align);
+
+			Draw::Detach(DC_double, old_filler, filler);
+		}
+		break;
+
+		case States::Game:
+		{
+			BitBlt(DC_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
+			m_Player.Render(DC_double);
+		}
+		break;
+
+		default: break;
+	}
 
 	// 후면 버퍼 -> 화면 버퍼
 	StretchBlt(surface_app, 0, 0, WND_SZ_W, WND_SZ_H
@@ -176,6 +212,58 @@ void Framework::Render(HWND window)
 
 	ReleaseDC(window, surface_app);
 	EndPaint(window, &ps);
+}
+
+void Framework::InputEvent(WPARAM key)
+{
+	switch (Status)
+	{
+		case States::Begin:
+		{
+			EnterIpChar(key);
+		}
+		break;
+
+		case States::Game:
+		{
+			SendKey(key);
+		}
+		break;
+
+		default: break;
+	}
+}
+
+void Framework::EnterIpChar(WPARAM key)
+{
+	if (key == VK_RETURN)
+	{
+		Status = States::Game;
+		Start();
+	}
+	else if (key == VK_BACK)
+	{
+		if (0 < SERVER_IP.length())
+		{
+			SERVER_IP.erase(SERVER_IP.end() - 1);
+		}
+	}
+	else if (isdigit(key))
+	{
+		if (SERVER_IP.length() < 16)
+		{
+			SERVER_IP.push_back((char)(key));
+		}
+	}
+	else if (key == VK_OEM_PERIOD)
+	{
+		if (SERVER_IP.length() < 16)
+		{
+			SERVER_IP.push_back('.');
+		}
+	}
+
+	InvalidateRect(Window, NULL, TRUE);
 }
 
 void Framework::SendKey(WPARAM key)

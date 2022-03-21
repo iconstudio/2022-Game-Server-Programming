@@ -48,13 +48,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case WM_CREATE:
 		{
 			framework.Init(hWnd);
-			framework.Start();
 		}
 		break;
 
 		case WM_KEYDOWN:
 		{
-			framework.SendKey(wParam);
+			framework.InputEvent(wParam);
 		}
 		break;
 
