@@ -62,7 +62,8 @@ int main()
 
 		DWORD sent_byte;
 		mybuf.len = recv_byte;
-		result = WSASend(c_socket, &mybuf, 1, &sent_byte, 0, 0, 0); if (SOCKET_ERROR == result)
+		result = WSASend(c_socket, &mybuf, 1, &sent_byte, 0, 0, 0);
+		if (SOCKET_ERROR == result)
 		{
 			error_display("WSASend Error!\n", WSAGetLastError());
 			break;

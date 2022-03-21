@@ -62,7 +62,12 @@ int main()
 		cout << "Server Sent [" << recv_byte << "bytes] : " << recv_buf << endl;
 	}
 
-	WSACleanup();	return 0;}void error_display(const char* msg, int err_no)
+	WSACleanup();
+
+	return 0;
+}
+
+void error_display(const char* msg, int err_no)
 {
 	WCHAR* lpMsgBuf;
 	FormatMessage(
