@@ -34,6 +34,9 @@ void Framework::Init(HWND window)
 		return;
 	}
 
+	m_Player.x = BOARD_X + BOARD_W * 0.5 - CELL_W * 0.5;
+	m_Player.y = BOARD_Y + BOARD_H * 0.5 - CELL_H * 0.5;
+
 	background_color = C_WHITE;
 
 	auto hdc = GetDC(Window);
@@ -94,8 +97,6 @@ void Framework::Start()
 		ErrorDisplay("WSAConnect()");
 		return;
 	}
-	m_Player.x = BOARD_X + BOARD_W * 0.5 - CELL_W * 0.5;
-	m_Player.y = BOARD_Y + BOARD_H * 0.5 - CELL_H * 0.5;
 
 	DWORD send_size = 0;
 	Position player_pos{ m_Player.x, m_Player.y };

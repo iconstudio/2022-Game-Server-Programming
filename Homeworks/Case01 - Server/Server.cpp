@@ -98,7 +98,7 @@ int main()
 		if (0 < recv_size)
 		{
 			cout << "키 받음: " << recv_store << " (" << recv_size << " 바이트)\n";
-			
+
 			WPARAM received = 0;// = reinterpret_cast<WPARAM>(recv_store);
 			memcpy_s(&received, sizeof(received), recv_store, recv_size);
 
@@ -133,19 +133,17 @@ int main()
 				break;
 			}
 
-			if (moved)
+			cout << "send 1\n";
+			buffer.buf = reinterpret_cast<char*>(&player);
+			buffer.len = sizeof(player);
+			result = WSASend(client_socket, &buffer, 1, &send_size, NULL, NULL, NULL);
+			if (SOCKET_ERROR == result)
 			{
-				cout << "send 1\n";
-				buffer.buf = reinterpret_cast<char*>(&player);
-				buffer.len = sizeof(player);
-				result = WSASend(client_socket, &buffer, 1, &send_size, NULL, NULL, NULL);
-				if (SOCKET_ERROR == result)
-				{
-					ErrorDisplay("WSASend 1");
-					break;
-				}
+				ErrorDisplay("WSASend 1");
+				break;
 			}
-			else
+
+			if (!moved)
 			{
 				cout << "플레이어 움직이지 않음.\n";
 			}
