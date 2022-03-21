@@ -153,6 +153,11 @@ int main()
 	closesocket(m_Socket);
 	WSACleanup();
 
+	cout << "¼­¹ö Á¾·áµÊ\n";
+	while (true)
+	{
+	}
+
 	return 0;
 }
 
