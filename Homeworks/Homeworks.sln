@@ -25,6 +25,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice 03 - Overlapped IO
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice 04 - Multiplayer Overlapped IO Server", "Practice 04 - Multiplayer Overlapped IO Server\Practice 04 - Multiplayer Overlapped IO Server.vcxproj", "{16C75A6E-0D21-4608-BFB0-4607BED64FAF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice 05 - Chat Server", "Practice 05 - Chat Server\Practice 05 - Chat Server.vcxproj", "{B43EA864-555D-4FA0-87E8-249A68D4D313}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice 05 - Chat Client", "Practice 05 - Chat Client\Practice 05 - Chat Client.vcxproj", "{AAA992E2-170D-4F34-AB86-D384EB9DEE98}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -121,6 +125,22 @@ Global
 		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Release|x64.Build.0 = Release|x64
 		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Release|x86.ActiveCfg = Release|Win32
 		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Release|x86.Build.0 = Release|Win32
+		{B43EA864-555D-4FA0-87E8-249A68D4D313}.Debug|x64.ActiveCfg = Debug|x64
+		{B43EA864-555D-4FA0-87E8-249A68D4D313}.Debug|x64.Build.0 = Debug|x64
+		{B43EA864-555D-4FA0-87E8-249A68D4D313}.Debug|x86.ActiveCfg = Debug|Win32
+		{B43EA864-555D-4FA0-87E8-249A68D4D313}.Debug|x86.Build.0 = Debug|Win32
+		{B43EA864-555D-4FA0-87E8-249A68D4D313}.Release|x64.ActiveCfg = Release|x64
+		{B43EA864-555D-4FA0-87E8-249A68D4D313}.Release|x64.Build.0 = Release|x64
+		{B43EA864-555D-4FA0-87E8-249A68D4D313}.Release|x86.ActiveCfg = Release|Win32
+		{B43EA864-555D-4FA0-87E8-249A68D4D313}.Release|x86.Build.0 = Release|Win32
+		{AAA992E2-170D-4F34-AB86-D384EB9DEE98}.Debug|x64.ActiveCfg = Debug|x64
+		{AAA992E2-170D-4F34-AB86-D384EB9DEE98}.Debug|x64.Build.0 = Debug|x64
+		{AAA992E2-170D-4F34-AB86-D384EB9DEE98}.Debug|x86.ActiveCfg = Debug|Win32
+		{AAA992E2-170D-4F34-AB86-D384EB9DEE98}.Debug|x86.Build.0 = Debug|Win32
+		{AAA992E2-170D-4F34-AB86-D384EB9DEE98}.Release|x64.ActiveCfg = Release|x64
+		{AAA992E2-170D-4F34-AB86-D384EB9DEE98}.Release|x64.Build.0 = Release|x64
+		{AAA992E2-170D-4F34-AB86-D384EB9DEE98}.Release|x86.ActiveCfg = Release|Win32
+		{AAA992E2-170D-4F34-AB86-D384EB9DEE98}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
