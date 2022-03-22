@@ -29,7 +29,11 @@ public:
 
 private:
 	States Status = States::Begin;
+
+	INT Index = -1; // 네트워크 상에서 플레이어의 번호
 	Player m_Player;
+	WPARAM Lastkey;
+	std::string Server_IP;
 
 	HWND Window;
 	HDC DC_double;
@@ -42,10 +46,8 @@ private:
 	SOCKET Socket;
 	SOCKADDR_IN Server_address;
 	INT sz_Address;
-	WSABUF Buffer;
-	WPARAM Lastkey;
-
-	std::string SERVER_IP;
+	WSABUF Buffer_recv;
+	WSABUF Buffer_send;
 };
 
 constexpr UINT BUFFSIZE = 512;

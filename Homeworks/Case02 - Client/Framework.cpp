@@ -3,10 +3,10 @@
 #include "Player.h"
 
 Framework::Framework()
-	: m_Player(), Socket(), Server_address(), Buffer()
+	: m_Player(), Socket(), Server_address(), Buffer_recv(), Buffer_send()
 	, Board_canvas(), Board_image()
 	, Board_rect{ BOARD_X, BOARD_Y, BOARD_X + BOARD_W, BOARD_Y + BOARD_H }
-	, SERVER_IP("127.0.0.1")
+	, Server_IP("127.0.0.1")
 {}
 
 void Framework::Init(HWND window)
@@ -89,7 +89,7 @@ void Framework::Start()
 	ZeroMemory(&Server_address, sz_Address);
 	Server_address.sin_family = AF_INET;
 	Server_address.sin_port = htons(6000);
-	inet_pton(AF_INET, SERVER_IP.c_str(), &Server_address.sin_addr);
+	inet_pton(AF_INET, Server_IP.c_str(), &Server_address.sin_addr);
 
 	int result = WSAConnect(Socket, reinterpret_cast<SOCKADDR*>(&Server_address), sz_Address, NULL, NULL, NULL, NULL);
 	if (SOCKET_ERROR == result)
@@ -123,12 +123,12 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 	{
 		case FD_CONNECT:
 		{
-			Position player_pos{ m_Player.x, m_Player.y };
-			Buffer.buf = reinterpret_cast<char*>(&player_pos);
-			Buffer.len = sizeof(player_pos);
+			auto player_pos = Position{ m_Player };
+			Buffer_send.buf = reinterpret_cast<char*>(&player_pos);
+			Buffer_send.len = sizeof(player_pos);
 
 			// send 1
-			result = WSASend(Socket, &Buffer, 1, &send_size, 0, NULL, NULL);
+			result = WSASend(Socket, &Buffer_send, 1, &send_size, 0, NULL, NULL);
 			if (SOCKET_ERROR == result)
 			{
 				if (WSAGetLastError() != WSAEWOULDBLOCK)
@@ -143,11 +143,11 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 		case FD_READ:
 		{
 			ZeroMemory(recv_store, BUFFSIZE + 1);
-			Buffer.buf = recv_store;
-			Buffer.len = BUFFSIZE;
+			Buffer_recv.buf = recv_store;
+			Buffer_recv.len = BUFFSIZE;
 
 			// recv 1
-			result = WSARecv(Socket, &Buffer, 1, &recv_size, &recv_flag, 0, 0);
+			result = WSARecv(Socket, &Buffer_recv, 1, &recv_size, &recv_flag, 0, 0);
 			if (SOCKET_ERROR == result)
 			{
 				if (WSAGetLastError() != WSAEWOULDBLOCK)
@@ -157,7 +157,7 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 				}
 			}
 
-			if (0 < recv_size)
+			if (0 < recv_size && sizeof(Position) <= recv_size)
 			{
 				auto position = reinterpret_cast<Position*>(recv_store);
 
@@ -176,11 +176,11 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 				WPARAM key = Lastkey;
 				Lastkey = 0;
 
-				Buffer.buf = reinterpret_cast<char*>(&key);
-				Buffer.len = sizeof(key);
+				Buffer_send.buf = reinterpret_cast<char*>(&key);
+				Buffer_send.len = sizeof(key);
 
 				// send 2
-				int result = WSASend(Socket, &Buffer, 1, &send_size, 0, NULL, NULL);
+				int result = WSASend(Socket, &Buffer_send, 1, &send_size, 0, NULL, NULL);
 				if (SOCKET_ERROR == result)
 				{
 					if (WSAGetLastError() != WSAEWOULDBLOCK)
@@ -222,7 +222,7 @@ void Framework::Render(HWND window)
 
 			size_t ip_size = 16;
 			WCHAR ip_address[17];
-			mbstowcs_s(&ip_size, ip_address, SERVER_IP.c_str(), 16);
+			mbstowcs_s(&ip_size, ip_address, Server_IP.c_str(), 16);
 
 			TextOut(DC_double, xpos, ypos - 70, notification, noti_len);
 			TextOut(DC_double, xpos, ypos, ip_address, lstrlen(ip_address));
@@ -281,23 +281,23 @@ void Framework::EnterIpChar(WPARAM key)
 	}
 	else if (key == VK_BACK)
 	{
-		if (0 < SERVER_IP.length())
+		if (0 < Server_IP.length())
 		{
-			SERVER_IP.erase(SERVER_IP.end() - 1);
+			Server_IP.erase(Server_IP.end() - 1);
 		}
 	}
 	else if (isdigit(key))
 	{
-		if (SERVER_IP.length() < 16)
+		if (Server_IP.length() < 16)
 		{
-			SERVER_IP.push_back((char)(key));
+			Server_IP.push_back((char)(key));
 		}
 	}
 	else if (key == VK_OEM_PERIOD)
 	{
-		if (SERVER_IP.length() < 16)
+		if (Server_IP.length() < 16)
 		{
-			SERVER_IP.push_back('.');
+			Server_IP.push_back('.');
 		}
 	}
 
