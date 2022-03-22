@@ -32,6 +32,12 @@ private:
 	WPARAM Lastkey;
 	std::string Server_IP;
 
+	SOCKET Socket;
+	SOCKADDR_IN Server_address;
+	INT sz_Address;
+	WSABUF Buffer_recv;
+	WSABUF Buffer_send;
+
 	HWND Window;
 	HDC DC_double;
 	HBITMAP Surface_double;
@@ -39,10 +45,4 @@ private:
 	HDC Board_canvas;
 	HBITMAP Board_image;
 	RECT Board_rect;
-
-	SOCKET Socket;
-	SOCKADDR_IN Server_address;
-	INT sz_Address;
-	WSABUF Buffer_recv;
-	WSABUF Buffer_send;
 };

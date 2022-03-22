@@ -118,6 +118,8 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 
 	int result = 0;
 	char recv_store[BUFFSIZE + 1];
+	ZeroMemory(recv_store, BUFFSIZE + 1);
+
 	DWORD recv_size = 0;
 	DWORD recv_flag = 0;
 	DWORD send_size = 0;
@@ -146,7 +148,6 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 
 		case FD_READ:
 		{
-			ZeroMemory(recv_store, BUFFSIZE + 1);
 			Buffer_recv.buf = recv_store;
 			Buffer_recv.len = BUFFSIZE;
 
@@ -168,6 +169,7 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 				m_Player.x = position->x;
 				m_Player.y = position->y;
 				InvalidateRect(NULL, &Board_rect, FALSE);
+				ZeroMemory(recv_store, recv_size + 1);
 			}
 		}
 		break;
