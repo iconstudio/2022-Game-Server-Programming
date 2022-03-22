@@ -1,6 +1,6 @@
 #pragma comment (lib, "WS2_32.LIB")
-#include <iostream>
 #include <WS2tcpip.h>
+#include <iostream>
 using namespace std;
 
 const short SERVER_PORT = 4000;

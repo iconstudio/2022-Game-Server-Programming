@@ -1,9 +1,11 @@
 #include "overlapped client.hpp"
 
 using namespace std;
+#define CASE01
 
 void CALLBACK recv_callback(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 void CALLBACK send_callback(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
+void ProceedSend(SOCKET sock);
 void ProceedReceive(SOCKET sock);
 
 const char* SERVER_ADDR = "127.0.0.1";
@@ -31,11 +33,16 @@ int main()
 	inet_pton(AF_INET, SERVER_ADDR, &svr_addr.sin_addr);
 
 	WSAConnect(Socket, reinterpret_cast<sockaddr*>(&svr_addr), sz_addr, 0, 0, 0, 0);
-
+	
+	// 그냥 냅두면 수신이 아예 되지 않기 때문에 메인에서 한번은 무조건 실행해야 한다.
 	ProceedReceive(Socket);
+#ifdef CASE01
+	ProceedSend(Socket);
+#endif
 
 	while (true)
 	{
+#ifdef CASE00
 		// IO 병목 현상의 원인: cout -> 메인 스레드 강제 대기
 		cout << "Enter Messsage: ";
 		cin.getline(cbuffer_send, BUF_SIZE - 1);
@@ -55,7 +62,8 @@ int main()
 		// 비동기의 특징이다.
 		// 그리고 cout 때문에 억지로 받는 것이기도 때문이다.
 		// 실제 개발에선 메인 스레드는 무조건 프레임 당 실행을 보장 해야만 한다.
-		SleepEx(300, TRUE);
+#endif
+		SleepEx(100, TRUE);
 	}
 
 	closesocket(Socket);
@@ -67,7 +75,26 @@ int main()
 void CALLBACK send_callback(DWORD err, DWORD num_bytes
 	, LPWSAOVERLAPPED over, DWORD flags)
 {
+	SOCKET sock = (SOCKET)(over->hEvent);
 	delete over;
+
+	// 다시 시작
+	ProceedSend(sock);
+}
+
+void ProceedSend(SOCKET sock)
+{
+	cout << "Enter Messsage: ";
+	cin.getline(cbuffer_send, BUF_SIZE - 1);
+
+	buffer_send.buf = cbuffer_send;
+	buffer_send.len = static_cast<int>(strlen(cbuffer_send)) + 1;
+
+	auto overlap = new WSAOVERLAPPED();
+	ZeroMemory(overlap, sizeof(overlap));
+	overlap->hEvent = (HANDLE)(sock);
+
+	WSASend(sock, &buffer_send, 1, 0, 0, overlap, send_callback);
 }
 
 void CALLBACK recv_callback(DWORD err, DWORD num_bytes

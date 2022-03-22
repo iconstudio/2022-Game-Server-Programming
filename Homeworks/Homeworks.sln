@@ -19,9 +19,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice02 - Client", "Prac
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Case02 - Client", "Case02 - Client\Case02 - Client.vcxproj", "{9245978D-0E68-4DC2-ABAB-F4C252886811}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice03 - Overlapped IO Server", "Practice03 - Overlapped IO\Practice03 - Overlapped IO.vcxproj", "{92F62320-82E8-406A-94F6-C9605CB53F2F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice 03 - Overlapped IO Server", "Practice03 - Overlapped IO\Practice03 - Overlapped IO.vcxproj", "{92F62320-82E8-406A-94F6-C9605CB53F2F}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice 03 - Overlapped IO Client", "Practice 03 - Overlapped IO Client\Practice 03 - Overlapped IO Client.vcxproj", "{46FE60E6-D3FB-4BDD-AB0C-5DC21D281959}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Practice 04 - Multiplayer Overlapped IO Server", "Practice 04 - Multiplayer Overlapped IO Server\Practice 04 - Multiplayer Overlapped IO Server.vcxproj", "{16C75A6E-0D21-4608-BFB0-4607BED64FAF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -111,6 +113,14 @@ Global
 		{46FE60E6-D3FB-4BDD-AB0C-5DC21D281959}.Release|x64.Build.0 = Release|x64
 		{46FE60E6-D3FB-4BDD-AB0C-5DC21D281959}.Release|x86.ActiveCfg = Release|Win32
 		{46FE60E6-D3FB-4BDD-AB0C-5DC21D281959}.Release|x86.Build.0 = Release|Win32
+		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Debug|x64.ActiveCfg = Debug|x64
+		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Debug|x64.Build.0 = Debug|x64
+		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Debug|x86.ActiveCfg = Debug|Win32
+		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Debug|x86.Build.0 = Debug|Win32
+		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Release|x64.ActiveCfg = Release|x64
+		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Release|x64.Build.0 = Release|x64
+		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Release|x86.ActiveCfg = Release|Win32
+		{16C75A6E-0D21-4608-BFB0-4607BED64FAF}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

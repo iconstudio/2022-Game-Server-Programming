@@ -6,6 +6,12 @@
 void ErrorAbort(const wchar_t* title);
 void ErrorDisplay(const wchar_t* title);
 
+enum class States : int
+{
+	Begin = 0,
+	Game = 1
+};
+
 class Framework
 {
 public:
@@ -15,11 +21,14 @@ public:
 	void Start();
 	void WINAPI Communicate(UINT msg, WPARAM sock, LPARAM state);
 	void Render(HWND window);
+	void InputEvent(WPARAM key);
+	void EnterIpChar(WPARAM key);
 	void SendKey(WPARAM key);
 
 	COLORREF background_color = C_WHITE;
 
 private:
+	States Status = States::Begin;
 	Player m_Player;
 
 	HWND Window;
@@ -36,7 +45,7 @@ private:
 	WSABUF Buffer;
 	WPARAM Lastkey;
 
-	const char* SERVER_IP = "127.0.0.1";
+	std::string SERVER_IP;
 };
 
 constexpr UINT BUFFSIZE = 512;
