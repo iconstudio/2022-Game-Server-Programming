@@ -3,7 +3,8 @@
 #include "Player.h"
 
 Framework::Framework()
-	: m_Player(), Socket(), Server_address(), Buffer_recv(), Buffer_send()
+	: m_Player(), Lastkey(-1)
+	, Socket(), Server_address(), Buffer_recv(), Buffer_send()
 	, Board_canvas(), Board_image()
 	, Board_rect{ BOARD_X, BOARD_Y, BOARD_X + BOARD_W, BOARD_Y + BOARD_H }
 	, Server_IP("127.0.0.1")
@@ -27,7 +28,7 @@ void Framework::Init(HWND window)
 		return;
 	}
 
-	auto options = FD_CONNECT | FD_CLOSE | FD_READ | FD_WRITE;
+	auto options = FD_CONNECT | FD_READ | FD_WRITE;
 	if (SOCKET_ERROR == WSAAsyncSelect(Socket, Window, WM_SOCKET, options))
 	{
 		ErrorAbort(L"WSAAsyncSelect()");
@@ -107,7 +108,10 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 	auto error = WSAGETSELECTERROR(state);
 	if (error)
 	{
-		ErrorDisplay(L"WSASelection");
+		WCHAR caption[32]{};
+		wsprintf(caption, L"WSASelection 오류: %u", error);
+
+		ErrorDisplay(caption);
 		closesocket(sock);
 		return;
 	}
@@ -308,43 +312,4 @@ void Framework::SendKey(WPARAM key)
 {
 	Lastkey = key;
 	PostMessage(Window, WM_SOCKET, Socket, FD_WRITE);
-}
-
-void ErrorAbort(const wchar_t* title)
-{
-	WCHAR* lpMsgBuf;
-	auto error = WSAGetLastError();
-
-	FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, error,
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPWSTR)&lpMsgBuf, 0, NULL);
-
-	WCHAR wtitle[512];
-	wsprintf(wtitle, L"오류: %s", title);
-
-	MessageBox(NULL, lpMsgBuf, wtitle, MB_ICONERROR | MB_OK);
-
-	LocalFree(lpMsgBuf);
-	exit(error);
-}
-
-void ErrorDisplay(const wchar_t* title)
-{
-	WCHAR* lpMsgBuf;
-	FormatMessage(
-		FORMAT_MESSAGE_ALLOCATE_BUFFER |
-		FORMAT_MESSAGE_FROM_SYSTEM,
-		NULL, WSAGetLastError(),
-		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPWSTR)&lpMsgBuf, 0, NULL);
-
-	WCHAR wtitle[512];
-	wsprintf(wtitle, L"오류: %s", title);
-
-	MessageBox(NULL, lpMsgBuf, wtitle, MB_ICONERROR | MB_OK);
-
-	LocalFree(lpMsgBuf);
 }
