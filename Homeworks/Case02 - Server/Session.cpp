@@ -3,7 +3,7 @@
 #include "ServerFramework.h"
 
 Session::Session(ServerFramework* nframework)
-	: framework(nframework)
+	: Framework(nframework)
 	, Overlap_recv(new WSAOVERLAPPED()), Overlap_send(new WSAOVERLAPPED())
 	, Buffer_recv(), Buffer_send(), Size_recv(0), Size_send(0)
 {
@@ -12,8 +12,8 @@ Session::Session(ServerFramework* nframework)
 	ClearRecvBuffer();
 	ClearSendBuffer();
 
-	framework->AddClient(Overlap_recv, this);
-	framework->AddClient(Overlap_send, this);
+	Framework->AddClient(Overlap_recv, this);
+	Framework->AddClient(Overlap_send, this);
 
 	Buffer_recv.buf = CBuffer_recv;
 	Buffer_recv.len = BUFFSIZE;

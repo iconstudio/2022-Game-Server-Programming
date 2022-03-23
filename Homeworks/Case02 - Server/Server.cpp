@@ -2,12 +2,12 @@
 #include "ServerFramework.h"
 #include "Session.h"
 
-ServerFramework framework{};
+ServerFramework Framework{};
 
 int main()
 {
-	framework.Init();
-	framework.Start();
+	Framework.Init();
+	Framework.Start();
 
 	cout << "¼­¹ö Á¾·áµÊ\n";
 	while (true);
@@ -17,7 +17,7 @@ int main()
 
 void CallbackStartPositions(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DWORD flags)
 {
-	auto session = framework.GetClient(over);
+	auto session = Framework.GetClient(over);
 	auto& wbuffer = session->Buffer_recv;
 	auto& cbuffer = wbuffer.buf;
 	auto& sz_recv = wbuffer.len;

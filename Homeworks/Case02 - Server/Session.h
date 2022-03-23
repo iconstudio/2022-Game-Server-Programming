@@ -13,7 +13,7 @@ public:
 	Player* CreatePlayerCharacter();
 
 	Player* Instance;
-	ServerFramework* framework;
+	ServerFramework* Framework;
 
 	INT ID;
 	SOCKET Socket;
