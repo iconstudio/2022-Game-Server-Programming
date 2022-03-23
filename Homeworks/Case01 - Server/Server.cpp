@@ -1,4 +1,6 @@
+#include "stdafx.h"
 #include "Server.h"
+#include "ServerFramework.h"
 
 SOCKET m_Socket;
 SOCKADDR_IN m_Address;
