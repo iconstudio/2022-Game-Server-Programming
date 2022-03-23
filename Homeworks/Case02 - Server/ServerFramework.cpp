@@ -1,6 +1,13 @@
-#include "ServerFramework.h"
 #include "stdafx.h"
 #include "ServerFramework.h"
+#include "Session.h"
+
+ServerFramework::ServerFramework() : Overlap_recv()
+{
+	ZeroMemory(&Overlap_recv, sizeof(Overlap_recv));
+	Buffer_recv.buf = CBuffer_recv;
+	Buffer_recv.len = BUFFSIZE;
+}
 
 ServerFramework::~ServerFramework()
 {
@@ -48,35 +55,10 @@ void ServerFramework::Start()
 	cout << "서버 시작\n";
 	while (true)
 	{
-		if (!AcceptSession())
-		{
-			break;
-		}
+		AcceptSession();
 	}
 
 	int result = 0;
-
-	char recv_store[BUFFSIZE + 1];
-	WSABUF buffer{};
-	DWORD recv_size = 0;
-	DWORD recv_flag = 0;
-	DWORD send_size = 0;
-
-	ZeroMemory(recv_store, BUFFSIZE + 1);
-	buffer.buf = recv_store;
-	buffer.len = BUFFSIZE;
-
-	cout << "recv 1\n";
-	result = WSARecv(client_socket, &buffer, 1, &recv_size, &recv_flag, NULL, NULL);
-	if (SOCKET_ERROR == result)
-	{
-		ErrorDisplay("WSARecv 1");
-		return;
-	}
-
-	auto player_pos = reinterpret_cast<Position*>(&recv_store);
-	Player player{ player_pos->x, player_pos->y };
-	cout << "플레이어 좌표: (" << player_pos->x << ", " << player_pos->y << ")\n";
 
 	while (true)
 	{
@@ -148,17 +130,54 @@ void ServerFramework::Start()
 	} // while (true)
 }
 
-void CallbackStartPositions(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DWORD flags)
+void ServerFramework::AddClient(INT nid, Session* session)
+{
+	Clients.try_emplace(nid, session);
+}
+
+void ServerFramework::AddClient(LPWSAOVERLAPPED overlap, Session * session)
+{
+	OverlapClients.try_emplace(overlap, session);
+}
+
+Session* ServerFramework::GetClient(INT fid)
+{
+	auto it = Clients.find(fid);
+	if (it != Clients.cend())
+	{
+		return (*it).second;
+	}
+
+	return nullptr;
+}
+
+Session* ServerFramework::GetClient(LPWSAOVERLAPPED overlap)
+{
+	auto it = OverlapClients.find(overlap);
+	if (it != OverlapClients.cend())
+	{
+		return (*it).second;
+	}
+
+	return nullptr;
+}
+
+void ServerFramework::RemoveClient(INT nid)
+{
+	Clients.erase(nid);
+}
+
+void ServerFramework::RemoveClient(LPWSAOVERLAPPED overlap)
+{
+	OverlapClients.erase(overlap);
+}
+
+void ServerFramework::RemoveSession(const INT id)
 {
 
 }
 
-void CallbackInputs(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DWORD flags)
-{
-
-}
-
-bool ServerFramework::AcceptSession()
+void ServerFramework::AcceptSession()
 {
 	SOCKADDR_IN client_addr;
 	int cl_addr_size = sizeof(client_addr);
@@ -169,33 +188,19 @@ bool ServerFramework::AcceptSession()
 	if (INVALID_SOCKET == client_socket)
 	{
 		ErrorDisplay("WSAAccept()");
-		return false;
+		return;
 	}
 
 	cout << "클라이언트 접속: (" << inet_ntoa(client_addr.sin_addr)
 		<< "), 핸들: " << client_socket << "\n";
 
-	auto session = new Session;
+	auto session = new Session(this);
 	session->ID = Clients_index;
 	session->Socket = client_socket;
+	session->ReceiveStartPosition();
 
-	Clients.try_emplace(Clients_index, session);
-
+	AddClient(Clients_index, session);
 	Clients_index++;
-	return true;
-}
-
-Player* ServerFramework::CreatePlayerCharacter(Session* session)
-{
-	auto instance = new Player;
-	session->Instance = instance;
-
-	return (instance);
-}
-
-void ServerFramework::RemoveSession(const INT id)
-{
-
 }
 
 bool Player::TryMoveLT()

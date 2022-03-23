@@ -4,23 +4,12 @@
 #include <WS2tcpip.h>
 
 #include <iostream>
+#include <vector>
+#include <unordered_map>
+#include <algorithm>
 using namespace std;
 
 void ErrorDisplay(const char* title);
-
-struct Position
-{
-	int x, y;
-};
-
-class Player : public Position
-{
-public:
-	bool TryMoveLT();
-	bool TryMoveRT();
-	bool TryMoveUP();
-	bool TryMoveDW();
-};
 
 constexpr UINT BUFFSIZE = 512;
 constexpr SIZE_T WND_SZ_W = 800, WND_SZ_H = 600; // Ã¢ Å©±â
