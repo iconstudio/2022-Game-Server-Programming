@@ -10,9 +10,7 @@ int main()
 	framework.Start();
 
 	cout << "¼­¹ö Á¾·áµÊ\n";
-	while (true)
-	{
-	}
+	while (true);
 
 	return 0;
 }
@@ -25,7 +23,7 @@ void CallbackStartPositions(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DW
 	auto& sz_recv = wbuffer.len;
 
 	const size_t sz_want = sizeof(Position);
-	if (sz_want <= sz_recv)
+	if (sz_want <= num_bytes)
 	{
 		auto player_pos = reinterpret_cast<Position*>(cbuffer);
 		Player player{ player_pos->x, player_pos->y };
