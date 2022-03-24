@@ -3,11 +3,21 @@
 #include "Session.h"
 
 ServerFramework::ServerFramework()
-	: Overlap(), Buffer(), World(10), Size_send(0)
+	: Overlap()
+	, World(10), World_data(nullptr), World_cbuffer()
+	, World_data_length(0)
+	, Size_send(0)
 {
 	ZeroMemory(&Overlap, sizeof(Overlap));
-	Buffer.buf = CBuffer;
-	Buffer.len = BUFFSIZE;
+
+	World_data_info.Length = 0;
+	World_data_info.Size = 0;
+	World_cbuffer = reinterpret_cast<char*>(&World_data_info);
+
+	auto info_buffer = new WSABUF;
+	info_buffer->buf = World_cbuffer;
+	info_buffer->len = sizeof(PacketInfo);
+	World.emplace_back(move(*info_buffer));
 }
 
 ServerFramework::~ServerFramework()
@@ -47,7 +57,7 @@ void ServerFramework::Init()
 
 void ServerFramework::Start()
 {
-	if (SOCKET_ERROR == listen(Socket, SOMAXCONN))
+	if (SOCKET_ERROR == listen(Socket, 10))
 	{
 		ErrorDisplay("listen()");
 		return;
@@ -70,7 +80,7 @@ void ServerFramework::AddClient(INT nid, Session* session)
 	Clients.emplace(nid, session);
 }
 
-void ServerFramework::AddClient(LPWSAOVERLAPPED overlap, Session * session)
+void ServerFramework::AddClient(LPWSAOVERLAPPED overlap, Session* session)
 {
 	OverlapClients.emplace(overlap, session);
 }
@@ -165,15 +175,25 @@ void ServerFramework::SendWorld(Session* session, DWORD begin_bytes)
 {
 	cout << "클라이언트 " << session->ID << "에 월드 정보를 보냅니다.\n";
 
-	const auto data = World.data();
+	const auto cdata = World.data();
 	auto number = GetClientsNumber();
+	auto count = number + 1;
 
-	int result = session->SendPackets(data, number, CallbackWorld);
+	auto data = new WSABUF[count]{};
+	auto size = sizeof(WSABUF) * count;
+	ZeroMemory(data, size);
+
+	World_data_info.Size = size;
+	World_data_info.Length = number;
+
+	CopyMemory(data + 1, cdata, number);
+
+	int result = session->SendPackets(data, count, CallbackWorld);
 	if (SOCKET_ERROR == result)
 	{
 		int error = WSAGetLastError();
 		if (WSA_IO_PENDING != error)
-		{			
+		{
 			ErrorDisplay("SendWorld()");
 			return;
 		}
@@ -197,6 +217,7 @@ void ServerFramework::ProceedWorld(Session* session, DWORD send_bytes)
 
 		SendWorld(session, Size_send);
 	}
+	SleepEx(100, TRUE);
 }
 
 bool Player::TryMoveLT()

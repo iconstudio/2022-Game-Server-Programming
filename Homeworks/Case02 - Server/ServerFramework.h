@@ -12,6 +12,12 @@ public:
 	bool TryMoveDW();
 };
 
+struct PacketInfo
+{
+	ULONG Size = 0;
+	ULONG Length = 0;
+};
+
 class ServerFramework
 {
 public:
@@ -45,13 +51,17 @@ private:
 
 	SOCKADDR_IN Address;
 	INT sz_Address;
+
 	WSAOVERLAPPED Overlap;
-	WSABUF Buffer;
-	CHAR CBuffer[BUFFSIZE];
 	ULONG Size_send;
 
-	INT Clients_index = 0;
 	vector<WSABUF> World;
+	WSABUF* World_data;
+	PacketInfo World_data_info;
+	CHAR* World_cbuffer;
+	UINT World_data_length;
+
 	unordered_map<INT, Session*> Clients;
 	unordered_map<LPWSAOVERLAPPED, Session*> OverlapClients;
+	INT Clients_index = 0;
 };
