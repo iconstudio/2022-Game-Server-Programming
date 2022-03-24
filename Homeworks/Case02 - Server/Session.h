@@ -2,7 +2,6 @@
 #include "stdafx.h"
 
 class ServerFramework;
-struct Position;
 class Player;
 
 class Session
@@ -12,29 +11,28 @@ public:
 	~Session();
 
 	void ClearRecvBuffer();
-	void ClearSendBuffer();
 	void ClearOverlap(LPWSAOVERLAPPED overlap);
 
+	int RecvPackets(LPWSABUF datas, UINT count, DWORD flags, LPWSAOVERLAPPED_COMPLETION_ROUTINE);
+	int SendPackets(LPWSABUF datas, UINT count, LPWSAOVERLAPPED_COMPLETION_ROUTINE);
 	void ReceiveStartPosition(DWORD begin_bytes = 0);
 	void ProceedStartPosition(DWORD recv_bytes);
 	Player* CreatePlayerCharacter();
 	void ReceiveKeyInput(DWORD begin_bytes = 0);
 	void ProceedKeyInput (DWORD recv_bytes);
 	bool TryMove(WPARAM input);
-	void SendWorld(LPWSABUF world_info, DWORD send_bytes = 0);
-	void ProceedWorld(DWORD send_bytes);
 
 	INT ID;
+	const SOCKET Socket;
+	ULONG Size_recv, Size_send;
 
 	Player* Instance;
 	ServerFramework* Framework;
 
 private:
-	const SOCKET Socket;
 	SOCKADDR_IN Address;
 	INT sz_Address;
 	LPWSAOVERLAPPED Overlap_recv, Overlap_send;
-	WSABUF Buffer_recv, Buffer_send;
-	ULONG Size_recv, Size_send;
-	char CBuffer_recv[BUFFSIZE], CBuffer_send[BUFFSIZE];
+	WSABUF Buffer_recv;
+	char CBuffer_recv[BUFFSIZE];
 };

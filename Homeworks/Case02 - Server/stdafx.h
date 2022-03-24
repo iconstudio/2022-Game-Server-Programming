@@ -12,7 +12,7 @@ using std::cout;
 
 void CallbackStartPositions(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 void CallbackInputs(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
-void CallbackBroadcastWorld(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
+void CallbackWorld(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 void ErrorDisplay(const char* title);
 
 constexpr UINT BUFFSIZE = 512;
@@ -27,3 +27,8 @@ constexpr int BOARD_W = CELL_W * CELLS_CNT_H;
 constexpr int BOARD_H = CELL_H * CELLS_CNT_V;
 constexpr int BOARD_X = (WND_SZ_W - BOARD_W) / 2;
 constexpr int BOARD_Y = (WND_SZ_H - BOARD_H - 20) / 2;
+
+struct Position
+{
+	int x, y;
+};

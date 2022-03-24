@@ -5,21 +5,18 @@
 Session::Session(ServerFramework* nframework, SOCKET sock)
 	: Framework(nframework), Socket(sock)
 	, Overlap_recv(new WSAOVERLAPPED()), Overlap_send(new WSAOVERLAPPED())
-	, Buffer_recv(), Buffer_send(), CBuffer_recv(), CBuffer_send()
+	, Buffer_recv(), CBuffer_recv()
 	, Size_recv(0), Size_send(0)
 {
 	ClearOverlap(Overlap_recv);
 	ClearOverlap(Overlap_send);
 	ClearRecvBuffer();
-	ClearSendBuffer();
 
 	Framework->AddClient(Overlap_recv, this);
 	Framework->AddClient(Overlap_send, this);
 
 	Buffer_recv.buf = CBuffer_recv;
 	Buffer_recv.len = BUFFSIZE;
-	Buffer_send.buf = CBuffer_send;
-	Buffer_send.len = BUFFSIZE;
 }
 
 Session::~Session()
@@ -34,15 +31,20 @@ void Session::ClearRecvBuffer()
 	Size_recv = 0;
 }
 
-void Session::ClearSendBuffer()
-{
-	ZeroMemory(CBuffer_send, BUFFSIZE);
-	Size_send = 0;
-}
-
 void Session::ClearOverlap(LPWSAOVERLAPPED overlap)
 {
 	ZeroMemory(overlap, sizeof(WSAOVERLAPPED));
+}
+
+int Session::RecvPackets(LPWSABUF datas, UINT count, DWORD flags, LPWSAOVERLAPPED_COMPLETION_ROUTINE routine)
+{
+	return WSARecv(Socket, datas, count, NULL, &flags, Overlap_recv, routine);
+}
+
+int Session::SendPackets(LPWSABUF datas, UINT count
+	, LPWSAOVERLAPPED_COMPLETION_ROUTINE routine)
+{
+	return WSASend(Socket, datas, count, NULL, 0, Overlap_send, routine);
 }
 
 void Session::ReceiveStartPosition(DWORD begin_bytes)
@@ -55,9 +57,7 @@ void Session::ReceiveStartPosition(DWORD begin_bytes)
 	Buffer_recv.buf = (CBuffer_recv + begin_bytes);
 	Buffer_recv.len = sz_want - begin_bytes;
 
-	int result = WSARecv(Socket, &Buffer_recv, 1
-		, NULL, &recv_flag
-		, Overlap_recv, CallbackStartPositions);
+	int result = RecvPackets(&Buffer_recv, 1, 0, CallbackStartPositions);
 	if (SOCKET_ERROR == result)
 	{
 		int error = WSAGetLastError();
@@ -87,6 +87,8 @@ void Session::ProceedStartPosition(DWORD recv_bytes)
 		cout << "플레이어 좌표: ("
 			<< positions->x << ", " << positions->y << ")\n";
 
+		Framework->AddPlayerSpace(Instance);
+
 		ClearRecvBuffer();
 		ReceiveKeyInput();
 	}
@@ -114,9 +116,7 @@ void Session::ReceiveKeyInput(DWORD begin_bytes)
 	Buffer_recv.buf = (CBuffer_recv + begin_bytes);
 	Buffer_recv.len = sz_want - begin_bytes;
 
-	int result = WSARecv(Socket, &Buffer_recv, 1
-		, NULL, &recv_flag
-		, Overlap_recv, CallbackInputs);
+	int result = RecvPackets(&Buffer_recv, 1, 0, CallbackInputs);
 	if (SOCKET_ERROR == result)
 	{
 		int error = WSAGetLastError();
@@ -200,33 +200,4 @@ bool Session::TryMove(WPARAM input)
 	}
 
 	return moved;
-}
-
-void Session::SendWorld(LPWSABUF world_info, DWORD send_bytes)
-{
-	cout << "클라이언트 " << ID << "에 월드 정보를 보냅니다.\n";
-
-	DWORD recv_flag = 0;
-
-	const size_t sz_want = sizeof(WPARAM);
-	Buffer_recv.buf = (CBuffer_recv + begin_bytes);
-	Buffer_recv.len = sz_want - begin_bytes;
-
-	int result = WSARecv(Socket, &Buffer_recv, 1
-		, NULL, &recv_flag
-		, Overlap_recv, CallbackInputs);
-	if (SOCKET_ERROR == result)
-	{
-		int error = WSAGetLastError();
-		if (WSA_IO_PENDING != error)
-		{
-			ErrorDisplay("ReceiveKeyInput()");
-			return;
-		}
-	}
-}
-
-void Session::ProceedWorld(DWORD send_bytes)
-{
-
 }

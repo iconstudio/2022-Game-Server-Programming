@@ -53,7 +53,7 @@ void CallbackInputs(DWORD err, DWORD recv_bytes, LPWSAOVERLAPPED over, DWORD fla
 	session->ProceedKeyInput(recv_bytes);
 }
 
-void CallbackBroadcastWorld(DWORD err, DWORD send_bytes
+void CallbackWorld(DWORD err, DWORD send_bytes
 	, LPWSAOVERLAPPED over, DWORD flags)
 {
 	auto session = framework.GetClient(over);
@@ -66,24 +66,31 @@ void CallbackBroadcastWorld(DWORD err, DWORD send_bytes
 	if (0 != err || 0 == send_bytes)
 	{
 		framework.RemoveSession(session->ID);
-		ErrorDisplay("CallbackBroadcastWorld()");
+		ErrorDisplay("CallbackWorld()");
 		return;
 	}
 
-	session->ProceedWorld(send_bytes);
+	framework.ProceedWorld(session, send_bytes);
 }
 
 void ErrorDisplay(const char* title)
 {
-	TCHAR* lpMsgBuf{};
+	WCHAR lpMsgBuf[501];
+	ZeroMemory(lpMsgBuf, 501);
+
 	FormatMessage(
 		FORMAT_MESSAGE_ALLOCATE_BUFFER |
 		FORMAT_MESSAGE_FROM_SYSTEM,
 		NULL, WSAGetLastError(),
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPWSTR)&lpMsgBuf, 0, NULL);
+		lpMsgBuf, 500, NULL);
 
-	wcout << title << " -> 오류: " << lpMsgBuf << endl;
+	char msg[501];
+	ZeroMemory(msg, 501);
+
+	wcstombs_s(NULL, msg, 500, lpMsgBuf, 500);
+
+	cout << title << " -> 오류: " << msg << "\n";
 
 	LocalFree(lpMsgBuf);
 }

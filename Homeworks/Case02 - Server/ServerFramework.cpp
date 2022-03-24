@@ -2,7 +2,8 @@
 #include "ServerFramework.h"
 #include "Session.h"
 
-ServerFramework::ServerFramework() : Overlap(), Buffer(), World(10)
+ServerFramework::ServerFramework()
+	: Overlap(), Buffer(), World(10), Size_send(0)
 {
 	ZeroMemory(&Overlap, sizeof(Overlap));
 	Buffer.buf = CBuffer;
@@ -66,12 +67,21 @@ UINT ServerFramework::GetClientsNumber() const
 
 void ServerFramework::AddClient(INT nid, Session* session)
 {
-	Clients.try_emplace(nid, session);
+	Clients.emplace(nid, session);
 }
 
 void ServerFramework::AddClient(LPWSAOVERLAPPED overlap, Session * session)
 {
-	OverlapClients.try_emplace(overlap, session);
+	OverlapClients.emplace(overlap, session);
+}
+
+void ServerFramework::AddPlayerSpace(Player* instance)
+{
+	WSABUF wbuffer{};
+	wbuffer.buf = reinterpret_cast<char*>(static_cast<Position*>(instance));
+	wbuffer.len = sizeof(Position);
+
+	World.emplace_back(move(wbuffer));
 }
 
 Session* ServerFramework::GetClient(INT fid)
@@ -133,6 +143,7 @@ void ServerFramework::AcceptSession()
 	auto session = new Session(this, client_socket);
 	session->ID = Clients_index;
 	session->ReceiveStartPosition();
+	SendWorld(session);
 
 	AddClient(Clients_index, session);
 	Clients_index++;
@@ -140,11 +151,51 @@ void ServerFramework::AcceptSession()
 
 void ServerFramework::BroadcastWorld()
 {
-	const auto data = *(World.data());
 	for (auto it = Clients.begin(); it != Clients.end(); ++it)
 	{
 		auto session = (*it).second;
-		session->SendWorld(data);
+		if (session)
+		{
+			SendWorld(session);
+		}
+	}
+}
+
+void ServerFramework::SendWorld(Session* session, DWORD begin_bytes)
+{
+	cout << "클라이언트 " << session->ID << "에 월드 정보를 보냅니다.\n";
+
+	const auto data = World.data();
+	auto number = GetClientsNumber();
+
+	int result = session->SendPackets(data, number, CallbackWorld);
+	if (SOCKET_ERROR == result)
+	{
+		int error = WSAGetLastError();
+		if (WSA_IO_PENDING != error)
+		{			
+			ErrorDisplay("SendWorld()");
+			return;
+		}
+	}
+}
+
+void ServerFramework::ProceedWorld(Session* session, DWORD send_bytes)
+{
+	auto& Size_send = session->Size_send;
+	Size_send += send_bytes;
+	constexpr size_t sz_want = sizeof(Position);
+
+	if (sz_want <= Size_send)
+	{
+		SendWorld(session, 0);
+	}
+	else
+	{
+		cout << "클라이언트 " << session->ID << "에 월드 정보를 "
+			<< sz_want - Size_send << " 만큼 더 보냅니다.\n";
+
+		SendWorld(session, Size_send);
 	}
 }
 
