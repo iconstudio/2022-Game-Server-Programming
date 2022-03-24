@@ -178,17 +178,20 @@ void ServerFramework::SendWorld(Session* session, DWORD begin_bytes)
 	const auto cdata = World.data();
 	auto number = GetClientsNumber();
 	auto count = number + 1;
-
-	auto data = new WSABUF[count]{};
 	auto size = sizeof(WSABUF) * count;
-	ZeroMemory(data, size);
 
 	World_data_info.Size = size;
 	World_data_info.Length = number;
 
-	CopyMemory(data + 1, cdata, number);
+	World_data = new WSABUF[count];
+	auto seek = World_data + 1;
+	for (auto it = World.begin(); it != World.end(); ++it, seek++)
+	{
+		*seek = *it;
+	}
+	//copy(World.begin(), World.end(), World_data + 1);
 
-	int result = session->SendPackets(data, count, CallbackWorld);
+	int result = session->SendPackets(World_data, count, CallbackWorld);
 	if (SOCKET_ERROR == result)
 	{
 		int error = WSAGetLastError();
