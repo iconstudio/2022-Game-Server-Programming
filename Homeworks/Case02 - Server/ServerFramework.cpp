@@ -2,11 +2,11 @@
 #include "ServerFramework.h"
 #include "Session.h"
 
-ServerFramework::ServerFramework() : Overlap_recv()
+ServerFramework::ServerFramework() : Overlap(), Buffer(), World(10)
 {
-	ZeroMemory(&Overlap_recv, sizeof(Overlap_recv));
-	Buffer_recv.buf = CBuffer_recv;
-	Buffer_recv.len = BUFFSIZE;
+	ZeroMemory(&Overlap, sizeof(Overlap));
+	Buffer.buf = CBuffer;
+	Buffer.len = BUFFSIZE;
 }
 
 ServerFramework::~ServerFramework()
@@ -24,7 +24,7 @@ void ServerFramework::Init()
 		return;
 	}
 
-	Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, 0);
+	Socket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == Socket)
 	{
 		ErrorDisplay("WSASocket()");
@@ -57,77 +57,11 @@ void ServerFramework::Start()
 	{
 		AcceptSession();
 	}
+}
 
-	int result = 0;
-
-	while (true)
-	{
-		ZeroMemory(recv_store, BUFFSIZE);
-		buffer.buf = recv_store;
-		buffer.len = BUFFSIZE;
-
-		cout << "recv 2\n";
-		result = WSARecv(client_socket, &buffer, 1, &recv_size, &recv_flag, NULL, NULL);
-		if (SOCKET_ERROR == result)
-		{
-			ErrorDisplay("WSARecv 2");
-			break;
-		}
-
-		if (0 < recv_size)
-		{
-			cout << "키 받음: " << recv_store << " (" << recv_size << " 바이트)\n";
-
-			WPARAM received = 0;// = reinterpret_cast<WPARAM>(recv_store);
-			memcpy_s(&received, sizeof(received), recv_store, recv_size);
-
-			bool moved = false;
-			switch (received)
-			{
-				case VK_LEFT:
-				{
-					moved = player.TryMoveLT();
-				}
-				break;
-
-				case VK_RIGHT:
-				{
-					moved = player.TryMoveRT();
-				}
-				break;
-
-				case VK_UP:
-				{
-					moved = player.TryMoveUP();
-				}
-				break;
-
-				case VK_DOWN:
-				{
-					moved = player.TryMoveDW();
-				}
-				break;
-
-				default:
-				break;
-			}
-
-			cout << "send 1\n";
-			buffer.buf = reinterpret_cast<char*>(&player);
-			buffer.len = sizeof(player);
-			result = WSASend(client_socket, &buffer, 1, &send_size, NULL, NULL, NULL);
-			if (SOCKET_ERROR == result)
-			{
-				ErrorDisplay("WSASend 1");
-				break;
-			}
-
-			if (!moved)
-			{
-				cout << "플레이어 움직이지 않음.\n";
-			}
-		} // if (0 < recv_size)
-	} // while (true)
+UINT ServerFramework::GetClientsNumber() const
+{
+	return Clients.size();
 }
 
 void ServerFramework::AddClient(INT nid, Session* session)
@@ -174,7 +108,9 @@ void ServerFramework::RemoveClient(LPWSAOVERLAPPED overlap)
 
 void ServerFramework::RemoveSession(const INT id)
 {
-
+	auto session = GetClient(id);
+	RemoveClient(id);
+	delete session;
 }
 
 void ServerFramework::AcceptSession()
@@ -194,13 +130,22 @@ void ServerFramework::AcceptSession()
 	cout << "클라이언트 접속: (" << inet_ntoa(client_addr.sin_addr)
 		<< "), 핸들: " << client_socket << "\n";
 
-	auto session = new Session(this);
+	auto session = new Session(this, client_socket);
 	session->ID = Clients_index;
-	session->Socket = client_socket;
 	session->ReceiveStartPosition();
 
 	AddClient(Clients_index, session);
 	Clients_index++;
+}
+
+void ServerFramework::BroadcastWorld()
+{
+	const auto data = *(World.data());
+	for (auto it = Clients.begin(); it != Clients.end(); ++it)
+	{
+		auto session = (*it).second;
+		session->SendWorld(data);
+	}
 }
 
 bool Player::TryMoveLT()

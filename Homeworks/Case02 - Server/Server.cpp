@@ -2,12 +2,12 @@
 #include "ServerFramework.h"
 #include "Session.h"
 
-ServerFramework Framework{};
+ServerFramework framework{};
 
 int main()
 {
-	Framework.Init();
-	Framework.Start();
+	framework.Init();
+	framework.Start();
 
 	cout << "서버 종료됨\n";
 	while (true);
@@ -15,36 +15,67 @@ int main()
 	return 0;
 }
 
-void CallbackStartPositions(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DWORD flags)
+void CallbackStartPositions(DWORD err, DWORD recv_bytes, LPWSAOVERLAPPED over, DWORD flags)
 {
-	auto session = Framework.GetClient(over);
-	auto& wbuffer = session->Buffer_recv;
-	auto& cbuffer = wbuffer.buf;
-	auto& sz_recv = wbuffer.len;
-
-	const size_t sz_want = sizeof(Position);
-	if (sz_want <= num_bytes)
+	auto session = framework.GetClient(over);
+	if (!session)
 	{
-		auto player_pos = reinterpret_cast<Position*>(cbuffer);
-		Player player{ player_pos->x, player_pos->y };
-		cout << "플레이어 좌표: (" << player_pos->x << ", " << player_pos->y << ")\n";
-
-		session->ClearRecvBuffer();
+		ErrorDisplay("No client session.");
+		return;
 	}
-	else
+
+	if (0 != err || 0 == recv_bytes)
 	{
-
+		framework.RemoveSession(session->ID);
+		ErrorDisplay("CallbackStartPositions()");
+		return;
 	}
+
+	session->ProceedStartPosition(recv_bytes);
 }
 
-void CallbackInputs(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DWORD flags)
+void CallbackInputs(DWORD err, DWORD recv_bytes, LPWSAOVERLAPPED over, DWORD flags)
 {
+	auto session = framework.GetClient(over);
+	if (!session)
+	{
+		ErrorDisplay("No client session.");
+		return;
+	}
 
+	if (0 != err || 0 == recv_bytes)
+	{
+		framework.RemoveSession(session->ID);
+		ErrorDisplay("CallbackInputs()");
+		return;
+	}
+
+	session->ProceedKeyInput(recv_bytes);
+}
+
+void CallbackBroadcastWorld(DWORD err, DWORD send_bytes
+	, LPWSAOVERLAPPED over, DWORD flags)
+{
+	auto session = framework.GetClient(over);
+	if (!session)
+	{
+		ErrorDisplay("No client session.");
+		return;
+	}
+
+	if (0 != err || 0 == send_bytes)
+	{
+		framework.RemoveSession(session->ID);
+		ErrorDisplay("CallbackBroadcastWorld()");
+		return;
+	}
+
+	session->ProceedWorld(send_bytes);
 }
 
 void ErrorDisplay(const char* title)
 {
-	TCHAR* lpMsgBuf;
+	TCHAR* lpMsgBuf{};
 	FormatMessage(
 		FORMAT_MESSAGE_ALLOCATE_BUFFER |
 		FORMAT_MESSAGE_FROM_SYSTEM,

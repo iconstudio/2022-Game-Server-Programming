@@ -1,5 +1,7 @@
 #pragma once
 
+class Session;
+
 class ServerFramework
 {
 public:
