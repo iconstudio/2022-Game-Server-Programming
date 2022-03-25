@@ -3,6 +3,8 @@
 #include "Session.h"
 
 ServerFramework framework{};
+WCHAR Msg_buffer[501];
+char Msg[501];
 
 int main()
 {
@@ -75,22 +77,18 @@ void CallbackWorld(DWORD err, DWORD send_bytes
 
 void ErrorDisplay(const char* title)
 {
-	WCHAR lpMsgBuf[501];
-	ZeroMemory(lpMsgBuf, 501);
+	ZeroMemory(Msg_buffer, 501);
 
 	FormatMessage(
 		FORMAT_MESSAGE_ALLOCATE_BUFFER |
 		FORMAT_MESSAGE_FROM_SYSTEM,
 		NULL, WSAGetLastError(),
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		lpMsgBuf, 500, NULL);
+		Msg_buffer, 500, NULL);
 
-	char msg[501];
-	ZeroMemory(msg, 501);
+	ZeroMemory(Msg, 501);
 
-	wcstombs_s(NULL, msg, 500, lpMsgBuf, 500);
+	wcstombs_s(NULL, Msg, 500, Msg_buffer, 500);
 
-	cout << title << " -> 오류: " << msg << "\n";
-
-	LocalFree(lpMsgBuf);
+	cout << title << " -> 오류: " << Msg << "\n";
 }
