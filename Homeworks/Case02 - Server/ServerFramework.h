@@ -12,12 +12,6 @@ public:
 	bool TryMoveDW();
 };
 
-struct PacketInfo
-{
-	ULONG Size = 0;
-	ULONG Length = 0;
-};
-
 class ServerFramework
 {
 public:

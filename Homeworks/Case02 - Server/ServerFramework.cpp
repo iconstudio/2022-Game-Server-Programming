@@ -4,19 +4,23 @@
 
 ServerFramework::ServerFramework()
 	: Overlap()
-	, World(10), World_data(nullptr), World_cbuffer()
+	, World(), World_data(nullptr), World_cbuffer()
 	, World_data_length(0)
 	, Size_send(0)
 {
 	ZeroMemory(&Overlap, sizeof(Overlap));
 
+	Clients.reserve(CLIENTS_MAX_NUMBER);
+	OverlapClients.reserve(CLIENTS_MAX_NUMBER);
+
 	World_data_info.Length = 0;
 	World_data_info.Size = 0;
 
-	auto info_buffer = new WSABUF;
-	info_buffer->buf = reinterpret_cast<char*>(&World_data_info);
-	info_buffer->len = sizeof(PacketInfo);
-	World.emplace_back(move(*info_buffer));
+	World.reserve(CLIENTS_MAX_NUMBER);
+	WSABUF info_buffer{};
+	info_buffer.buf = reinterpret_cast<char*>(&World_data_info);
+	info_buffer.len = sizeof(PacketInfo);
+	World.emplace_back(move(info_buffer));
 }
 
 ServerFramework::~ServerFramework()
@@ -56,7 +60,7 @@ void ServerFramework::Init()
 
 void ServerFramework::Start()
 {
-	if (SOCKET_ERROR == listen(Socket, 10))
+	if (SOCKET_ERROR == listen(Socket, CLIENTS_MAX_NUMBER))
 	{
 		ErrorDisplay("listen()");
 		return;

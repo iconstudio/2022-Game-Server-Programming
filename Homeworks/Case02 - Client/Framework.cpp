@@ -4,7 +4,8 @@
 
 Framework::Framework()
 	: m_Player(), Lastkey(-1)
-	, Socket(), Server_address(), Buffer_recv(), Buffer_send()
+	, Socket(), Server_address()
+	, Buffer_recv(), Buffer_send(), Buffer_world(), CBuffer_world()
 	, Board_canvas(), Board_image()
 	, Board_rect{ BOARD_X, BOARD_Y, BOARD_X + BOARD_W, BOARD_Y + BOARD_H }
 	, Server_IP("127.0.0.1")
@@ -148,11 +149,17 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 
 		case FD_READ:
 		{
-			Buffer_recv.buf = recv_store;
-			Buffer_recv.len = BUFFSIZE;
+			ZeroMemory(Buffer_world, sizeof(WSABUF) * 11);
+
+			int i = 0;
+			for (auto it = begin(Buffer_world); it != end(Buffer_world); ++it, i++) {
+				WSABUF& buffer = *it;
+				buffer.buf = CBuffer_world[i];
+				buffer.len = BUFFSIZE;
+			};
 
 			// recv 1
-			result = WSARecv(Socket, &Buffer_recv, 1, &recv_size, &recv_flag, 0, 0);
+			result = WSARecv(Socket, Buffer_world, 11, &recv_size, &recv_flag, 0, 0);
 			if (SOCKET_ERROR == result)
 			{
 				if (WSAGetLastError() != WSAEWOULDBLOCK)
@@ -162,14 +169,23 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 				}
 			}
 
-			if (0 < recv_size && sizeof(Position) <= recv_size)
+			const auto sz_want = sizeof(WSABUF);
+			if (0 < recv_size && sz_want <= recv_size)
 			{
+				auto wb_info = Buffer_world[0];
+				auto& bf_info = wb_info.buf;
+				auto& sz_info = wb_info.len;
+				auto info = reinterpret_cast<PacketInfo*>(bf_info);
+
+				InvalidateRect(NULL, &Board_rect, FALSE);
+				/*
 				auto position = reinterpret_cast<Position*>(recv_store);
 
 				m_Player.x = position->x;
 				m_Player.y = position->y;
 				InvalidateRect(NULL, &Board_rect, FALSE);
 				ZeroMemory(recv_store, recv_size + 1);
+				*/
 			}
 		}
 		break;

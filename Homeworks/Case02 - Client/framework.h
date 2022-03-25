@@ -37,6 +37,9 @@ private:
 	INT sz_Address;
 	WSABUF Buffer_recv;
 	WSABUF Buffer_send;
+	CHAR* CBuffer_world[11];
+	WSABUF Buffer_world[11];
+	INT Buffer_world_length;
 
 	HWND Window;
 	HDC DC_double;
