@@ -23,7 +23,6 @@ public:
 
 	void AddClient(INT nid, Session* session);
 	void AddClient(LPWSAOVERLAPPED overlap, Session* session);
-	void AddPlayerSpace(Player* instance);
 	UINT GetClientsNumber() const;
 
 	Session* GetClient(INT fid);
@@ -33,6 +32,8 @@ public:
 	void RemoveClient(LPWSAOVERLAPPED overlap);
 	void RemoveSession(const INT id);
 
+	void AddInstance(Position* instance);
+	void GenerateWorldData();
 	void SendWorld(Session* session, DWORD send_bytes = 0);
 	void ProceedWorld(Session* session, DWORD send_bytes);
 
@@ -50,11 +51,11 @@ private:
 	WSAOVERLAPPED Overlap;
 	ULONG Size_send;
 
-	vector<WSABUF> World;
-	WSABUF* World_data;
-	PacketInfo World_data_info;
+	vector<Position*> World;
+	WSABUF* World_blob;
+	UINT World_blob_length;
+	PacketInfo World_data_desc;
 	CHAR* World_cbuffer;
-	UINT World_data_length;
 
 	unordered_map<INT, Session*> Clients;
 	unordered_map<LPWSAOVERLAPPED, Session*> OverlapClients;

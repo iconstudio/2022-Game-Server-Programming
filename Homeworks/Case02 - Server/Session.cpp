@@ -87,7 +87,7 @@ void Session::ProceedStartPosition(DWORD recv_bytes)
 		cout << "플레이어 좌표: ("
 			<< positions->x << ", " << positions->y << ")\n";
 
-		Framework->AddPlayerSpace(Instance);
+		Framework->AddInstance(Instance);
 
 		ClearRecvBuffer();
 		ReceiveKeyInput();
