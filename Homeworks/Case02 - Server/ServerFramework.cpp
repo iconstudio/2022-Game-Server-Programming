@@ -12,10 +12,9 @@ ServerFramework::ServerFramework()
 
 	World_data_info.Length = 0;
 	World_data_info.Size = 0;
-	World_cbuffer = reinterpret_cast<char*>(&World_data_info);
 
 	auto info_buffer = new WSABUF;
-	info_buffer->buf = World_cbuffer;
+	info_buffer->buf = reinterpret_cast<char*>(&World_data_info);
 	info_buffer->len = sizeof(PacketInfo);
 	World.emplace_back(move(*info_buffer));
 }
@@ -72,11 +71,12 @@ void ServerFramework::Start()
 
 UINT ServerFramework::GetClientsNumber() const
 {
-	return Clients.size();
+	return Clients_number;//Clients.size();
 }
 
 void ServerFramework::AddClient(INT nid, Session* session)
 {
+	Clients_number++;
 	Clients.emplace(nid, session);
 }
 
@@ -118,6 +118,7 @@ Session* ServerFramework::GetClient(LPWSAOVERLAPPED overlap)
 
 void ServerFramework::RemoveClient(INT nid)
 {
+	Clients_number--;
 	Clients.erase(nid);
 }
 
@@ -151,11 +152,11 @@ void ServerFramework::AcceptSession()
 		<< "), วฺต้: " << client_socket << "\n";
 
 	auto session = new Session(this, client_socket);
+	AddClient(Clients_index, session);
+
 	session->ID = Clients_index;
 	session->ReceiveStartPosition();
-	SendWorld(session);
 
-	AddClient(Clients_index, session);
 	Clients_index++;
 }
 
@@ -183,7 +184,9 @@ void ServerFramework::SendWorld(Session* session, DWORD begin_bytes)
 	World_data_info.Size = size;
 	World_data_info.Length = number;
 
-	World_data = new WSABUF[count];
+	World_data = new WSABUF[count]{};
+	ZeroMemory(World_data, size);
+
 	auto seek = World_data + 1;
 	for (auto it = World.begin(); it != World.end(); ++it, seek++)
 	{
@@ -191,7 +194,7 @@ void ServerFramework::SendWorld(Session* session, DWORD begin_bytes)
 	}
 	//copy(World.begin(), World.end(), World_data + 1);
 
-	int result = session->SendPackets(World_data, count, CallbackWorld);
+	int result = session->SendPackets(cdata, count, CallbackWorld);
 	if (SOCKET_ERROR == result)
 	{
 		int error = WSAGetLastError();

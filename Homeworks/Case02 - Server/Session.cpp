@@ -91,6 +91,7 @@ void Session::ProceedStartPosition(DWORD recv_bytes)
 
 		ClearRecvBuffer();
 		ReceiveKeyInput();
+		Framework->SendWorld(this);
 	}
 	else
 	{

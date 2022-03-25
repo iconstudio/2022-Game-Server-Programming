@@ -39,15 +39,16 @@ public:
 	void RemoveClient(LPWSAOVERLAPPED overlap);
 	void RemoveSession(const INT id);
 
-	SOCKET Socket;
+	void SendWorld(Session* session, DWORD send_bytes = 0);
+	void ProceedWorld(Session* session, DWORD send_bytes);
 
 	friend void CallbackWorld(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
+
+	SOCKET Socket;
 
 private:
 	void AcceptSession();
 	void BroadcastWorld();
-	void SendWorld(Session* session, DWORD send_bytes = 0);
-	void ProceedWorld(Session* session, DWORD send_bytes);
 
 	SOCKADDR_IN Address;
 	INT sz_Address;
@@ -63,5 +64,5 @@ private:
 
 	unordered_map<INT, Session*> Clients;
 	unordered_map<LPWSAOVERLAPPED, Session*> OverlapClients;
-	INT Clients_index = 0;
+	INT Clients_index = 0, Clients_number = 0;
 };
