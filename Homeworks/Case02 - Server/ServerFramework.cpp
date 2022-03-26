@@ -4,7 +4,7 @@
 
 ServerFramework::ServerFramework()
 	: Overlap()
-	, World(), World_blob(nullptr), World_cbuffer()
+	, World(), World_blob(), World_cbuffer()
 	, World_blob_length(0)
 	, Size_send(0)
 {
@@ -15,7 +15,6 @@ ServerFramework::ServerFramework()
 
 	World_data_desc.Length = 0;
 	World_data_desc.Size = 0;
-
 	World.reserve(CLIENTS_MAX_NUMBER);
 }
 
@@ -173,39 +172,31 @@ void ServerFramework::GenerateWorldData()
 	const auto cdata = World.data();
 	const auto number = GetClientsNumber();
 	const auto count = number + 1;
-	const auto size = sizeof(WSABUF) * number;
+	const auto size = sizeof(Position) * number;
 
-	if (count != World_blob_length)
-	{
-		World_blob = new WSABUF[count]{};
-		World_blob_length = count;
-	}
-	ZeroMemory(World_blob + 1, size);
-
-	WSABUF info_buffer{};
-	info_buffer.buf = reinterpret_cast<char*>(&World_data_desc);
-	info_buffer.len = sizeof(PacketInfo);
-	World_blob[0] = move(info_buffer);
+	ZeroMemory(World_blob, sizeof(World_blob));
+	// 0
+	WSABUF info_wbuffer{};
+	info_wbuffer.buf = reinterpret_cast<char*>(&World_data_desc);
+	info_wbuffer.len = sizeof(PacketInfo);
+	World_blob[0] = move(info_wbuffer);
 	World_data_desc.Size = size;
 	World_data_desc.Length = number;
-
-	auto seek = World_blob + 1;
-	for (auto it = World.begin(); it != World.end(); ++it, seek++)
+	// 1
+	WSABUF contents_wbuffer{};
+	if (0 < number)
 	{
-		auto& wbuffer = *seek;
-		wbuffer.buf = reinterpret_cast<char*>(*it);
-		wbuffer.len = sizeof(Position);
+		contents_wbuffer.buf = reinterpret_cast<char*>(cdata);
+		contents_wbuffer.len = size;
 	}
+	World_blob[1] = move(contents_wbuffer);
 }
 
 void ServerFramework::SendWorld(Session* session, DWORD begin_bytes)
 {
 	cout << "클라이언트 " << session->ID << "에 월드 정보를 보냅니다.\n";
-	GenerateWorldData();
 
-	auto size = World_blob_length;
-
-	int result = session->SendPackets(World_blob, size, CallbackWorld);
+	int result = session->SendPackets(World_blob, 2, CallbackWorld);
 	if (SOCKET_ERROR == result)
 	{
 		int error = WSAGetLastError();

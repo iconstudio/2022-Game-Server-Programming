@@ -42,6 +42,11 @@ public:
 	SOCKET Socket;
 
 private:
+	struct WorldPacket
+	{
+		WSABUF buffer[2]{};
+	};
+
 	void AcceptSession();
 	void BroadcastWorld();
 
@@ -52,7 +57,7 @@ private:
 	ULONG Size_send;
 
 	vector<Position*> World;
-	WSABUF* World_blob;
+	WSABUF World_blob[2];
 	UINT World_blob_length;
 	PacketInfo World_data_desc;
 	CHAR* World_cbuffer;

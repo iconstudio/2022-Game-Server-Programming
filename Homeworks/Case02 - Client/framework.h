@@ -37,9 +37,10 @@ private:
 	INT sz_Address;
 	WSABUF Buffer_recv;
 	WSABUF Buffer_send;
-	CHAR* CBuffer_world[11];
-	WSABUF Buffer_world[11];
+	WSABUF Buffer_world[2];
+	CHAR* CBuffer_world;
 	INT Buffer_world_length;
+	vector<Position*> World_instances;
 
 	HWND Window;
 	HDC DC_double;

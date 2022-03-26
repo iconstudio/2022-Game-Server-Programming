@@ -5,11 +5,13 @@
 Framework::Framework()
 	: m_Player(), Lastkey(-1)
 	, Socket(), Server_address()
-	, Buffer_recv(), Buffer_send(), Buffer_world(), CBuffer_world()
+	, Buffer_recv(), Buffer_send(), Buffer_world(), CBuffer_world(), World_instances()
 	, Board_canvas(), Board_image()
 	, Board_rect{ BOARD_X, BOARD_Y, BOARD_X + BOARD_W, BOARD_Y + BOARD_H }
 	, Server_IP("127.0.0.1")
-{}
+{
+	World_instances.reserve(10);
+}
 
 void Framework::Init(HWND window)
 {
@@ -149,17 +151,22 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 
 		case FD_READ:
 		{
-			ZeroMemory(Buffer_world, sizeof(WSABUF) * 11);
+			ZeroMemory(&Buffer_world, sizeof(Buffer_world));
+			if (CBuffer_world) delete[] CBuffer_world;
+			CBuffer_world = new char[BUFFSIZE + 1]{};
+			ZeroMemory(CBuffer_world, BUFFSIZE + 1);
 
-			int i = 0;
-			for (auto it = begin(Buffer_world); it != end(Buffer_world); ++it, i++) {
-				WSABUF& buffer = *it;
-				buffer.buf = CBuffer_world[i];
-				buffer.len = BUFFSIZE;
-			};
+			const auto sz_header = sizeof(PacketInfo);
+			auto& header_buffer = Buffer_world[0];
+			header_buffer.buf = CBuffer_world;
+			header_buffer.len = sz_header;
+
+			auto& contents_buffer = Buffer_world[1];
+			contents_buffer.buf = CBuffer_world + sz_header;
+			contents_buffer.len = BUFFSIZE - sz_header;
 
 			// recv 1
-			result = WSARecv(Socket, Buffer_world, 11, &recv_size, &recv_flag, 0, 0);
+			result = WSARecv(Socket, Buffer_world, 2, &recv_size, &recv_flag, 0, 0);
 			if (SOCKET_ERROR == result)
 			{
 				if (WSAGetLastError() != WSAEWOULDBLOCK)
@@ -169,15 +176,31 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 				}
 			}
 
-			const auto sz_want = sizeof(WSABUF);
-			if (0 < recv_size && sz_want <= recv_size)
+			if (sz_header <= recv_size)
 			{
-				auto wb_info = Buffer_world[0];
-				auto& bf_info = wb_info.buf;
-				auto& sz_info = wb_info.len;
-				auto info = reinterpret_cast<PacketInfo*>(bf_info);
+				auto info = reinterpret_cast<PacketInfo*>(CBuffer_world);
 
-				InvalidateRect(NULL, &Board_rect, FALSE);
+				ULONG instance_count = info->Length;
+				ULONG sz_world_blob = info->Size;
+				recv_size -= sz_header;
+
+				if (sz_world_blob <= recv_size)
+				{
+					auto stride = sizeof(Position);
+					auto& bf_world = contents_buffer.buf;
+					auto& sz_world = contents_buffer.len;
+
+					World_instances.clear();
+					for (auto it = bf_world; it < bf_world + sz_world; it += stride)
+					{
+						auto instance = reinterpret_cast<Position*>(it);
+
+						World_instances.push_back(move(instance));
+					}
+
+					InvalidateRect(NULL, &Board_rect, FALSE);
+				}
+
 				/*
 				auto position = reinterpret_cast<Position*>(recv_store);
 
