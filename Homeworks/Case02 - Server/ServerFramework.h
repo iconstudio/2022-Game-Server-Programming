@@ -30,37 +30,24 @@ public:
 
 	void RemoveClient(INT nid);
 	void RemoveClient(LPWSAOVERLAPPED overlap);
+	void RemoveInstance(Position* instance);
 	void RemoveSession(const INT id);
 
 	void AddInstance(Position* instance);
-	void GenerateWorldData();
-	void SendWorld(Session* session, DWORD send_bytes = 0);
-	void ProceedWorld(Session* session, DWORD send_bytes);
-
-	friend void CallbackWorld(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
+	Position* GetWorldInstanceData();
 
 	SOCKET Socket;
 
 private:
-	struct WorldPacket
-	{
-		WSABUF buffer[2]{};
-	};
-
 	void AcceptSession();
-	void BroadcastWorld();
 
 	SOCKADDR_IN Address;
 	INT sz_Address;
 
 	WSAOVERLAPPED Overlap;
-	ULONG Size_send;
-
 	vector<Position*> World;
-	WSABUF World_blob[2];
-	UINT World_blob_length;
-	PacketInfo World_data_desc;
-	CHAR* World_cbuffer;
+	vector<Position> World_blob;
+	PacketInfo World_desc;
 
 	unordered_map<INT, Session*> Clients;
 	unordered_map<LPWSAOVERLAPPED, Session*> OverlapClients;

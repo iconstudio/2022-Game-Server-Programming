@@ -191,14 +191,12 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 					auto& sz_world = contents_buffer.len;
 
 					World_instances.clear();
-					for (auto it = bf_world; it < bf_world + sz_world; it += stride)
+					for (auto it = bf_world; it < bf_world + sz_world_blob; it += stride)
 					{
 						auto instance = reinterpret_cast<Position*>(it);
 
 						World_instances.push_back(move(instance));
 					}
-
-					InvalidateRect(NULL, &Board_rect, FALSE);
 				}
 
 				/*
@@ -209,6 +207,7 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 				InvalidateRect(NULL, &Board_rect, FALSE);
 				ZeroMemory(recv_store, recv_size + 1);
 				*/
+				InvalidateRect(NULL, &Board_rect, FALSE);
 			}
 		}
 		break;
@@ -281,7 +280,14 @@ void Framework::Render(HWND window)
 		case States::Game:
 		{
 			BitBlt(DC_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
-			m_Player.Render(DC_double);
+
+			for_each(World_instances.begin(), World_instances.end(), [&](Position* pos) {
+				auto x = pos->x;
+				auto y = pos->y;
+
+				Draw::Ellipse(DC_double, x - 16, y - 16, x + 16, y + 16);
+			});
+			//m_Player.Render(DC_double);
 		}
 		break;
 

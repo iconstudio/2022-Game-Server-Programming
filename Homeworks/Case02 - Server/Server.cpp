@@ -72,7 +72,7 @@ void CallbackWorld(DWORD err, DWORD send_bytes
 		return;
 	}
 
-	framework.ProceedWorld(session, send_bytes);
+	session->ProceedWorld(send_bytes);
 }
 
 void ErrorDisplay(const char* title)

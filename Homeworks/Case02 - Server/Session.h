@@ -15,12 +15,18 @@ public:
 
 	int RecvPackets(LPWSABUF datas, UINT count, DWORD flags, LPWSAOVERLAPPED_COMPLETION_ROUTINE);
 	int SendPackets(LPWSABUF datas, UINT count, LPWSAOVERLAPPED_COMPLETION_ROUTINE);
+
 	void ReceiveStartPosition(DWORD begin_bytes = 0);
 	void ProceedStartPosition(DWORD recv_bytes);
 	Player* CreatePlayerCharacter();
+
 	void ReceiveKeyInput(DWORD begin_bytes = 0);
 	void ProceedKeyInput (DWORD recv_bytes);
 	bool TryMove(WPARAM input);
+
+	void GenerateWorldData();
+	void SendWorld(DWORD send_bytes = 0);
+	void ProceedWorld(DWORD send_bytes);
 
 	INT ID;
 	const SOCKET Socket;
@@ -35,4 +41,9 @@ private:
 	LPWSAOVERLAPPED Overlap_recv, Overlap_send;
 	WSABUF Buffer_recv;
 	char CBuffer_recv[BUFFSIZE];
+
+	WSABUF World_blob[2];
+	PacketInfo World_desc;
+	Position* LocalWorld;
+	char CBuffer_world[BUFFSIZE];
 };

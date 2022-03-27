@@ -3,18 +3,15 @@
 #include "Session.h"
 
 ServerFramework::ServerFramework()
-	: Overlap()
-	, World(), World_blob(), World_cbuffer()
-	, World_blob_length(0)
-	, Size_send(0)
+	: Overlap(), World(), World_desc()
 {
 	ZeroMemory(&Overlap, sizeof(Overlap));
 
 	Clients.reserve(CLIENTS_MAX_NUMBER);
 	OverlapClients.reserve(CLIENTS_MAX_NUMBER);
 
-	World_data_desc.Length = 0;
-	World_data_desc.Size = 0;
+	World_desc.Length = 0;
+	World_desc.Size = 0;
 	World.reserve(CLIENTS_MAX_NUMBER);
 }
 
@@ -117,6 +114,15 @@ void ServerFramework::RemoveClient(LPWSAOVERLAPPED overlap)
 	OverlapClients.erase(overlap);
 }
 
+void ServerFramework::RemoveInstance(Position* instance)
+{
+	auto fid = find(World.cbegin(), World.cend(), instance);
+	if (World.cend() != fid)
+	{
+		World.erase(fid);
+	}
+}
+
 void ServerFramework::RemoveSession(const INT id)
 {
 	auto session = GetClient(id);
@@ -150,82 +156,23 @@ void ServerFramework::AcceptSession()
 	Clients_index++;
 }
 
-void ServerFramework::BroadcastWorld()
-{
-	for (auto it = Clients.begin(); it != Clients.end(); ++it)
-	{
-		auto session = (*it).second;
-		if (session)
-		{
-			SendWorld(session);
-		}
-	}
-}
-
 void ServerFramework::AddInstance(Position* instance)
 {
 	World.emplace_back(instance);
 }
 
-void ServerFramework::GenerateWorldData()
-{
-	const auto cdata = World.data();
-	const auto number = GetClientsNumber();
-	const auto count = number + 1;
-	const auto size = sizeof(Position) * number;
-
-	ZeroMemory(World_blob, sizeof(World_blob));
-	// 0
-	WSABUF info_wbuffer{};
-	info_wbuffer.buf = reinterpret_cast<char*>(&World_data_desc);
-	info_wbuffer.len = sizeof(PacketInfo);
-	World_blob[0] = move(info_wbuffer);
-	World_data_desc.Size = size;
-	World_data_desc.Length = number;
-	// 1
-	WSABUF contents_wbuffer{};
-	if (0 < number)
+Position* ServerFramework::GetWorldInstanceData()
+{	
+	auto result = new Position[Clients_number]{};
+	if (0 < Clients_number)
 	{
-		contents_wbuffer.buf = reinterpret_cast<char*>(cdata);
-		contents_wbuffer.len = size;
+		int i = 0;
+		for_each(World.begin(), World.end(), [&](Position* instance) {
+			(result[i++]) = (*instance);
+		});
 	}
-	World_blob[1] = move(contents_wbuffer);
-}
 
-void ServerFramework::SendWorld(Session* session, DWORD begin_bytes)
-{
-	cout << "클라이언트 " << session->ID << "에 월드 정보를 보냅니다.\n";
-
-	int result = session->SendPackets(World_blob, 2, CallbackWorld);
-	if (SOCKET_ERROR == result)
-	{
-		int error = WSAGetLastError();
-		if (WSA_IO_PENDING != error)
-		{
-			ErrorDisplay("SendWorld()");
-			return;
-		}
-	}
-}
-
-void ServerFramework::ProceedWorld(Session* session, DWORD send_bytes)
-{
-	auto& Size_send = session->Size_send;
-	Size_send += send_bytes;
-	constexpr size_t sz_want = sizeof(Position);
-
-	if (sz_want <= Size_send)
-	{
-		SendWorld(session, 0);
-	}
-	else
-	{
-		cout << "클라이언트 " << session->ID << "에 월드 정보를 "
-			<< sz_want - Size_send << " 만큼 더 보냅니다.\n";
-
-		SendWorld(session, Size_send);
-	}
-	SleepEx(100, TRUE);
+	return result;
 }
 
 bool Player::TryMoveLT()
