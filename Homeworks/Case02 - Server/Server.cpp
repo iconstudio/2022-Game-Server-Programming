@@ -3,8 +3,7 @@
 #include "Session.h"
 
 ServerFramework framework{};
-WCHAR Msg_buffer[501];
-char Msg[501];
+TCHAR* Msg_buffer = NULL;
 
 int main()
 {
@@ -13,6 +12,17 @@ int main()
 
 	cout << "서버 종료됨\n";
 	while (true);
+
+	return 0;
+}
+
+DWORD WINAPI Communicate(LPVOID arg)
+{
+	cout << "서버 시작\n";
+	while (true)
+	{
+		framework.AcceptSession();
+	}
 
 	return 0;
 }
@@ -77,18 +87,16 @@ void CallbackWorld(DWORD err, DWORD send_bytes
 
 void ErrorDisplay(const char* title)
 {
-	ZeroMemory(Msg_buffer, 501);
-
 	FormatMessage(
 		FORMAT_MESSAGE_ALLOCATE_BUFFER |
 		FORMAT_MESSAGE_FROM_SYSTEM,
 		NULL, WSAGetLastError(),
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		Msg_buffer, 500, NULL);
+		(TCHAR*)&Msg_buffer, 0, NULL);
 
-	ZeroMemory(Msg, 501);
+	cout << title << " -> 오류: ";
+	setlocale(LC_ALL, "KOREAN");
+	wprintf(L"%s\n", Msg_buffer);
 
-	wcstombs_s(NULL, Msg, 500, Msg_buffer, 500);
-
-	cout << title << " -> 오류: " << Msg << "\n";
+	LocalFree(Msg_buffer);
 }

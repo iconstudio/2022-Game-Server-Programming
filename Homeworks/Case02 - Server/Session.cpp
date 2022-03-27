@@ -169,6 +169,7 @@ void Session::ProceedKeyInput(DWORD recv_bytes)
 		}
 		else
 		{
+			Framework->CastWorldChanged();
 			cout << "플레이어 " << ID << " - 위치: ("
 				<< Instance->x << ", " << Instance->y << ")\n";
 		}
@@ -227,7 +228,7 @@ void Session::GenerateWorldData()
 	if (!Framework) return;
 	if (LocalWorld) delete LocalWorld;
 
-	LocalWorld = Framework->GetWorldInstanceData();
+	LocalWorld = Framework->GetInstancesData();
 	const auto number = Framework->GetClientsNumber();
 	const auto count = number + 1;
 	const auto size = sizeof(Position) * number;
@@ -244,7 +245,6 @@ void Session::GenerateWorldData()
 
 void Session::SendWorld(DWORD begin_bytes)
 {
-	SleepEx(150, TRUE);
 	cout << "클라이언트 " << ID << "에 월드 정보를 보냅니다.\n";
 
 	int result = 0;
@@ -275,7 +275,6 @@ void Session::SendWorld(DWORD begin_bytes)
 			result = SendPackets(World_blob + 1, 1, CallbackWorld);
 		}*/
 	}
-
 	if (SOCKET_ERROR == result)
 	{
 		int error = WSAGetLastError();

@@ -191,6 +191,8 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 					auto& sz_world = contents_buffer.len;
 
 					World_instances.clear();
+					World_instances.shrink_to_fit();
+					World_instances.reserve(instance_count);
 					for (auto it = bf_world; it < bf_world + sz_world_blob; it += stride)
 					{
 						auto instance = reinterpret_cast<Position*>(it);
@@ -199,14 +201,6 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 					}
 				}
 
-				/*
-				auto position = reinterpret_cast<Position*>(recv_store);
-
-				m_Player.x = position->x;
-				m_Player.y = position->y;
-				InvalidateRect(NULL, &Board_rect, FALSE);
-				ZeroMemory(recv_store, recv_size + 1);
-				*/
 				InvalidateRect(NULL, &Board_rect, FALSE);
 			}
 		}

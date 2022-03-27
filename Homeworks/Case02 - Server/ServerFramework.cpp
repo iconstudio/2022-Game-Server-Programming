@@ -3,15 +3,13 @@
 #include "Session.h"
 
 ServerFramework::ServerFramework()
-	: Overlap(), World(), World_desc()
+	: Overlap(), World(), Instances_blob()
+	, Clients(), OverlapClients(), Clients_index(0), Clients_number(0)
 {
 	ZeroMemory(&Overlap, sizeof(Overlap));
 
 	Clients.reserve(CLIENTS_MAX_NUMBER);
 	OverlapClients.reserve(CLIENTS_MAX_NUMBER);
-
-	World_desc.Length = 0;
-	World_desc.Size = 0;
 	World.reserve(CLIENTS_MAX_NUMBER);
 }
 
@@ -48,6 +46,13 @@ void ServerFramework::Init()
 		ErrorDisplay("bind()");
 		return;
 	}
+
+	Event_world = CreateEvent(NULL, FALSE, FALSE, NULL);
+	if (0 == Event_world)
+	{
+		ErrorDisplay("CreateEvent()");
+		return;
+	}
 }
 
 void ServerFramework::Start()
@@ -58,10 +63,18 @@ void ServerFramework::Start()
 		return;
 	}
 
-	cout << "서버 시작\n";
+	auto worker = CreateThread(NULL, 0, Communicate, this, 0, NULL);
+	if (0 == worker)
+	{
+		ErrorDisplay("CreateThread()");
+		return;
+	}
+
 	while (true)
 	{
-		AcceptSession();
+		WaitForSingleObjectEx(Event_world, 200, TRUE);
+		GenerateInstancesData();
+		//SleepEx(200, TRUE);
 	}
 }
 
@@ -154,6 +167,7 @@ void ServerFramework::AcceptSession()
 	session->ReceiveStartPosition();
 
 	Clients_index++;
+	CastWorldChanged();
 }
 
 void ServerFramework::AddInstance(Position* instance)
@@ -161,8 +175,8 @@ void ServerFramework::AddInstance(Position* instance)
 	World.emplace_back(instance);
 }
 
-Position* ServerFramework::GetWorldInstanceData()
-{	
+Position* ServerFramework::GenerateInstancesData()
+{
 	auto result = new Position[Clients_number]{};
 	if (0 < Clients_number)
 	{
@@ -173,6 +187,16 @@ Position* ServerFramework::GetWorldInstanceData()
 	}
 
 	return result;
+}
+
+Position* ServerFramework::GetInstancesData()
+{
+	return Instances_blob;
+}
+
+void ServerFramework::CastWorldChanged()
+{
+	SetEvent(Event_world);
 }
 
 bool Player::TryMoveLT()
