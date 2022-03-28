@@ -21,19 +21,19 @@ Session::Session(ServerFramework* nframework, SOCKET sock)
 	info_wbuffer.len = sizeof(PacketInfo);
 	World_blob[0] = move(info_wbuffer);
 	WSABUF contents_wbuffer{};
-	contents_wbuffer.buf = nullptr;
+	contents_wbuffer.buf = reinterpret_cast<char*>(LocalWorld);
 	contents_wbuffer.len = 0;
 	World_blob[1] = move(contents_wbuffer);
 }
 
 Session::~Session()
 {
-	if (LocalWorld) delete LocalWorld;
+	delete Overlap_recv, Overlap_send_world;
 }
 
 void Session::ClearRecvBuffer()
 {
-	ZeroMemory(CBuffer_recv, BUFFSIZE);
+	ZeroMemory(CBuffer_recv, sizeof(CBuffer_recv));
 	Size_recv = 0;
 }
 
@@ -151,8 +151,10 @@ void Session::ProceedKeyInput(DWORD recv_bytes)
 		WPARAM received = 0;
 		memcpy_s(&received, sizeof(received), cbuffer, sz_recv);
 
-		auto moved = TryMove(received);
+		ClearOverlap(Overlap_recv);
+		ClearRecvBuffer();
 
+		auto moved = TryMove(received);
 		if (!moved)
 		{
 			cout << "플레이어 " << ID << " - 움직이지 않음.\n";
@@ -163,10 +165,11 @@ void Session::ProceedKeyInput(DWORD recv_bytes)
 				<< Instance->x << ", " << Instance->y << ")\n";
 		}
 
-		ClearOverlap(Overlap_recv);
-		ClearRecvBuffer();
 		ReceiveKeyInput(0);
-		Framework->BroadcastWorld();
+		if (moved)
+		{
+			Framework->BroadcastWorld();
+		}
 	}
 	else
 	{
@@ -215,17 +218,12 @@ bool Session::TryMove(WPARAM input)
 
 void Session::GenerateWorldData()
 {
-	if (LocalWorld)
-	{
-		delete[] LocalWorld;
-	}
-
 	if (!Framework) return;
 
 	const auto number = Framework->GetClientsNumber();
 	const auto size = sizeof(Position) * number;
 
-	LocalWorld = new Position[number]{};
+	ZeroMemory(LocalWorld, sizeof(LocalWorld));
 	int foundindex = 0; // 메모리 오류 방지
 	for (UINT i = 0; i < number; ++i)
 	{
@@ -240,7 +238,7 @@ void Session::GenerateWorldData()
 	World_desc.Length = number;
 
 	auto& contents_wbuffer = World_blob[1];
-	contents_wbuffer.buf = reinterpret_cast<char*>(LocalWorld);
+	//contents_wbuffer.buf = reinterpret_cast<char*>(LocalWorld);
 	contents_wbuffer.len = size;
 }
 
@@ -273,7 +271,7 @@ void Session::SendWorld(DWORD begin_bytes)
 
 			result = SendPackets(World_blob, 2, CallbackWorld);
 		}
-		else if (sz_info < begin_bytes) // 뒤에 렌더링 정보가 잘림
+		else // 뒤에 렌더링 정보가 잘림
 		{
 			auto& contents_wbuffer = World_blob[1];
 			contents_wbuffer.buf += begin_bytes;
