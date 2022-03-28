@@ -1,5 +1,6 @@
 #pragma once
 #include "stdafx.h"
+#include <queue>
 
 class Session;
 
@@ -32,11 +33,11 @@ public:
 
 	void RemoveClient(INT nid);
 	void RemoveClient(LPWSAOVERLAPPED overlap);
-	void RemoveInstance(Position* instance);
+	void RemovePlayerInstance(Player* instance);
 	void RemoveSession(const INT id);
 
-	void AddInstance(Position* instance);
-	Position** GetInstancesData();
+	void AssignPlayerInstance(Player*& instance);
+	Player* GetInstancesData(int index);
 
 	SOCKET Socket;
 
@@ -49,9 +50,12 @@ private:
 	INT sz_Address;
 
 	WSAOVERLAPPED Overlap;
-	vector<Position*> World;
+	vector<Player*> PlayerInst_pool;
+	Player* __PlayerInst_pool[CLIENTS_MAX_NUMBER];
+	UINT Players_pool_index = 0;
 
+	CRITICAL_SECTION Client_sect;
 	unordered_map<INT, Session*> Clients;
 	unordered_map<LPWSAOVERLAPPED, Session*> OverlapClients;
-	INT Clients_index , Clients_number;
+	INT Clients_index, Clients_number;
 };

@@ -3,18 +3,28 @@
 #include "Session.h"
 
 ServerFramework::ServerFramework()
-	: Overlap(), World()
+	: Overlap(), PlayerInst_pool(), __PlayerInst_pool()
 	, Clients(), OverlapClients(), Clients_index(0), Clients_number(0)
 {
 	ZeroMemory(&Overlap, sizeof(Overlap));
 
+	InitializeCriticalSection(&Client_sect);
+
 	Clients.reserve(CLIENTS_MAX_NUMBER);
 	OverlapClients.reserve(CLIENTS_MAX_NUMBER);
-	World.reserve(CLIENTS_MAX_NUMBER);
+	PlayerInst_pool.reserve(CLIENTS_MAX_NUMBER);
+
+	for (int i = 0; i < 10; ++i)
+	{
+		__PlayerInst_pool[i] = new Player;
+
+		PlayerInst_pool.push_back(__PlayerInst_pool[i]);
+	}
 }
 
 ServerFramework::~ServerFramework()
 {
+	DeleteCriticalSection(&Client_sect);
 	closesocket(Socket);
 	WSACleanup();
 }
@@ -65,19 +75,18 @@ void ServerFramework::Start()
 
 	while (true)
 	{
-		SleepEx(200, TRUE);
+		SleepEx(1000, TRUE);
 		BroadcastWorld();
 	}
 }
 
 UINT ServerFramework::GetClientsNumber() const
 {
-	return Clients_number;//Clients.size();
+	return Clients_number;
 }
 
 void ServerFramework::AddClient(INT nid, Session* session)
 {
-	Clients_number++;
 	Clients.emplace(nid, session);
 }
 
@@ -110,7 +119,6 @@ Session* ServerFramework::GetClient(LPWSAOVERLAPPED overlap)
 
 void ServerFramework::RemoveClient(INT nid)
 {
-	Clients_number--;
 	Clients.erase(nid);
 }
 
@@ -119,30 +127,37 @@ void ServerFramework::RemoveClient(LPWSAOVERLAPPED overlap)
 	OverlapClients.erase(overlap);
 }
 
-void ServerFramework::RemoveInstance(Position* instance)
+void ServerFramework::RemovePlayerInstance(Player* instance)
 {
-	auto fid = find(World.cbegin(), World.cend(), instance);
-	if (World.cend() != fid)
-	{
-		World.erase(fid);
-	}
+	PlayerInst_pool.emplace_back(move(instance));
 }
 
 void ServerFramework::RemoveSession(const INT id)
 {
+	EnterCriticalSection(&Client_sect);
 	auto session = GetClient(id);
+
+	auto inst = session->Instance;
+	if (inst) RemovePlayerInstance(inst);
+
 	RemoveClient(id);
 	delete session;
+	Clients_number--;
+	LeaveCriticalSection(&Client_sect);
 }
 
-void ServerFramework::AddInstance(Position* instance)
+void ServerFramework::AssignPlayerInstance(Player*& instance)
 {
-	World.emplace_back(instance);
+	EnterCriticalSection(&Client_sect);
+	auto inst = PlayerInst_pool.back();
+	PlayerInst_pool.pop_back();
+	instance = (inst); //GetInstancesData(Players_pool_index);
+	LeaveCriticalSection(&Client_sect);
 }
 
-Position** ServerFramework::GetInstancesData()
+Player* ServerFramework::GetInstancesData(int index)
 {
-	return World.data();
+	return __PlayerInst_pool[index];
 }
 
 void ServerFramework::AcceptSession()
@@ -162,6 +177,7 @@ void ServerFramework::AcceptSession()
 	cout << "클라이언트 접속: (" << inet_ntoa(client_addr.sin_addr)
 		<< "), 핸들: " << client_socket << "\n";
 
+	EnterCriticalSection(&Client_sect);
 	auto session = new Session(this, client_socket);
 	AddClient(Clients_index, session);
 
@@ -169,10 +185,13 @@ void ServerFramework::AcceptSession()
 	session->ReceiveStartPosition();
 
 	Clients_index++;
+	Clients_number++;
+	LeaveCriticalSection(&Client_sect);
 }
 
 void ServerFramework::BroadcastWorld()
 {
+	EnterCriticalSection(&Client_sect);
 	for_each(Clients.begin(), Clients.end(), [](pair<const INT, Session*> set) {
 		auto session = set.second;
 		if (session)
@@ -180,6 +199,7 @@ void ServerFramework::BroadcastWorld()
 			set.second->SendWorld();
 		}
 	});
+	LeaveCriticalSection(&Client_sect);
 }
 
 bool Player::TryMoveLT()

@@ -35,8 +35,6 @@ Session::~Session()
 {
 	if (Overlap_recv) Framework->RemoveClient(Overlap_recv);
 	if (Overlap_send) Framework->RemoveClient(Overlap_send);
-
-	if (Instance) Framework->RemoveInstance(Instance);
 	if (LocalWorld) delete LocalWorld;
 }
 
@@ -101,13 +99,13 @@ void Session::ProceedStartPosition(DWORD recv_bytes)
 		auto& sz_recv = wbuffer.len;
 
 		auto positions = reinterpret_cast<Position*>(cbuffer);
-		Instance = CreatePlayerCharacter();
+		//Instance = CreatePlayerCharacter();
+
+		Framework->AssignPlayerInstance(Instance);
 		Instance->x = positions->x;
 		Instance->y = positions->y;
-		cout << "플레이어 좌표: ("
+		cout << "플레이어 " << ID << "의 좌표: ("
 			<< positions->x << ", " << positions->y << ")\n";
-
-		Framework->AddInstance(Instance);
 
 		ClearOverlap(Overlap_recv);
 		ClearRecvBuffer();
@@ -235,7 +233,6 @@ void Session::GenerateWorldData()
 
 	if (!Framework) return;
 
-	auto world = Framework->GetInstancesData();
 	const auto number = Framework->GetClientsNumber();
 	const auto count = number + 1;
 	const auto size = sizeof(Position) * number;
@@ -243,7 +240,7 @@ void Session::GenerateWorldData()
 	auto temp = new Position[number]{};
 	for (int i = 0; i < number; ++i)
 	{
-		temp[i] = *(world[i]);
+		temp[i] = *(Framework->GetInstancesData(i));
 	}
 
 	World_desc.Size = size;
@@ -268,6 +265,7 @@ void Session::SendWorld(DWORD begin_bytes)
 	int result = 0;
 	if (0 == begin_bytes)
 	{
+		GenerateWorldData();
 		result = SendPackets(World_blob, 2, CallbackWorld);
 	}
 	else
@@ -312,7 +310,6 @@ void Session::ProceedWorld(DWORD send_bytes)
 
 	if (sz_want <= Size_send)
 	{
-		GenerateWorldData();
 		//SendWorld(0);
 		Size_send = 0;
 	}
