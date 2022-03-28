@@ -2,7 +2,7 @@
 
 struct Position
 {
-	int x, y;
+	USHORT x, y;
 };
 
 class Player : public Position

@@ -10,6 +10,17 @@
 using namespace std;
 using std::cout;
 
+struct PacketInfo
+{
+	USHORT Length = 0;
+	ULONG Size = 0;
+};
+
+struct Position
+{
+	USHORT x, y;
+};
+
 void CallbackStartPositions(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 void CallbackInputs(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 void CallbackWorld(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
@@ -28,14 +39,3 @@ constexpr int BOARD_W = CELL_W * CELLS_CNT_H;
 constexpr int BOARD_H = CELL_H * CELLS_CNT_V;
 constexpr int BOARD_X = (WND_SZ_W - BOARD_W) / 2;
 constexpr int BOARD_Y = (WND_SZ_H - BOARD_H - 20) / 2;
-
-struct PacketInfo
-{
-	ULONG Size = 0;
-	ULONG Length = 0;
-};
-
-struct Position
-{
-	int x, y;
-};

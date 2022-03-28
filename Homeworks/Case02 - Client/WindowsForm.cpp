@@ -2,15 +2,13 @@
 #include "Resource.h"
 #include "WindowsForm.h"
 
-WindowsForm::WindowsForm(LONG cw, LONG ch, UINT framerate)
-	: frames(framerate), width(cw), height(ch), procedure(NULL)
-	, frame_time(1.0 / framerate)
+WindowsForm::WindowsForm(LONG cw, LONG ch)
+	: width(cw), height(ch), hwindow(NULL), procedure(NULL)
 {}
 
 WindowsForm::~WindowsForm()
 {
 	UnregisterClassW(class_id, instance);
-	KillTimer(hwindow, 0);
 }
 
 BOOL WindowsForm::Initialize(HINSTANCE handle, WNDPROC procedure, LPCWSTR title, LPCWSTR id, INT cmd_show)
@@ -46,8 +44,6 @@ BOOL WindowsForm::Initialize(HINSTANCE handle, WNDPROC procedure, LPCWSTR title,
 	ShowWindow(hWnd, cmd_show);
 	UpdateWindow(hWnd);
 
-	SetTimer(hWnd, 0, (frame_time * 1000), NULL);
-
 	return TRUE;
 }
 
@@ -59,9 +55,4 @@ LONG WindowsForm::GetWidth() const
 LONG WindowsForm::GetHeight() const
 {
 	return height;
-}
-
-float WindowsForm::GetFrametime() const
-{
-	return frame_time;
 }

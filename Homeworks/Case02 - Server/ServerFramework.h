@@ -34,7 +34,6 @@ public:
 
 	void RemoveClient(INT rid);
 	void RemoveClient(LPWSAOVERLAPPED overlap);
-	void RemovePlayerInstance(Player* instance);
 	void RemoveSession(const INT id);
 
 	void AssignPlayerInstance(shared_ptr<Player>& instance);
@@ -46,10 +45,8 @@ private:
 	SOCKADDR_IN Address;
 	INT sz_Address;
 
-	WSAOVERLAPPED Overlap;
-
 	CRITICAL_SECTION Client_sect;
-
+	WSAOVERLAPPED Overlap;
 	vector<INT> IndexedClients;
 	unordered_map<INT, Session*> ClientsDict;
 	unordered_map<LPWSAOVERLAPPED, Session*> ClientsOverlap;

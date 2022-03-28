@@ -4,12 +4,12 @@
 
 Session::Session(ServerFramework* nframework, SOCKET sock)
 	: Framework(nframework), Socket(sock)
-	, Overlap_recv(new WSAOVERLAPPED()), Overlap_send(new WSAOVERLAPPED())
+	, Overlap_recv(new WSAOVERLAPPED()), Overlap_send_world(new WSAOVERLAPPED())
 	, Buffer_recv(), CBuffer_recv(), Size_recv(0)
-	, World_blob(), LocalWorld(), Size_send(0)
+	, World_blob(), LocalWorld(), Size_send_world(0)
 {
 	ClearOverlap(Overlap_recv);
-	ClearOverlap(Overlap_send);
+	ClearOverlap(Overlap_send_world);
 	ClearRecvBuffer();
 
 	Buffer_recv.buf = CBuffer_recv;
@@ -54,7 +54,7 @@ int Session::SendPackets(LPWSABUF datas, UINT count
 {
 	if (!datas) return 0;
 
-	return WSASend(Socket, datas, count, NULL, 0, Overlap_send, routine);
+	return WSASend(Socket, datas, count, NULL, 0, Overlap_send_world, routine);
 }
 
 void Session::ReceiveStartPosition(DWORD begin_bytes)
@@ -226,8 +226,8 @@ void Session::GenerateWorldData()
 	const auto size = sizeof(Position) * number;
 
 	LocalWorld = new Position[number]{};
-	int foundindex = 0;
-	for (int i = 0; i < number; ++i)
+	int foundindex = 0; // 메모리 오류 방지
+	for (UINT i = 0; i < number; ++i)
 	{
 		auto inst = (Framework->GetInstancesData(i));
 		if (inst)
@@ -261,8 +261,8 @@ void Session::SendWorld(DWORD begin_bytes)
 	}
 	else
 	{
-		result = SendPackets(World_blob, 2, CallbackWorld);
-		/*
+		//result = SendPackets(World_blob, 2, CallbackWorld);
+		
 		constexpr auto sz_info = sizeof(PacketInfo);
 
 		if (begin_bytes < sz_info) // 헤더가 잘림
@@ -280,7 +280,7 @@ void Session::SendWorld(DWORD begin_bytes)
 			contents_wbuffer.len -= begin_bytes;
 
 			result = SendPackets(World_blob + 1, 1, CallbackWorld);
-		}*/
+		}
 	}
 	if (SOCKET_ERROR == result)
 	{
@@ -296,19 +296,23 @@ void Session::SendWorld(DWORD begin_bytes)
 
 void Session::ProceedWorld(DWORD send_bytes)
 {
-	Size_send += send_bytes;
-	constexpr size_t sz_want = sizeof(PacketInfo) + sizeof(Position);
-
-	if (sz_want <= Size_send)
+	Size_send_world += send_bytes;
+	const auto sz_want = World_desc.Size;
+	if (0 == sz_want)
 	{
-		ClearOverlap(Overlap_send);
-		Size_send = 0;
+		return;
+	}
+
+	if (sz_want <= Size_send_world)
+	{
+		ClearOverlap(Overlap_send_world);
+		Size_send_world = 0;
 	}
 	else
 	{
 		cout << "클라이언트 " << ID << "에 월드 정보를 "
 			<< send_bytes << " 만큼 보냈습니다.\n";
 
-		SendWorld(Size_send);
+		SendWorld(Size_send_world);
 	}
 }

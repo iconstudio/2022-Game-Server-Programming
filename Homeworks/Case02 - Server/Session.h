@@ -29,8 +29,8 @@ public:
 
 	INT ID;
 	const SOCKET Socket;
-	ULONG Size_recv, Size_send;
-	LPWSAOVERLAPPED Overlap_recv, Overlap_send;
+	ULONG Size_recv, Size_send_world;
+	LPWSAOVERLAPPED Overlap_recv, Overlap_send_world;
 
 	shared_ptr<Player> Instance;
 	ServerFramework* Framework;

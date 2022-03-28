@@ -11,20 +11,18 @@
 
 #include <string>
 #include <vector>
-#include <queue>
-#include <memory>
 #include <algorithm>
 using namespace std;
-
-struct PacketInfo
-{
-	ULONG Size = 0;
-	ULONG Length = 0;
-};
 
 constexpr COLORREF C_BLACK = RGB(0, 0, 0);
 constexpr COLORREF C_WHITE = RGB(255, 255, 255);
 constexpr COLORREF C_GREEN = RGB(0, 128, 0);
+
+struct PacketInfo
+{
+	USHORT Length = 0;
+	ULONG Size = 0;
+};
 
 void ErrorAbort(const wchar_t* title);
 void ErrorDisplay(const wchar_t* title);

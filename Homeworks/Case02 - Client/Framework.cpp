@@ -4,7 +4,7 @@
 
 Framework::Framework()
 	: m_Player(), Lastkey(-1)
-	, Socket(), Server_address()
+	, Socket(), Server_address(), sz_Address(0)
 	, Buffer_recv(), Buffer_send(), Buffer_world(), CBuffer_world(), World_instances()
 	, Board_canvas(), Board_image()
 	, Board_rect{ BOARD_X, BOARD_Y, BOARD_X + BOARD_W, BOARD_Y + BOARD_H }

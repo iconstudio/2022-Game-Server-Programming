@@ -88,7 +88,7 @@ void ServerFramework::AcceptSession()
 	auto session = new Session(this, client_socket);
 	AddClient(Clients_index, session);
 	AddClient(session->Overlap_recv, session);
-	AddClient(session->Overlap_send, session);
+	AddClient(session->Overlap_send_world, session);
 	Clients_number++;
 
 	session->ID = Clients_index++;
@@ -104,7 +104,7 @@ void ServerFramework::BroadcastWorld()
 	{
 		for_each(ClientsDict.begin(), ClientsDict.end(), [](pair<const INT, Session*> set) {
 			auto session = set.second;
-			if (session)
+			if (session && 0 == session->Size_send_world)
 			{
 				session->GenerateWorldData();
 				session->SendWorld();
@@ -178,11 +178,6 @@ void ServerFramework::RemoveClient(LPWSAOVERLAPPED overlap)
 	ClientsOverlap.erase(overlap);
 }
 
-void ServerFramework::RemovePlayerInstance(Player* instance)
-{
-	PlayerInst_index--;
-}
-
 void ServerFramework::RemoveSession(const INT id)
 {
 	EnterCriticalSection(&Client_sect);
@@ -192,7 +187,7 @@ void ServerFramework::RemoveSession(const INT id)
 
 	RemoveClient(id);
 	RemoveClient(session->Overlap_recv);
-	RemoveClient(session->Overlap_send);
+	RemoveClient(session->Overlap_send_world);
 
 	delete session;
 	Clients_number--;

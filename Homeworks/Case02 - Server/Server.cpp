@@ -10,7 +10,7 @@ int main()
 	framework.Init();
 	framework.Start();
 
-	cout << "¼­¹ö Á¾·áµÊ\n";
+	cout << "¼­¹ö Á¾·áµÊ.\n";
 	while (true);
 
 	return 0;
@@ -70,7 +70,7 @@ void CallbackWorld(DWORD err, DWORD send_bytes
 		ErrorDisplay("CallbackWorld()");
 		return;
 	}
-	else
+	else if (0 != send_bytes)
 	{
 		session->ProceedWorld(send_bytes);
 	}

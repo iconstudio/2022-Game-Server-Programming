@@ -7,7 +7,7 @@
 WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
 
-WindowsForm window{ WND_SZ_W, WND_SZ_H, 30 };
+WindowsForm window{ WND_SZ_W, WND_SZ_H };
 Framework framework{};
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
