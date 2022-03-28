@@ -5,7 +5,7 @@
 ServerFramework::ServerFramework()
 	: Overlap()
 	, Players_pool(), IndexedClients(), ClientsDict(), ClientsOverlap()
-	, Clients_index(0), Clients_number(0), PlayerInst_index(0)
+	, Clients_index_order(0), Clients_number(0), PlayerInst_index(0)
 {
 	ZeroMemory(&Overlap, sizeof(Overlap));
 
@@ -86,12 +86,12 @@ void ServerFramework::AcceptSession()
 
 	EnterCriticalSection(&Client_sect);
 	auto session = new Session(this, client_socket);
-	AddClient(Clients_index, session);
+	AddClient(Clients_index_order, session);
 	AddClient(session->Overlap_recv, session);
 	AddClient(session->Overlap_send_world, session);
 	Clients_number++;
 
-	session->ID = Clients_index++;
+	session->ID = Clients_index_order++;
 
 	session->ReceiveStartPosition();
 	LeaveCriticalSection(&Client_sect);

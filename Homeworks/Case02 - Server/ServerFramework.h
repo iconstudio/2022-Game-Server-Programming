@@ -50,7 +50,7 @@ private:
 	vector<INT> IndexedClients;
 	unordered_map<INT, Session*> ClientsDict;
 	unordered_map<LPWSAOVERLAPPED, Session*> ClientsOverlap;
-	INT Clients_index, Clients_number;
+	INT Clients_index_order, Clients_number;
 
 	vector<Player*> Players_pool;
 	UINT PlayerInst_index;

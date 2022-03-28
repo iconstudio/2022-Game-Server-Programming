@@ -44,5 +44,4 @@ private:
 	WSABUF World_blob[2];
 	PacketInfo World_desc;
 	Position* LocalWorld;
-	char CBuffer_world[BUFFSIZE];
 };
