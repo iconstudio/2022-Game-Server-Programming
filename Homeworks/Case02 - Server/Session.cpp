@@ -6,7 +6,7 @@ Session::Session(ServerFramework* nframework, SOCKET sock)
 	: Framework(nframework), Socket(sock)
 	, Overlap_recv(new WSAOVERLAPPED()), Overlap_send(new WSAOVERLAPPED())
 	, Buffer_recv(), CBuffer_recv(), Size_recv(0)
-	, World_blob(), Size_send(0)
+	, World_blob(), LocalWorld(), Size_send(0)
 {
 	ClearOverlap(Overlap_recv);
 	ClearOverlap(Overlap_send);
@@ -33,9 +33,11 @@ Session::Session(ServerFramework* nframework, SOCKET sock)
 
 Session::~Session()
 {
-	Framework->RemoveInstance(Instance);
-	Framework->RemoveClient(Overlap_recv);
-	Framework->RemoveClient(Overlap_send);
+	if (Overlap_recv) Framework->RemoveClient(Overlap_recv);
+	if (Overlap_send) Framework->RemoveClient(Overlap_send);
+
+	if (Instance) Framework->RemoveInstance(Instance);
+	if (LocalWorld) delete LocalWorld;
 }
 
 void Session::ClearRecvBuffer()
@@ -80,6 +82,7 @@ void Session::ReceiveStartPosition(DWORD begin_bytes)
 		int error = WSAGetLastError();
 		if (WSA_IO_PENDING != error)
 		{
+			Framework->RemoveSession(ID);
 			ErrorDisplay("ReceiveStartPosition()");
 			return;
 		}
@@ -141,6 +144,7 @@ void Session::ReceiveKeyInput(DWORD begin_bytes)
 		int error = WSAGetLastError();
 		if (WSA_IO_PENDING != error)
 		{
+			Framework->RemoveSession(ID);
 			ErrorDisplay("ReceiveKeyInput()");
 			return;
 		}
@@ -169,7 +173,6 @@ void Session::ProceedKeyInput(DWORD recv_bytes)
 		}
 		else
 		{
-			Framework->CastWorldChanged();
 			cout << "플레이어 " << ID << " - 위치: ("
 				<< Instance->x << ", " << Instance->y << ")\n";
 		}
@@ -225,27 +228,42 @@ bool Session::TryMove(WPARAM input)
 
 void Session::GenerateWorldData()
 {
-	if (!Framework) return;
-	if (LocalWorld) delete LocalWorld;
+	if (LocalWorld)
+	{
+		delete[] LocalWorld;
+	}
 
-	LocalWorld = Framework->GetInstancesData();
+	if (!Framework) return;
+
+	auto world = Framework->GetInstancesData();
 	const auto number = Framework->GetClientsNumber();
 	const auto count = number + 1;
 	const auto size = sizeof(Position) * number;
 
+	auto temp = new Position[number]{};
+	for (int i = 0; i < number; ++i)
+	{
+		temp[i] = *(world[i]);
+	}
+
 	World_desc.Size = size;
 	World_desc.Length = number;
+
+	LocalWorld = move(temp);
 	auto& contents_wbuffer = World_blob[1];
-	if (0 < number)
-	{
-		contents_wbuffer.buf = reinterpret_cast<char*>(LocalWorld);
-		contents_wbuffer.len = size;
-	}
+	contents_wbuffer.buf = reinterpret_cast<char*>(LocalWorld);
+	contents_wbuffer.len = size;
 }
 
 void Session::SendWorld(DWORD begin_bytes)
 {
 	cout << "클라이언트 " << ID << "에 월드 정보를 보냅니다.\n";
+
+	if (!LocalWorld)
+	{
+		cout << "월드 포인터 오류\n";
+		return;
+	}
 
 	int result = 0;
 	if (0 == begin_bytes)
@@ -271,7 +289,7 @@ void Session::SendWorld(DWORD begin_bytes)
 			auto& contents_wbuffer = World_blob[1];
 			contents_wbuffer.buf += begin_bytes;
 			contents_wbuffer.len -= begin_bytes;
-			
+
 			result = SendPackets(World_blob + 1, 1, CallbackWorld);
 		}*/
 	}
@@ -280,6 +298,7 @@ void Session::SendWorld(DWORD begin_bytes)
 		int error = WSAGetLastError();
 		if (WSA_IO_PENDING != error)
 		{
+			Framework->RemoveSession(ID);
 			ErrorDisplay("SendWorld()");
 			return;
 		}
@@ -294,7 +313,7 @@ void Session::ProceedWorld(DWORD send_bytes)
 	if (sz_want <= Size_send)
 	{
 		GenerateWorldData();
-		SendWorld(0);
+		//SendWorld(0);
 		Size_send = 0;
 	}
 	else

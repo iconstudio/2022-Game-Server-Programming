@@ -48,6 +48,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case WM_CREATE:
 		{
 			framework.Init(hWnd);
+			//SetTimer(hWnd, 0, window.frames * 1000, NULL);
 		}
 		break;
 
@@ -60,6 +61,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case WM_KEYDOWN:
 		{
 			framework.InputEvent(wParam);
+		}
+		break;
+
+		case WM_TIMER:
+		{
+			//InvalidateRect(hWnd, NULL, FALSE);
 		}
 		break;
 

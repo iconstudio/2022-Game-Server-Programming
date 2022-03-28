@@ -3,7 +3,7 @@
 #include "Session.h"
 
 ServerFramework::ServerFramework()
-	: Overlap(), World(), Instances_blob()
+	: Overlap(), World()
 	, Clients(), OverlapClients(), Clients_index(0), Clients_number(0)
 {
 	ZeroMemory(&Overlap, sizeof(Overlap));
@@ -46,13 +46,6 @@ void ServerFramework::Init()
 		ErrorDisplay("bind()");
 		return;
 	}
-
-	Event_world = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (0 == Event_world)
-	{
-		ErrorDisplay("CreateEvent()");
-		return;
-	}
 }
 
 void ServerFramework::Start()
@@ -72,9 +65,8 @@ void ServerFramework::Start()
 
 	while (true)
 	{
-		WaitForSingleObjectEx(Event_world, 200, TRUE);
-		GenerateInstancesData();
-		//SleepEx(200, TRUE);
+		SleepEx(200, TRUE);
+		BroadcastWorld();
 	}
 }
 
@@ -143,6 +135,16 @@ void ServerFramework::RemoveSession(const INT id)
 	delete session;
 }
 
+void ServerFramework::AddInstance(Position* instance)
+{
+	World.emplace_back(instance);
+}
+
+Position** ServerFramework::GetInstancesData()
+{
+	return World.data();
+}
+
 void ServerFramework::AcceptSession()
 {
 	SOCKADDR_IN client_addr;
@@ -167,36 +169,17 @@ void ServerFramework::AcceptSession()
 	session->ReceiveStartPosition();
 
 	Clients_index++;
-	CastWorldChanged();
 }
 
-void ServerFramework::AddInstance(Position* instance)
+void ServerFramework::BroadcastWorld()
 {
-	World.emplace_back(instance);
-}
-
-Position* ServerFramework::GenerateInstancesData()
-{
-	auto result = new Position[Clients_number]{};
-	if (0 < Clients_number)
-	{
-		int i = 0;
-		for_each(World.begin(), World.end(), [&](Position* instance) {
-			(result[i++]) = (*instance);
-		});
-	}
-
-	return result;
-}
-
-Position* ServerFramework::GetInstancesData()
-{
-	return Instances_blob;
-}
-
-void ServerFramework::CastWorldChanged()
-{
-	SetEvent(Event_world);
+	for_each(Clients.begin(), Clients.end(), [](pair<const INT, Session*> set) {
+		auto session = set.second;
+		if (session)
+		{
+			set.second->SendWorld();
+		}
+	});
 }
 
 bool Player::TryMoveLT()

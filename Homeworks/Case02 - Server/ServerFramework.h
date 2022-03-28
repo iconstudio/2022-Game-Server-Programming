@@ -36,14 +36,13 @@ public:
 	void RemoveSession(const INT id);
 
 	void AddInstance(Position* instance);
-	Position* GenerateInstancesData();
-	Position* GetInstancesData();
-	void CastWorldChanged();
+	Position** GetInstancesData();
 
 	SOCKET Socket;
 
 private:
 	void AcceptSession();
+	void BroadcastWorld();
 	friend DWORD WINAPI Communicate(LPVOID arg);
 
 	SOCKADDR_IN Address;
@@ -51,8 +50,6 @@ private:
 
 	WSAOVERLAPPED Overlap;
 	vector<Position*> World;
-	Position* Instances_blob;
-	HANDLE Event_world;
 
 	unordered_map<INT, Session*> Clients;
 	unordered_map<LPWSAOVERLAPPED, Session*> OverlapClients;

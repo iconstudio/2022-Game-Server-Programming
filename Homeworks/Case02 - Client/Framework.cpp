@@ -169,11 +169,16 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 			result = WSARecv(Socket, Buffer_world, 2, &recv_size, &recv_flag, 0, 0);
 			if (SOCKET_ERROR == result)
 			{
-				if (WSAGetLastError() != WSAEWOULDBLOCK)
+				if (WSAEWOULDBLOCK != WSAGetLastError())
 				{
 					ErrorDisplay(L"WSARecv 1");
 					break;
 				}
+			}
+
+			if (0 == recv_size)
+			{
+				break;
 			}
 
 			if (sz_header <= recv_size)
@@ -183,6 +188,8 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 				ULONG instance_count = info->Length;
 				ULONG sz_world_blob = info->Size;
 				recv_size -= sz_header;
+				World_instances.clear();
+				World_instances.shrink_to_fit();
 
 				if (sz_world_blob <= recv_size)
 				{
@@ -190,8 +197,6 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 					auto& bf_world = contents_buffer.buf;
 					auto& sz_world = contents_buffer.len;
 
-					World_instances.clear();
-					World_instances.shrink_to_fit();
 					World_instances.reserve(instance_count);
 					for (auto it = bf_world; it < bf_world + sz_world_blob; it += stride)
 					{
@@ -199,9 +204,9 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 
 						World_instances.push_back(move(instance));
 					}
-				}
 
-				InvalidateRect(NULL, &Board_rect, FALSE);
+					InvalidateRect(Window, NULL, FALSE);
+				}
 			}
 		}
 		break;
@@ -221,7 +226,7 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 				int result = WSASend(Socket, &Buffer_send, 1, &send_size, 0, NULL, NULL);
 				if (SOCKET_ERROR == result)
 				{
-					if (WSAGetLastError() != WSAEWOULDBLOCK)
+					if (WSAEWOULDBLOCK != WSAGetLastError())
 					{
 						ErrorDisplay(L"WSASend 2");
 						return;
