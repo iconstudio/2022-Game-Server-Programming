@@ -28,16 +28,17 @@ public:
 	void AddClient(LPWSAOVERLAPPED overlap, Session* session);
 	UINT GetClientsNumber() const;
 
+	Session* GetClientByIndex(INT nth);
 	Session* GetClient(INT fid);
 	Session* GetClient(LPWSAOVERLAPPED overlap);
 
-	void RemoveClient(INT nid);
+	void RemoveClient(INT rid);
 	void RemoveClient(LPWSAOVERLAPPED overlap);
 	void RemovePlayerInstance(Player* instance);
 	void RemoveSession(const INT id);
 
-	void AssignPlayerInstance(Player*& instance);
-	Player* GetInstancesData(int index);
+	void AssignPlayerInstance(shared_ptr<Player>& instance);
+	Player* GetInstancesData(INT index);
 
 	SOCKET Socket;
 
@@ -48,10 +49,12 @@ private:
 	WSAOVERLAPPED Overlap;
 
 	CRITICAL_SECTION Client_sect;
-	unordered_map<INT, Session*> Clients;
-	unordered_map<LPWSAOVERLAPPED, Session*> OverlapClients;
+
+	vector<INT> IndexedClients;
+	unordered_map<INT, Session*> ClientsDict;
+	unordered_map<LPWSAOVERLAPPED, Session*> ClientsOverlap;
 	INT Clients_index, Clients_number;
 
-	vector<Player*> PlayerInst_pool;
-	UINT PlayerInst_index = 0;
+	vector<Player*> Players_pool;
+	UINT PlayerInst_index;
 };

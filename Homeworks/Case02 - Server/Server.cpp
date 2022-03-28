@@ -64,14 +64,11 @@ void CallbackWorld(DWORD err, DWORD send_bytes
 		return;
 	}
 
-	if (0 != err || 0 == send_bytes)
+	if (0 != err)
 	{
-		if (WSA_IO_PENDING != err)
-		{
-			//framework.RemoveSession(session->ID);
-			//ErrorDisplay("CallbackWorld()");
-			//return;
-		}
+		framework.RemoveSession(session->ID);
+		ErrorDisplay("CallbackWorld()");
+		return;
 	}
 	else
 	{

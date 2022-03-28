@@ -223,13 +223,17 @@ void Session::GenerateWorldData()
 	if (!Framework) return;
 
 	const auto number = Framework->GetClientsNumber();
-	const auto count = number + 1;
 	const auto size = sizeof(Position) * number;
 
 	LocalWorld = new Position[number]{};
+	int foundindex = 0;
 	for (int i = 0; i < number; ++i)
 	{
-		LocalWorld[i] = *(Framework->GetInstancesData(i));
+		auto inst = (Framework->GetInstancesData(i));
+		if (inst)
+		{
+			LocalWorld[foundindex++] = *inst;
+		}
 	}
 
 	World_desc.Size = size;

@@ -32,7 +32,7 @@ public:
 	ULONG Size_recv, Size_send;
 	LPWSAOVERLAPPED Overlap_recv, Overlap_send;
 
-	Player* Instance;
+	shared_ptr<Player> Instance;
 	ServerFramework* Framework;
 
 private:

@@ -3,20 +3,17 @@
 #include "Session.h"
 
 ServerFramework::ServerFramework()
-	: Overlap(), PlayerInst_pool()
-	, Clients(), OverlapClients(), Clients_index(0), Clients_number(0)
+	: Overlap()
+	, Players_pool(), IndexedClients(), ClientsDict(), ClientsOverlap()
+	, Clients_index(0), Clients_number(0), PlayerInst_index(0)
 {
 	ZeroMemory(&Overlap, sizeof(Overlap));
 
 	InitializeCriticalSection(&Client_sect);
 
-	Clients.reserve(CLIENTS_MAX_NUMBER);
-	OverlapClients.reserve(CLIENTS_MAX_NUMBER);
-	PlayerInst_pool.reserve(CLIENTS_MAX_NUMBER);
-	for (int i = 0; i < 10; ++i)
-	{
-		PlayerInst_pool.push_back(new Player);
-	}
+	IndexedClients.reserve(CLIENTS_MAX_NUMBER);
+	ClientsDict.reserve(CLIENTS_MAX_NUMBER);
+	ClientsOverlap.reserve(CLIENTS_MAX_NUMBER);
 }
 
 ServerFramework::~ServerFramework()
@@ -105,7 +102,7 @@ void ServerFramework::BroadcastWorld()
 	EnterCriticalSection(&Client_sect);
 	if (0 < Clients_number)
 	{
-		for_each(Clients.begin(), Clients.end(), [](pair<const INT, Session*> set) {
+		for_each(ClientsDict.begin(), ClientsDict.end(), [](pair<const INT, Session*> set) {
 			auto session = set.second;
 			if (session)
 			{
@@ -124,18 +121,29 @@ UINT ServerFramework::GetClientsNumber() const
 
 void ServerFramework::AddClient(INT nid, Session* session)
 {
-	Clients.emplace(nid, session);
+	IndexedClients.push_back(nid);
+	ClientsDict.emplace(nid, session);
 }
 
 void ServerFramework::AddClient(LPWSAOVERLAPPED overlap, Session* session)
 {
-	OverlapClients.emplace(overlap, session);
+	ClientsOverlap.emplace(overlap, session);
+}
+
+Session* ServerFramework::GetClientByIndex(INT nth)
+{
+	if (nth < Clients_number)
+	{
+		return GetClient(IndexedClients.at(nth));
+	}
+
+	return nullptr;
 }
 
 Session* ServerFramework::GetClient(INT fid)
 {
-	auto it = Clients.find(fid);
-	if (it != Clients.cend())
+	auto it = ClientsDict.find(fid);
+	if (it != ClientsDict.cend())
 	{
 		return (*it).second;
 	}
@@ -145,8 +153,8 @@ Session* ServerFramework::GetClient(INT fid)
 
 Session* ServerFramework::GetClient(LPWSAOVERLAPPED overlap)
 {
-	auto it = OverlapClients.find(overlap);
-	if (it != OverlapClients.cend())
+	auto it = ClientsOverlap.find(overlap);
+	if (it != ClientsOverlap.cend())
 	{
 		return (*it).second;
 	}
@@ -154,19 +162,24 @@ Session* ServerFramework::GetClient(LPWSAOVERLAPPED overlap)
 	return nullptr;
 }
 
-void ServerFramework::RemoveClient(INT nid)
+void ServerFramework::RemoveClient(INT rid)
 {
-	Clients.erase(nid);
+	auto it = find(IndexedClients.begin(), IndexedClients.end(), rid);
+	if (it != IndexedClients.end())
+	{
+		IndexedClients.erase(it);
+	}
+
+	ClientsDict.erase(rid);
 }
 
 void ServerFramework::RemoveClient(LPWSAOVERLAPPED overlap)
 {
-	OverlapClients.erase(overlap);
+	ClientsOverlap.erase(overlap);
 }
 
 void ServerFramework::RemovePlayerInstance(Player* instance)
 {
-	//PlayerInst_pool.emplace_back((instance));
 	PlayerInst_index--;
 }
 
@@ -175,8 +188,7 @@ void ServerFramework::RemoveSession(const INT id)
 	EnterCriticalSection(&Client_sect);
 	auto session = GetClient(id);
 
-	auto inst = session->Instance;
-	if (inst) RemovePlayerInstance(inst);
+	session->Instance.reset();
 
 	RemoveClient(id);
 	RemoveClient(session->Overlap_recv);
@@ -187,17 +199,18 @@ void ServerFramework::RemoveSession(const INT id)
 	LeaveCriticalSection(&Client_sect);
 }
 
-void ServerFramework::AssignPlayerInstance(Player*& instance)
+void ServerFramework::AssignPlayerInstance(shared_ptr<Player>& instance)
 {
-	EnterCriticalSection(&Client_sect);
-	auto inst = PlayerInst_pool.at(PlayerInst_index++);
-	instance = (inst);
-	LeaveCriticalSection(&Client_sect);
+	instance = make_shared<Player>();
 }
 
-Player* ServerFramework::GetInstancesData(int index)
+Player* ServerFramework::GetInstancesData(INT index)
 {
-	return PlayerInst_pool[index];
+	EnterCriticalSection(&Client_sect);
+	auto player = GetClientByIndex(index);
+	LeaveCriticalSection(&Client_sect);
+
+	return (player->Instance).get();
 }
 
 bool Player::TryMoveLT()
