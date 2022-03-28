@@ -12,9 +12,6 @@ Session::Session(ServerFramework* nframework, SOCKET sock)
 	ClearOverlap(Overlap_send);
 	ClearRecvBuffer();
 
-	Framework->AddClient(Overlap_recv, this);
-	Framework->AddClient(Overlap_send, this);
-
 	Buffer_recv.buf = CBuffer_recv;
 	Buffer_recv.len = BUFFSIZE;
 
@@ -33,8 +30,6 @@ Session::Session(ServerFramework* nframework, SOCKET sock)
 
 Session::~Session()
 {
-	if (Overlap_recv) Framework->RemoveClient(Overlap_recv);
-	if (Overlap_send) Framework->RemoveClient(Overlap_send);
 	if (LocalWorld) delete LocalWorld;
 }
 

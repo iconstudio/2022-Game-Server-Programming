@@ -50,12 +50,13 @@ private:
 	INT sz_Address;
 
 	WSAOVERLAPPED Overlap;
-	vector<Player*> PlayerInst_pool;
-	Player* __PlayerInst_pool[CLIENTS_MAX_NUMBER];
-	UINT Players_pool_index = 0;
 
 	CRITICAL_SECTION Client_sect;
 	unordered_map<INT, Session*> Clients;
 	unordered_map<LPWSAOVERLAPPED, Session*> OverlapClients;
 	INT Clients_index, Clients_number;
+
+	vector<Player*> PlayerInst_pool;
+	Player* __PlayerInst_pool[CLIENTS_MAX_NUMBER];
+	UINT Players_pool_index = 0;
 };

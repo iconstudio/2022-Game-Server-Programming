@@ -10,10 +10,7 @@ ServerFramework::ServerFramework()
 
 	InitializeCriticalSection(&Client_sect);
 
-	Clients.reserve(CLIENTS_MAX_NUMBER);
-	OverlapClients.reserve(CLIENTS_MAX_NUMBER);
 	PlayerInst_pool.reserve(CLIENTS_MAX_NUMBER);
-
 	for (int i = 0; i < 10; ++i)
 	{
 		__PlayerInst_pool[i] = new Player;
@@ -129,7 +126,7 @@ void ServerFramework::RemoveClient(LPWSAOVERLAPPED overlap)
 
 void ServerFramework::RemovePlayerInstance(Player* instance)
 {
-	PlayerInst_pool.emplace_back(move(instance));
+	PlayerInst_pool.emplace_back((instance));
 }
 
 void ServerFramework::RemoveSession(const INT id)
@@ -141,6 +138,9 @@ void ServerFramework::RemoveSession(const INT id)
 	if (inst) RemovePlayerInstance(inst);
 
 	RemoveClient(id);
+	RemoveClient(session->Overlap_recv);
+	RemoveClient(session->Overlap_send);
+
 	delete session;
 	Clients_number--;
 	LeaveCriticalSection(&Client_sect);
@@ -180,25 +180,29 @@ void ServerFramework::AcceptSession()
 	EnterCriticalSection(&Client_sect);
 	auto session = new Session(this, client_socket);
 	AddClient(Clients_index, session);
-
-	session->ID = Clients_index;
-	session->ReceiveStartPosition();
-
-	Clients_index++;
+	AddClient(session->Overlap_recv, session);
+	AddClient(session->Overlap_send, session);
 	Clients_number++;
+
+	session->ID = Clients_index++;
+
+	session->ReceiveStartPosition();
 	LeaveCriticalSection(&Client_sect);
 }
 
 void ServerFramework::BroadcastWorld()
 {
 	EnterCriticalSection(&Client_sect);
-	for_each(Clients.begin(), Clients.end(), [](pair<const INT, Session*> set) {
-		auto session = set.second;
-		if (session)
-		{
-			set.second->SendWorld();
-		}
-	});
+	if (0 < Clients_number)
+	{
+		for_each(Clients.begin(), Clients.end(), [](pair<const INT, Session*> set) {
+			auto session = set.second;
+			if (session)
+			{
+				set.second->SendWorld();
+			}
+		});
+	}
 	LeaveCriticalSection(&Client_sect);
 }
 

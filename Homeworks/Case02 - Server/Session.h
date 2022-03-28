@@ -31,6 +31,7 @@ public:
 	INT ID;
 	const SOCKET Socket;
 	ULONG Size_recv, Size_send;
+	LPWSAOVERLAPPED Overlap_recv, Overlap_send;
 
 	Player* Instance;
 	ServerFramework* Framework;
@@ -38,7 +39,6 @@ public:
 private:
 	SOCKADDR_IN Address;
 	INT sz_Address;
-	LPWSAOVERLAPPED Overlap_recv, Overlap_send;
 	WSABUF Buffer_recv;
 	char CBuffer_recv[BUFFSIZE];
 
