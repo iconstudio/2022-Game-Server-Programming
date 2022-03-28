@@ -18,7 +18,6 @@ public:
 
 	void ReceiveStartPosition(DWORD begin_bytes = 0);
 	void ProceedStartPosition(DWORD recv_bytes);
-	Player* CreatePlayerCharacter();
 
 	void ReceiveKeyInput(DWORD begin_bytes = 0);
 	void ProceedKeyInput (DWORD recv_bytes);

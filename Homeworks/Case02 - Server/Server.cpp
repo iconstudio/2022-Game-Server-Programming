@@ -16,23 +16,12 @@ int main()
 	return 0;
 }
 
-DWORD WINAPI Communicate(LPVOID arg)
-{
-	cout << "서버 시작\n";
-	while (true)
-	{
-		framework.AcceptSession();
-	}
-
-	return 0;
-}
-
 void CallbackStartPositions(DWORD err, DWORD recv_bytes, LPWSAOVERLAPPED over, DWORD flags)
 {
 	auto session = framework.GetClient(over);
 	if (!session)
 	{
-		ErrorDisplay("No client session.");
+		ErrorDisplay("CallbackStartPositions: No client session.");
 		return;
 	}
 
@@ -51,7 +40,7 @@ void CallbackInputs(DWORD err, DWORD recv_bytes, LPWSAOVERLAPPED over, DWORD fla
 	auto session = framework.GetClient(over);
 	if (!session)
 	{
-		ErrorDisplay("No client session.");
+		ErrorDisplay("CallbackInputs: No client session.");
 		return;
 	}
 
@@ -71,18 +60,23 @@ void CallbackWorld(DWORD err, DWORD send_bytes
 	auto session = framework.GetClient(over);
 	if (!session)
 	{
-		ErrorDisplay("No client session.");
+		ErrorDisplay("CallbackWorld: No client session.");
 		return;
 	}
 
 	if (0 != err || 0 == send_bytes)
 	{
-		framework.RemoveSession(session->ID);
-		ErrorDisplay("CallbackWorld()");
-		return;
+		if (WSA_IO_PENDING != err)
+		{
+			//framework.RemoveSession(session->ID);
+			//ErrorDisplay("CallbackWorld()");
+			//return;
+		}
 	}
-
-	session->ProceedWorld(send_bytes);
+	else
+	{
+		session->ProceedWorld(send_bytes);
+	}
 }
 
 void ErrorDisplay(const char* title)

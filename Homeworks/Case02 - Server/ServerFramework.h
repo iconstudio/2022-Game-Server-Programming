@@ -4,8 +4,6 @@
 
 class Session;
 
-DWORD WINAPI Communicate(LPVOID arg);
-
 class Player : public Position
 {
 public:
@@ -23,6 +21,8 @@ public:
 
 	void Init();
 	void Start();
+	void AcceptSession();
+	void BroadcastWorld();
 
 	void AddClient(INT nid, Session* session);
 	void AddClient(LPWSAOVERLAPPED overlap, Session* session);
@@ -42,10 +42,6 @@ public:
 	SOCKET Socket;
 
 private:
-	void AcceptSession();
-	void BroadcastWorld();
-	friend DWORD WINAPI Communicate(LPVOID arg);
-
 	SOCKADDR_IN Address;
 	INT sz_Address;
 
@@ -57,6 +53,5 @@ private:
 	INT Clients_index, Clients_number;
 
 	vector<Player*> PlayerInst_pool;
-	Player* __PlayerInst_pool[CLIENTS_MAX_NUMBER];
-	UINT Players_pool_index = 0;
+	UINT PlayerInst_index = 0;
 };

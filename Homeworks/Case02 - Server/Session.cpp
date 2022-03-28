@@ -24,8 +24,6 @@ Session::Session(ServerFramework* nframework, SOCKET sock)
 	contents_wbuffer.buf = nullptr;
 	contents_wbuffer.len = 0;
 	World_blob[1] = move(contents_wbuffer);
-
-	GenerateWorldData();
 }
 
 Session::~Session()
@@ -105,7 +103,7 @@ void Session::ProceedStartPosition(DWORD recv_bytes)
 		ClearOverlap(Overlap_recv);
 		ClearRecvBuffer();
 		ReceiveKeyInput();
-		SendWorld();
+		Framework->BroadcastWorld();
 	}
 	else
 	{
@@ -114,11 +112,6 @@ void Session::ProceedStartPosition(DWORD recv_bytes)
 
 		ReceiveStartPosition(Size_recv);
 	}
-}
-
-Player* Session::CreatePlayerCharacter()
-{
-	return (new Player);
 }
 
 void Session::ReceiveKeyInput(DWORD begin_bytes)
@@ -173,6 +166,7 @@ void Session::ProceedKeyInput(DWORD recv_bytes)
 		ClearOverlap(Overlap_recv);
 		ClearRecvBuffer();
 		ReceiveKeyInput(0);
+		Framework->BroadcastWorld();
 	}
 	else
 	{
@@ -232,16 +226,15 @@ void Session::GenerateWorldData()
 	const auto count = number + 1;
 	const auto size = sizeof(Position) * number;
 
-	auto temp = new Position[number]{};
+	LocalWorld = new Position[number]{};
 	for (int i = 0; i < number; ++i)
 	{
-		temp[i] = *(Framework->GetInstancesData(i));
+		LocalWorld[i] = *(Framework->GetInstancesData(i));
 	}
 
 	World_desc.Size = size;
 	World_desc.Length = number;
 
-	LocalWorld = move(temp);
 	auto& contents_wbuffer = World_blob[1];
 	contents_wbuffer.buf = reinterpret_cast<char*>(LocalWorld);
 	contents_wbuffer.len = size;
@@ -260,7 +253,6 @@ void Session::SendWorld(DWORD begin_bytes)
 	int result = 0;
 	if (0 == begin_bytes)
 	{
-		GenerateWorldData();
 		result = SendPackets(World_blob, 2, CallbackWorld);
 	}
 	else
@@ -305,7 +297,7 @@ void Session::ProceedWorld(DWORD send_bytes)
 
 	if (sz_want <= Size_send)
 	{
-		//SendWorld(0);
+		ClearOverlap(Overlap_send);
 		Size_send = 0;
 	}
 	else

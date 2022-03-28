@@ -3,19 +3,19 @@
 #include "Session.h"
 
 ServerFramework::ServerFramework()
-	: Overlap(), PlayerInst_pool(), __PlayerInst_pool()
+	: Overlap(), PlayerInst_pool()
 	, Clients(), OverlapClients(), Clients_index(0), Clients_number(0)
 {
 	ZeroMemory(&Overlap, sizeof(Overlap));
 
 	InitializeCriticalSection(&Client_sect);
 
+	Clients.reserve(CLIENTS_MAX_NUMBER);
+	OverlapClients.reserve(CLIENTS_MAX_NUMBER);
 	PlayerInst_pool.reserve(CLIENTS_MAX_NUMBER);
 	for (int i = 0; i < 10; ++i)
 	{
-		__PlayerInst_pool[i] = new Player;
-
-		PlayerInst_pool.push_back(__PlayerInst_pool[i]);
+		PlayerInst_pool.push_back(new Player);
 	}
 }
 
@@ -63,18 +63,58 @@ void ServerFramework::Start()
 		return;
 	}
 
-	auto worker = CreateThread(NULL, 0, Communicate, this, 0, NULL);
-	if (0 == worker)
+	cout << "서버 시작\n";
+	while (true)
 	{
-		ErrorDisplay("CreateThread()");
+		AcceptSession();
+	}
+}
+
+void ServerFramework::AcceptSession()
+{
+	SOCKADDR_IN client_addr;
+	int cl_addr_size = sizeof(client_addr);
+	ZeroMemory(&client_addr, cl_addr_size);
+	auto cl_addr_ptr = reinterpret_cast<SOCKADDR*>(&Address);
+
+	SOCKET client_socket = WSAAccept(Socket, cl_addr_ptr, &sz_Address, NULL, NULL);
+	if (INVALID_SOCKET == client_socket)
+	{
+		ErrorDisplay("WSAAccept()");
 		return;
 	}
 
-	while (true)
+	cout << "클라이언트 접속: (" << inet_ntoa(client_addr.sin_addr)
+		<< "), 핸들: " << client_socket << "\n";
+
+	EnterCriticalSection(&Client_sect);
+	auto session = new Session(this, client_socket);
+	AddClient(Clients_index, session);
+	AddClient(session->Overlap_recv, session);
+	AddClient(session->Overlap_send, session);
+	Clients_number++;
+
+	session->ID = Clients_index++;
+
+	session->ReceiveStartPosition();
+	LeaveCriticalSection(&Client_sect);
+}
+
+void ServerFramework::BroadcastWorld()
+{
+	EnterCriticalSection(&Client_sect);
+	if (0 < Clients_number)
 	{
-		SleepEx(1000, TRUE);
-		BroadcastWorld();
+		for_each(Clients.begin(), Clients.end(), [](pair<const INT, Session*> set) {
+			auto session = set.second;
+			if (session)
+			{
+				session->GenerateWorldData();
+				session->SendWorld();
+			}
+		});
 	}
+	LeaveCriticalSection(&Client_sect);
 }
 
 UINT ServerFramework::GetClientsNumber() const
@@ -126,7 +166,8 @@ void ServerFramework::RemoveClient(LPWSAOVERLAPPED overlap)
 
 void ServerFramework::RemovePlayerInstance(Player* instance)
 {
-	PlayerInst_pool.emplace_back((instance));
+	//PlayerInst_pool.emplace_back((instance));
+	PlayerInst_index--;
 }
 
 void ServerFramework::RemoveSession(const INT id)
@@ -149,61 +190,14 @@ void ServerFramework::RemoveSession(const INT id)
 void ServerFramework::AssignPlayerInstance(Player*& instance)
 {
 	EnterCriticalSection(&Client_sect);
-	auto inst = PlayerInst_pool.back();
-	PlayerInst_pool.pop_back();
-	instance = (inst); //GetInstancesData(Players_pool_index);
+	auto inst = PlayerInst_pool.at(PlayerInst_index++);
+	instance = (inst);
 	LeaveCriticalSection(&Client_sect);
 }
 
 Player* ServerFramework::GetInstancesData(int index)
 {
-	return __PlayerInst_pool[index];
-}
-
-void ServerFramework::AcceptSession()
-{
-	SOCKADDR_IN client_addr;
-	int cl_addr_size = sizeof(client_addr);
-	ZeroMemory(&client_addr, cl_addr_size);
-	auto cl_addr_ptr = reinterpret_cast<SOCKADDR*>(&Address);
-
-	SOCKET client_socket = WSAAccept(Socket, cl_addr_ptr, &sz_Address, NULL, NULL);
-	if (INVALID_SOCKET == client_socket)
-	{
-		ErrorDisplay("WSAAccept()");
-		return;
-	}
-
-	cout << "클라이언트 접속: (" << inet_ntoa(client_addr.sin_addr)
-		<< "), 핸들: " << client_socket << "\n";
-
-	EnterCriticalSection(&Client_sect);
-	auto session = new Session(this, client_socket);
-	AddClient(Clients_index, session);
-	AddClient(session->Overlap_recv, session);
-	AddClient(session->Overlap_send, session);
-	Clients_number++;
-
-	session->ID = Clients_index++;
-
-	session->ReceiveStartPosition();
-	LeaveCriticalSection(&Client_sect);
-}
-
-void ServerFramework::BroadcastWorld()
-{
-	EnterCriticalSection(&Client_sect);
-	if (0 < Clients_number)
-	{
-		for_each(Clients.begin(), Clients.end(), [](pair<const INT, Session*> set) {
-			auto session = set.second;
-			if (session)
-			{
-				set.second->SendWorld();
-			}
-		});
-	}
-	LeaveCriticalSection(&Client_sect);
+	return PlayerInst_pool[index];
 }
 
 bool Player::TryMoveLT()

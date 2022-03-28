@@ -152,9 +152,7 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 		case FD_READ:
 		{
 			ZeroMemory(&Buffer_world, sizeof(Buffer_world));
-			if (CBuffer_world) delete[] CBuffer_world;
-			CBuffer_world = new char[BUFFSIZE + 1]{};
-			ZeroMemory(CBuffer_world, BUFFSIZE + 1);
+			ZeroMemory(CBuffer_world, sizeof(CBuffer_world));
 
 			const auto sz_header = sizeof(PacketInfo);
 			auto& header_buffer = Buffer_world[0];
@@ -202,7 +200,7 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 					{
 						auto instance = reinterpret_cast<Position*>(it);
 
-						World_instances.push_back(move(instance));
+						World_instances.push_back(move(*instance));
 					}
 
 					InvalidateRect(Window, NULL, FALSE);
@@ -280,9 +278,9 @@ void Framework::Render(HWND window)
 		{
 			BitBlt(DC_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
 
-			for_each(World_instances.begin(), World_instances.end(), [&](Position* pos) {
-				auto x = pos->x;
-				auto y = pos->y;
+			for_each(World_instances.begin(), World_instances.end(), [&](Position pos) {
+				auto x = pos.x;
+				auto y = pos.y;
 
 				Draw::Ellipse(DC_double, x - 16, y - 16, x + 16, y + 16);
 			});
@@ -292,7 +290,6 @@ void Framework::Render(HWND window)
 
 		default: break;
 	}
-
 
 	// 후면 버퍼 -> 화면 버퍼
 	StretchBlt(surface_app, 0, 0, WND_SZ_W, WND_SZ_H

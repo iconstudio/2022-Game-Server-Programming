@@ -38,9 +38,9 @@ private:
 	WSABUF Buffer_recv;
 	WSABUF Buffer_send;
 	WSABUF Buffer_world[2];
-	CHAR* CBuffer_world;
+	CHAR CBuffer_world[BUFFSIZE];
 	INT Buffer_world_length;
-	vector<Position*> World_instances;
+	vector<Position> World_instances;
 
 	HWND Window;
 	HDC DC_double;
