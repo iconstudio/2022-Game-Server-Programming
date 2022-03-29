@@ -13,40 +13,18 @@
 #include <unordered_map>
 #include <thread>
 #include <algorithm>
+#include <iostream>
+#include <unordered_map>
+#include <WS2tcpip.h>
+#pragma comment(lib, "WS2_32.lib")
 
+using namespace std;
+constexpr int PORT_NUM = 4000;
 constexpr int BUF_SIZE = 256;
+
+class SESSION;
 
 void ErrorAbort(const wchar_t* title);
 void ErrorDisplay(const wchar_t* title);
 void CALLBACK RecvRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 void CALLBACK SendRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
-
-class Session
-{
-public:
-	INT id;
-	SOCKET Socket;
-	WSAOVERLAPPED Overlap;
-	WSABUF Buffer_recv;
-	char cbuffer_recv[BUF_SIZE];
-
-	Session();
-	Session(Session&) = default;
-	Session(INT nid, SOCKET sock);
-
-	void ClearOverlap();
-	void ProceedReceive();
-	void ProceedSend(_In_bytecount_(size) char* data, size_t size);
-
-	friend void CALLBACK RecvRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
-	friend void CALLBACK SendRoutine(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
-
-	class Sender
-	{
-		WSABUF Buffer;
-		WSAOVERLAPPED Overlap;
-		char CBuffer[BUF_SIZE];
-
-		Sender();
-	};
-};
