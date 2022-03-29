@@ -6,8 +6,8 @@
 #include <WS2tcpip.h>
 
 #include <iostream>
-#include <vector>
-#include <unordered_map>
+#include <concurrent_vector.h>
+#include <concurrent_unordered_map.h>
 #include <algorithm>
 #include <atomic>
 using namespace std;
