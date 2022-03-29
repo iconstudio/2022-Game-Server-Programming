@@ -1,10 +1,9 @@
 #pragma once
 #include "stdafx.h"
-#include <queue>
 
 class Session;
 
-class Player : public Position
+class PlayerCharacter : public Position
 {
 public:
 	bool TryMoveLT();
@@ -36,8 +35,8 @@ public:
 	void RemoveClient(LPWSAOVERLAPPED overlap);
 	void RemoveSession(const INT id);
 
-	void AssignPlayerInstance(shared_ptr<Player>& instance);
-	Player* GetInstancesData(INT index);
+	void AssignPlayerInstance(shared_ptr<PlayerCharacter>& instance);
+	PlayerCharacter* GetInstancesData(INT index);
 
 	SOCKET Socket;
 
@@ -52,6 +51,6 @@ private:
 	unordered_map<LPWSAOVERLAPPED, Session*> ClientsOverlap;
 	INT Clients_index_order, Clients_number;
 
-	vector<Player*> Players_pool;
+	vector<PlayerCharacter*> Players_pool;
 	UINT PlayerInst_index;
 };

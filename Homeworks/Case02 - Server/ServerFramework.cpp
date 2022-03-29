@@ -192,14 +192,19 @@ void ServerFramework::RemoveSession(const INT id)
 	delete session;
 	Clients_number--;
 	LeaveCriticalSection(&Client_sect);
+
+	if (0 < Clients_number)
+	{
+		BroadcastWorld();
+	}
 }
 
-void ServerFramework::AssignPlayerInstance(shared_ptr<Player>& instance)
+void ServerFramework::AssignPlayerInstance(shared_ptr<PlayerCharacter>& instance)
 {
-	instance = make_shared<Player>();
+	instance = make_shared<PlayerCharacter>();
 }
 
-Player* ServerFramework::GetInstancesData(INT index)
+PlayerCharacter* ServerFramework::GetInstancesData(INT index)
 {
 	EnterCriticalSection(&Client_sect);
 	auto player = GetClientByIndex(index);
@@ -208,7 +213,7 @@ Player* ServerFramework::GetInstancesData(INT index)
 	return (player->Instance).get();
 }
 
-bool Player::TryMoveLT()
+bool PlayerCharacter::TryMoveLT()
 {
 	auto bd = BOARD_X;
 	if (bd + CELL_SIZE < x)
@@ -219,7 +224,7 @@ bool Player::TryMoveLT()
 	return false;
 }
 
-bool Player::TryMoveRT()
+bool PlayerCharacter::TryMoveRT()
 {
 	auto bd = BOARD_X + BOARD_W;
 	if (x < bd - CELL_SIZE)
@@ -230,7 +235,7 @@ bool Player::TryMoveRT()
 	return false;
 }
 
-bool Player::TryMoveUP()
+bool PlayerCharacter::TryMoveUP()
 {
 	auto bd = BOARD_Y;
 	if (bd + CELL_SIZE < y)
@@ -241,7 +246,7 @@ bool Player::TryMoveUP()
 	return false;
 }
 
-bool Player::TryMoveDW()
+bool PlayerCharacter::TryMoveDW()
 {
 	auto bd = BOARD_Y + BOARD_H;
 	if (y < bd - CELL_SIZE)

@@ -5,7 +5,7 @@ struct Position
 	USHORT x, y;
 };
 
-class Player : public Position
+class PlayerCharacter : public Position
 {
 public:
 	void Render(HDC canvas);

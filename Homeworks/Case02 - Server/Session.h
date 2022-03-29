@@ -2,7 +2,7 @@
 #include "stdafx.h"
 
 class ServerFramework;
-class Player;
+class PlayerCharacter;
 
 class Session
 {
@@ -32,7 +32,7 @@ public:
 	ULONG Size_recv, Size_send_world;
 	LPWSAOVERLAPPED Overlap_recv, Overlap_send_world;
 
-	shared_ptr<Player> Instance;
+	shared_ptr<PlayerCharacter> Instance;
 	ServerFramework* Framework;
 
 private:

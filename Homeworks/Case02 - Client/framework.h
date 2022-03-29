@@ -28,7 +28,7 @@ private:
 	States Status = States::Begin;
 
 	INT Index = -1; // 네트워크 상에서 플레이어의 번호
-	Player m_Player;
+	PlayerCharacter m_Player;
 	WPARAM Lastkey;
 	std::string Server_IP;
 
