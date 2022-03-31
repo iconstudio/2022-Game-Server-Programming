@@ -28,19 +28,21 @@ private:
 	States Status = States::Begin;
 
 	ULONG ID = -1; // 네트워크 상에서 플레이어의 번호
-	PlayerCharacter m_Player;
-	WPARAM Lastkey;
-	std::string Server_IP;
 
 	SOCKET Socket;
 	SOCKADDR_IN Server_address;
+	std::string Server_IP;
 	INT sz_Address;
+
 	WSABUF Buffer_recv;
-	WSABUF Buffer_send;
 	WSABUF Buffer_world[2];
 	CHAR CBuffer_world[BUFFSIZE];
 	INT Buffer_world_length;
 	vector<PlayerCharacter> World_instances;
+
+	WSABUF Buffer_send;
+	PlayerCharacter m_Player;
+	WPARAM Lastkey;
 
 	HWND Window;
 	HDC DC_double;

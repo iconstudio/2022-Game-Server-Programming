@@ -178,12 +178,19 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 				break;
 			}
 
+			bool cleanup = false;
 			if (sz_header <= recv_size)
 			{
 				auto info = reinterpret_cast<PacketInfo*>(CBuffer_world);
 
 				ULONG instance_count = info->Length;
 				ULONG sz_world_blob = info->Size;
+				if (-1 == ID)
+				{
+					ID = info->Player_id; // 플레이어 ID 받아오기
+					cleanup = true;
+				}
+
 				recv_size -= sz_header;
 				World_instances.clear();
 				World_instances.shrink_to_fit();
@@ -202,8 +209,13 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 						World_instances.push_back(move(*instance));
 					}
 
-					InvalidateRect(Window, NULL, FALSE);
+					cleanup = true;
 				}
+			}
+
+			if (cleanup)
+			{
+				InvalidateRect(Window, NULL, FALSE);
 			}
 		}
 		break;
@@ -275,12 +287,25 @@ void Framework::Render(HWND window)
 
 		case States::Game:
 		{
+			auto filler = CreateSolidBrush(C_BLACK);
+			auto old_filler = Draw::Attach(DC_double, filler);
+			auto old_align = SetTextAlign(DC_double, TA_LEFT);
+
+			const size_t sz_id = 32;
+			WCHAR text_id[sz_id];
+			ZeroMemory(text_id, sizeof(text_id));
+			wsprintf(text_id, L"플레이어 ID: %u", ID);
+
+			TextOut(DC_double, 8, 8, text_id, lstrlen(text_id));
+
+			SetTextAlign(DC_double, old_align);
+			Draw::Detach(DC_double, old_filler, filler);
+
 			BitBlt(DC_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
 
 			for_each(World_instances.begin(), World_instances.end(), [&](PlayerCharacter character) {
 				character.Render(DC_double);
 			});
-			//m_Player.Render(DC_double);
 		}
 		break;
 

@@ -18,7 +18,7 @@ void PlayerCharacter::Render(HDC canvas)
 	const size_t sz_id = 32;
 	WCHAR text_id[sz_id];
 	ZeroMemory(text_id, sizeof(text_id));
-	wsprintf(text_id, L"ID: %d", ID);
+	wsprintf(text_id, L"ID: %u", ID);
 
 	TextOut(canvas, x, y, text_id, lstrlen(text_id));
 	SetTextAlign(canvas, old_align);

@@ -226,6 +226,7 @@ void Session::GenerateWorldData()
 
 	World_desc.Size = size;
 	World_desc.Length = number;
+	World_desc.Player_id = ID;
 
 	ZeroMemory(World_blob, sizeof(World_blob));
 	auto& info_wbuffer = World_blob[0];
