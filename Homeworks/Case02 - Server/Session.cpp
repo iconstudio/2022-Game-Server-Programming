@@ -97,6 +97,7 @@ void Session::ProceedStartPosition(DWORD recv_bytes)
 		Framework->AssignPlayerInstance(Instance);
 		Instance->x = positions->x;
 		Instance->y = positions->y;
+		Instance->ID = ID;
 		cout << "플레이어 " << ID << "의 좌표: ("
 			<< positions->x << ", " << positions->y << ")\n";
 
@@ -223,10 +224,12 @@ void Session::GenerateWorldData()
 	const auto number = Framework->GetClientsNumber();
 	const auto size = sizeof(PlayerCharacter) * number;
 
-	ZeroMemory(LocalWorld, sizeof(LocalWorld));
+	LocalWorld = new PlayerCharacter[number];
+	ZeroMemory(LocalWorld, size);
 	int foundindex = 0; // 메모리 오류 방지
 	for (UINT i = 0; i < number; ++i)
 	{
+		//auto player = Framework->GetClientByIndex(i);
 		auto inst = (Framework->GetInstancesData(i));
 		if (inst)
 		{
@@ -238,7 +241,7 @@ void Session::GenerateWorldData()
 	World_desc.Length = number;
 
 	auto& contents_wbuffer = World_blob[1];
-	//contents_wbuffer.buf = reinterpret_cast<char*>(LocalWorld);
+	contents_wbuffer.buf = reinterpret_cast<char*>(LocalWorld);
 	contents_wbuffer.len = size;
 }
 
@@ -260,7 +263,7 @@ void Session::SendWorld(DWORD begin_bytes)
 	else
 	{
 		//result = SendPackets(World_blob, 2, CallbackWorld);
-		
+
 		constexpr auto sz_info = sizeof(PacketInfo);
 
 		if (begin_bytes < sz_info) // 헤더가 잘림

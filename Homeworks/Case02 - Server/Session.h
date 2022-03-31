@@ -43,5 +43,5 @@ private:
 
 	WSABUF World_blob[2];
 	PacketInfo World_desc;
-	PlayerCharacter LocalWorld[CLIENTS_MAX_NUMBER];
+	PlayerCharacter *LocalWorld;
 };
