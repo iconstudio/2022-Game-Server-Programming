@@ -63,7 +63,7 @@ void Session::ReceiveStartPosition(DWORD begin_bytes)
 
 	DWORD recv_flag = 0;
 
-	const size_t sz_want = sizeof(Position);
+	const size_t sz_want = sizeof(PlayerCharacter);
 	Buffer_recv.buf = (CBuffer_recv + begin_bytes);
 	Buffer_recv.len = sz_want - begin_bytes;
 
@@ -83,7 +83,7 @@ void Session::ReceiveStartPosition(DWORD begin_bytes)
 void Session::ProceedStartPosition(DWORD recv_bytes)
 {
 	Size_recv += recv_bytes;
-	constexpr size_t sz_want = sizeof(Position);
+	constexpr size_t sz_want = sizeof(PlayerCharacter);
 
 	if (sz_want <= Size_recv)
 	{
@@ -91,7 +91,7 @@ void Session::ProceedStartPosition(DWORD recv_bytes)
 		auto& cbuffer = wbuffer.buf;
 		auto& sz_recv = wbuffer.len;
 
-		auto positions = reinterpret_cast<Position*>(cbuffer);
+		auto positions = reinterpret_cast<PlayerCharacter*>(cbuffer);
 		//Instance = CreatePlayerCharacter();
 
 		Framework->AssignPlayerInstance(Instance);
@@ -221,7 +221,7 @@ void Session::GenerateWorldData()
 	if (!Framework) return;
 
 	const auto number = Framework->GetClientsNumber();
-	const auto size = sizeof(Position) * number;
+	const auto size = sizeof(PlayerCharacter) * number;
 
 	ZeroMemory(LocalWorld, sizeof(LocalWorld));
 	int foundindex = 0; // 메모리 오류 방지

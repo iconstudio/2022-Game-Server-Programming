@@ -18,12 +18,7 @@ struct PacketInfo
 	ULONG Size = 0;
 };
 
-struct Position
-{
-	USHORT x, y;
-};
-
-class PlayerCharacter : public Position
+class PlayerCharacter
 {
 public:
 	bool TryMoveLT();
@@ -31,6 +26,7 @@ public:
 	bool TryMoveUP();
 	bool TryMoveDW();
 
+	USHORT x, y;
 	USHORT ID;
 };
 #pragma pack(pop)
