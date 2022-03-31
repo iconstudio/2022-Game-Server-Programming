@@ -132,9 +132,8 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 	{
 		case FD_CONNECT:
 		{
-			auto player_pos = PlayerCharacter { m_Player };
-			Buffer_send.buf = reinterpret_cast<char*>(&player_pos);
-			Buffer_send.len = sizeof(player_pos);
+			Buffer_send.buf = reinterpret_cast<char*>(&m_Player);
+			Buffer_send.len = sizeof(m_Player);
 
 			// send 1
 			result = WSASend(Socket, &Buffer_send, 1, &send_size, 0, NULL, NULL);
@@ -278,11 +277,8 @@ void Framework::Render(HWND window)
 		{
 			BitBlt(DC_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
 
-			for_each(World_instances.begin(), World_instances.end(), [&](PlayerCharacter pos) {
-				auto x = pos.x;
-				auto y = pos.y;
-
-				Draw::Ellipse(DC_double, x - 16, y - 16, x + 16, y + 16);
+			for_each(World_instances.begin(), World_instances.end(), [&](PlayerCharacter character) {
+				character.Render(DC_double);
 			});
 			//m_Player.Render(DC_double);
 		}
