@@ -7,7 +7,7 @@ class PlayerCharacter;
 class Session
 {
 public:
-	Session(ServerFramework* nframework, SOCKET sock);
+	Session(ServerFramework* nframework, ULONG nid, SOCKET sock);
 	~Session();
 
 	void ClearRecvBuffer();
@@ -27,7 +27,7 @@ public:
 	void SendWorld(DWORD send_bytes = 0);
 	void ProceedWorld(DWORD send_bytes);
 
-	INT ID;
+	ULONG ID;
 	const SOCKET Socket;
 	ULONG Size_recv, Size_send_world;
 	LPWSAOVERLAPPED Overlap_recv, Overlap_send_world;

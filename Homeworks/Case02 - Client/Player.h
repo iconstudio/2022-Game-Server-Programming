@@ -7,6 +7,6 @@ public:
 	void Render(HDC canvas);
 
 	USHORT x, y;
-	USHORT ID;
+	ULONG ID;
 };
 #pragma pack(pop)

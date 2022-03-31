@@ -16,6 +16,7 @@ struct PacketInfo
 {
 	USHORT Length = 0;
 	ULONG Size = 0;
+	ULONG Player_id = 0;
 };
 
 class PlayerCharacter
@@ -27,7 +28,7 @@ public:
 	bool TryMoveDW();
 
 	USHORT x, y;
-	USHORT ID;
+	ULONG ID;
 };
 #pragma pack(pop)
 

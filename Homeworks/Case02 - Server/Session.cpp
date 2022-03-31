@@ -2,9 +2,10 @@
 #include "Session.h"
 #include "ServerFramework.h"
 
-Session::Session(ServerFramework* nframework, SOCKET sock)
-	: Framework(nframework), Socket(sock)
-	, Overlap_recv(new WSAOVERLAPPED()), Overlap_send_world(new WSAOVERLAPPED())
+Session::Session(ServerFramework* nframework, ULONG nid, SOCKET sock)
+	: Framework(nframework), ID(nid), Socket(sock)
+	, Overlap_recv(new WSAOVERLAPPED())
+	, Overlap_send_world(new WSAOVERLAPPED())
 	, Buffer_recv(), CBuffer_recv(), Size_recv(0)
 	, World_blob(), LocalWorld(), Size_send_world(0)
 {

@@ -24,6 +24,7 @@ struct PacketInfo
 {
 	USHORT Length = 0;
 	ULONG Size = 0;
+	ULONG Player_id = 0;
 };
 #pragma pack(pop)
 
