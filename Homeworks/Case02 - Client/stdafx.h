@@ -18,11 +18,13 @@ constexpr COLORREF C_BLACK = RGB(0, 0, 0);
 constexpr COLORREF C_WHITE = RGB(255, 255, 255);
 constexpr COLORREF C_GREEN = RGB(0, 128, 0);
 
+#pragma pack(push, 1)
 struct PacketInfo
 {
 	USHORT Length = 0;
 	ULONG Size = 0;
 };
+#pragma pack(pop)
 
 void ErrorAbort(const wchar_t* title);
 void ErrorDisplay(const wchar_t* title);

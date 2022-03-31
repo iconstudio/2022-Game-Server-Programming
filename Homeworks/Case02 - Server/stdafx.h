@@ -22,6 +22,17 @@ struct Position
 {
 	USHORT x, y;
 };
+
+class PlayerCharacter : public Position
+{
+public:
+	bool TryMoveLT();
+	bool TryMoveRT();
+	bool TryMoveUP();
+	bool TryMoveDW();
+
+	USHORT ID;
+};
 #pragma pack(pop)
 
 void CallbackStartPositions(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);

@@ -191,14 +191,14 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 
 				if (sz_world_blob <= recv_size)
 				{
-					auto stride = sizeof(Position);
+					auto stride = sizeof(PlayerCharacter);
 					auto& bf_world = contents_buffer.buf;
 					auto& sz_world = contents_buffer.len;
 
 					World_instances.reserve(instance_count);
 					for (auto it = bf_world; it < bf_world + sz_world_blob; it += stride)
 					{
-						auto instance = reinterpret_cast<Position*>(it);
+						auto instance = reinterpret_cast<PlayerCharacter*>(it);
 
 						World_instances.push_back(move(*instance));
 					}
@@ -278,7 +278,7 @@ void Framework::Render(HWND window)
 		{
 			BitBlt(DC_double, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, Board_canvas, 0, 0, SRCCOPY);
 
-			for_each(World_instances.begin(), World_instances.end(), [&](Position pos) {
+			for_each(World_instances.begin(), World_instances.end(), [&](PlayerCharacter pos) {
 				auto x = pos.x;
 				auto y = pos.y;
 

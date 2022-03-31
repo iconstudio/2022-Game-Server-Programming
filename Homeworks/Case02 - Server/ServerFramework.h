@@ -3,15 +3,6 @@
 
 class Session;
 
-class PlayerCharacter : public Position
-{
-public:
-	bool TryMoveLT();
-	bool TryMoveRT();
-	bool TryMoveUP();
-	bool TryMoveDW();
-};
-
 class ServerFramework
 {
 public:
