@@ -132,7 +132,7 @@ void WINAPI Framework::Communicate(UINT msg, WPARAM sock, LPARAM state)
 	{
 		case FD_CONNECT:
 		{
-			auto player_pos = Position{ m_Player };
+			auto player_pos = PlayerCharacter { m_Player };
 			Buffer_send.buf = reinterpret_cast<char*>(&player_pos);
 			Buffer_send.len = sizeof(player_pos);
 
