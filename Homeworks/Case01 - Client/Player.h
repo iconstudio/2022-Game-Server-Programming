@@ -1,9 +1,11 @@
 #pragma once
 
-class Player
+#pragma pack(push, 1)
+class Player : public Position
 {
 public:
 	void Render(HDC canvas);
 
-	int x, y;
+	USHORT ID;
 };
+#pragma pack(pop)

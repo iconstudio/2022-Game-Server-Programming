@@ -11,6 +11,7 @@
 using namespace std;
 using std::cout;
 
+#pragma pack(push, 1)
 struct PacketInfo
 {
 	USHORT Length = 0;
@@ -21,6 +22,7 @@ struct Position
 {
 	USHORT x, y;
 };
+#pragma pack(pop)
 
 void CallbackStartPositions(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 void CallbackInputs(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
