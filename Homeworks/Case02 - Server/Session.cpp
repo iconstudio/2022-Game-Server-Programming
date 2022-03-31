@@ -92,7 +92,6 @@ void Session::ProceedStartPosition(DWORD recv_bytes)
 		auto& sz_recv = wbuffer.len;
 
 		auto positions = reinterpret_cast<PlayerCharacter*>(cbuffer);
-		//Instance = CreatePlayerCharacter();
 
 		Framework->AssignPlayerInstance(Instance);
 		Instance->x = positions->x;
