@@ -6,22 +6,117 @@
 #include <WS2tcpip.h>
 
 #include <iostream>
+#include <vector>
 #include <concurrent_vector.h>
 #include <concurrent_unordered_map.h>
 #include <algorithm>
 #include <atomic>
 using namespace std;
 
-struct PacketInfo
+class IOCPServerFramework;
+
+#pragma pack(push, 1)
+enum PACKET_TYPES : USHORT
 {
-	USHORT Length = 0;
-	ULONG Size = 0;
+	NONE = 0,
+	CS_SIGNIN,
+	CS_SIGNOUT,
+	CS_KEY,
+	SC_SIGNUP,
+	SC_CREATE_CHARACTER,
+	SC_MOVE_CHARACTER,
+	SC_SIGNOUT
 };
 
-struct Position
+using PID = UINT;
+struct Packet
 {
-	USHORT x, y;
+	Packet(PACKET_TYPES type, USHORT size, UINT pid);
+	Packet(PACKET_TYPES type, UINT pid = 0);
+
+	USHORT Size;
+	PACKET_TYPES Type;
+	UINT playerID;
 };
+
+/// <summary>
+/// 서버에 로그인 의사 알림
+/// </summary>
+struct CSPacketSignIn : public Packet
+{
+	CSPacketSignIn(const CHAR* nickname);
+
+	CHAR Nickname[30];
+};
+
+/// <summary>
+/// 서버에서 나가는 의사 알림
+/// </summary>
+struct CSPacketSignOut : public Packet
+{
+	CSPacketSignOut(UINT pid);
+};
+
+/// <summary>
+/// 서버에 입력한 키 알림
+/// </summary>
+struct CSPacketKeyInput : public Packet
+{
+	CSPacketKeyInput(UINT pid, WPARAM key);
+
+	WPARAM Key;
+};
+
+/// <summary>
+/// 새로 접속한 플레이어에게 ID 부여
+/// </summary>
+struct SCPacketSignUp : public Packet
+{
+	SCPacketSignUp(UINT nid);
+};
+
+/// <summary>
+/// 특정 플레이어의 캐릭터 생성
+/// </summary>
+struct SCPacketCreateCharacter : public Packet
+{
+	SCPacketCreateCharacter(UINT pid, UCHAR cx, UCHAR cy);
+
+	UCHAR x, y;
+};
+
+/// <summary>
+/// 특정 플레이어의 캐릭터 이동
+/// </summary>
+struct SCPacketMoveCharacter : public Packet
+{
+	SCPacketMoveCharacter(UINT pid, UCHAR nx, UCHAR ny);
+
+	UCHAR x, y;
+};
+
+/// <summary>
+/// 특정 플레이어의 캐릭터 삭제 (나간 플레이어 이외에 다른 플레이어에 전송)
+/// </summary>
+struct SCPacketSignOut : public Packet
+{
+	SCPacketSignOut(UINT pid);
+};
+
+/// <summary>
+/// 플레이어 캐릭터
+/// </summary>
+class PlayerCharacter
+{
+public:
+	bool TryMoveLT();
+	bool TryMoveRT();
+	bool TryMoveUP();
+	bool TryMoveDW();
+
+	UCHAR x, y;
+};
+#pragma pack(pop)
 
 void ErrorDisplay(const char* title);
 

@@ -7,7 +7,6 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
-#include <atomic>
 using namespace std;
 using std::cout;
 
