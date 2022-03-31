@@ -4,11 +4,13 @@
 class Session
 {
 public:
-	Session(PID id, SOCKET sock, IOCPServerFramework& framework);
+	Session(PID id, SOCKET sock, IOCPFramework& framework);
 	~Session();
 
 	void ClearRecvBuffer();
-	void ClearOverlap(LPWSAOVERLAPPED overlap);
+
+	void Send(DWORD begin_bytes = 0);
+	void ReceiveStartPosition(DWORD begin_bytes = 0);
 
 	const PID ID;
 	const SOCKET Socket;
@@ -25,5 +27,5 @@ private:
 
 	LPWSAOVERLAPPED overlapSend;
 
-	const IOCPServerFramework const& Framework;
+	const IOCPFramework const& Framework;
 };

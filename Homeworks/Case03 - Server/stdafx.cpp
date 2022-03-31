@@ -2,11 +2,11 @@
 
 TCHAR* Msg_buffer = NULL;
 
-Packet::Packet(PACKET_TYPES type, USHORT size, UINT pid)
+Packet::Packet(PACKET_TYPES type, USHORT size, PID pid)
 	: Type(type), Size(size), playerID(pid)
 {}
 
-Packet::Packet(PACKET_TYPES type, UINT pid)
+Packet::Packet(PACKET_TYPES type, PID pid)
 	: Packet(type, sizeof(Packet), pid)
 {}
 
@@ -18,31 +18,76 @@ CSPacketSignIn::CSPacketSignIn(const CHAR* nickname)
 	strcpy_s(Nickname, nickname);
 }
 
-CSPacketSignOut::CSPacketSignOut(UINT pid)
+CSPacketSignOut::CSPacketSignOut(PID pid)
 	: Packet(CS_SIGNOUT, pid)
 {}
 
-CSPacketKeyInput::CSPacketKeyInput(UINT pid, WPARAM key)
+CSPacketKeyInput::CSPacketKeyInput(PID pid, WPARAM key)
 	: Packet(CS_KEY, sizeof(CSPacketKeyInput), pid), Key(key)
 {}
 
-SCPacketSignUp::SCPacketSignUp(UINT nid)
+SCPacketSignUp::SCPacketSignUp(PID nid)
 	: Packet(SC_SIGNUP, nid)
 {}
 
-SCPacketCreateCharacter::SCPacketCreateCharacter(UINT pid, UCHAR cx, UCHAR cy)
+SCPacketCreateCharacter::SCPacketCreateCharacter(PID pid, UCHAR cx, UCHAR cy)
 	: Packet(SC_CREATE_CHARACTER, sizeof(SCPacketCreateCharacter), pid)
 	, x(cx), y(cy)
 {}
 
-SCPacketMoveCharacter::SCPacketMoveCharacter(UINT pid, UCHAR nx, UCHAR ny)
+SCPacketMoveCharacter::SCPacketMoveCharacter(PID pid, UCHAR nx, UCHAR ny)
 	: Packet(SC_MOVE_CHARACTER, sizeof(SCPacketMoveCharacter), pid)
 	, x(nx), y(ny)
 {}
 
-SCPacketSignUp::SCPacketSignUp(UINT pid)
+SCPacketSignOut::SCPacketSignOut(PID pid)
 	: Packet(SC_SIGNOUT, pid)
 {}
+
+bool PlayerCharacter::TryMoveLT()
+{
+	if (0 < x)
+	{
+		x--;
+		return true;
+	}
+	return false;
+}
+
+bool PlayerCharacter::TryMoveRT()
+{
+	if (x < CELLS_CNT_H - 1)
+	{
+		x ++;
+		return true;
+	}
+	return false;
+}
+
+bool PlayerCharacter::TryMoveUP()
+{
+	if (0 < y)
+	{
+		y--;
+		return true;
+	}
+	return false;
+}
+
+bool PlayerCharacter::TryMoveDW()
+{
+	if (y < CELLS_CNT_V - 1)
+	{
+		y++;
+		return true;
+	}
+	return false;
+}
+
+void ClearOverlap(LPWSAOVERLAPPED overlap)
+{
+	ZeroMemory(overlap, sizeof(WSAOVERLAPPED));
+}
 
 void ErrorDisplay(const char* title)
 {

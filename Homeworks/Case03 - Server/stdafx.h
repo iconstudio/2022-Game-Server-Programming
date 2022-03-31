@@ -2,18 +2,23 @@
 #pragma comment(lib, "MSWSock.lib")
 #pragma comment(lib, "Ws2_32.lib")
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
-#include <MSWSock.h>
 #include <WS2tcpip.h>
+#include <MSWSock.h>
 
 #include <iostream>
 #include <vector>
 #include <concurrent_vector.h>
 #include <concurrent_unordered_map.h>
 #include <algorithm>
-#include <atomic>
+#include <tuple>
 using namespace std;
 
-class IOCPServerFramework;
+class IOCPFramework;
+
+class EXWSAOVERLAPPED : WSAOVERLAPPED
+{
+	SOCKET Socket;
+};
 
 #pragma pack(push, 1)
 enum PACKET_TYPES : USHORT
@@ -31,12 +36,12 @@ enum PACKET_TYPES : USHORT
 using PID = UINT;
 struct Packet
 {
-	Packet(PACKET_TYPES type, USHORT size, UINT pid);
-	Packet(PACKET_TYPES type, UINT pid = 0);
+	Packet(PACKET_TYPES type, USHORT size, PID pid);
+	Packet(PACKET_TYPES type, PID pid = 0);
 
 	USHORT Size;
 	PACKET_TYPES Type;
-	UINT playerID;
+	PID playerID;
 };
 
 /// <summary>
@@ -54,7 +59,7 @@ struct CSPacketSignIn : public Packet
 /// </summary>
 struct CSPacketSignOut : public Packet
 {
-	CSPacketSignOut(UINT pid);
+	CSPacketSignOut(PID pid);
 };
 
 /// <summary>
@@ -62,7 +67,7 @@ struct CSPacketSignOut : public Packet
 /// </summary>
 struct CSPacketKeyInput : public Packet
 {
-	CSPacketKeyInput(UINT pid, WPARAM key);
+	CSPacketKeyInput(PID pid, WPARAM key);
 
 	WPARAM Key;
 };
@@ -72,7 +77,7 @@ struct CSPacketKeyInput : public Packet
 /// </summary>
 struct SCPacketSignUp : public Packet
 {
-	SCPacketSignUp(UINT nid);
+	SCPacketSignUp(PID nid);
 };
 
 /// <summary>
@@ -80,7 +85,7 @@ struct SCPacketSignUp : public Packet
 /// </summary>
 struct SCPacketCreateCharacter : public Packet
 {
-	SCPacketCreateCharacter(UINT pid, UCHAR cx, UCHAR cy);
+	SCPacketCreateCharacter(PID pid, UCHAR cx, UCHAR cy);
 
 	UCHAR x, y;
 };
@@ -90,7 +95,7 @@ struct SCPacketCreateCharacter : public Packet
 /// </summary>
 struct SCPacketMoveCharacter : public Packet
 {
-	SCPacketMoveCharacter(UINT pid, UCHAR nx, UCHAR ny);
+	SCPacketMoveCharacter(PID pid, UCHAR nx, UCHAR ny);
 
 	UCHAR x, y;
 };
@@ -100,7 +105,7 @@ struct SCPacketMoveCharacter : public Packet
 /// </summary>
 struct SCPacketSignOut : public Packet
 {
-	SCPacketSignOut(UINT pid);
+	SCPacketSignOut(PID pid);
 };
 
 /// <summary>
@@ -118,9 +123,12 @@ public:
 };
 #pragma pack(pop)
 
+void ClearOverlap(LPWSAOVERLAPPED overlap);
 void ErrorDisplay(const char* title);
 
+constexpr USHORT PORT = 6000;
 constexpr UINT CLIENTS_MAX_NUMBER = 10;
+constexpr PID CLIENTS_ORDER_BEGIN = 10000;
 constexpr UINT BUFFSIZE = 512;
 constexpr SIZE_T WND_SZ_W = 800, WND_SZ_H = 600; // Ã¢ Å©±â
 constexpr SIZE_T CELL_SIZE = 64;

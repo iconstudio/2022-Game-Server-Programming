@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "IOCP ServerFramework.hpp"
 
-IOCPServerFramework framework{};
+IOCPFramework framework{};
 
 int main()
 {
