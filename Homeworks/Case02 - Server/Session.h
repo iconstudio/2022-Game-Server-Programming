@@ -14,7 +14,7 @@ public:
 	void ClearOverlap(LPWSAOVERLAPPED overlap);
 
 	int RecvPackets(LPWSABUF datas, UINT count, DWORD flags, LPWSAOVERLAPPED_COMPLETION_ROUTINE);
-	int SendPackets(LPWSABUF datas, UINT count, LPWSAOVERLAPPED_COMPLETION_ROUTINE);
+	int SendPackets(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap, LPWSAOVERLAPPED_COMPLETION_ROUTINE);
 
 	void ReceiveStartPosition(DWORD begin_bytes = 0);
 	void ProceedStartPosition(DWORD recv_bytes);
@@ -42,6 +42,6 @@ private:
 	char CBuffer_recv[BUFFSIZE];
 
 	WSABUF World_blob[2];
-	PacketInfo World_desc;
+	PacketInfo World_desc; // 월드 정보 서술자
 	PlayerCharacter *LocalWorld;
 };

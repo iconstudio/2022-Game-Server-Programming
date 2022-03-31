@@ -89,7 +89,6 @@ void ServerFramework::AcceptSession()
 
 	AddClient(Client_ID_order, session);
 	AddClient(session->Overlap_recv, session);
-	AddClient(session->Overlap_send_world, session);
 
 	Clients_number++;
 	Client_ID_order++;

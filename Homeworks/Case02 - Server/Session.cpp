@@ -4,27 +4,15 @@
 
 Session::Session(ServerFramework* nframework, ULONG nid, SOCKET sock)
 	: Framework(nframework), ID(nid), Socket(sock)
-	, Overlap_recv(new WSAOVERLAPPED())
-	, Overlap_send_world(new WSAOVERLAPPED())
+	, Overlap_recv(new WSAOVERLAPPED()), Overlap_send_world()
 	, Buffer_recv(), CBuffer_recv(), Size_recv(0)
 	, World_blob(), LocalWorld(), Size_send_world(0)
 {
 	ClearOverlap(Overlap_recv);
-	ClearOverlap(Overlap_send_world);
 	ClearRecvBuffer();
 
 	Buffer_recv.buf = CBuffer_recv;
 	Buffer_recv.len = BUFFSIZE;
-
-	ZeroMemory(World_blob, sizeof(World_blob));
-	WSABUF info_wbuffer{};
-	info_wbuffer.buf = reinterpret_cast<char*>(&World_desc);
-	info_wbuffer.len = sizeof(PacketInfo);
-	World_blob[0] = move(info_wbuffer);
-	WSABUF contents_wbuffer{};
-	contents_wbuffer.buf = reinterpret_cast<char*>(LocalWorld);
-	contents_wbuffer.len = 0;
-	World_blob[1] = move(contents_wbuffer);
 }
 
 Session::~Session()
@@ -45,17 +33,17 @@ void Session::ClearOverlap(LPWSAOVERLAPPED overlap)
 
 int Session::RecvPackets(LPWSABUF datas, UINT count, DWORD flags, LPWSAOVERLAPPED_COMPLETION_ROUTINE routine)
 {
-	if (!datas) return 0;
+	if (!datas || !routine) return 0;
 
 	return WSARecv(Socket, datas, count, NULL, &flags, Overlap_recv, routine);
 }
 
-int Session::SendPackets(LPWSABUF datas, UINT count
+int Session::SendPackets(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap
 	, LPWSAOVERLAPPED_COMPLETION_ROUTINE routine)
 {
-	if (!datas) return 0;
+	if (!datas || !overlap || !routine) return 0;
 
-	return WSASend(Socket, datas, count, NULL, 0, Overlap_send_world, routine);
+	return WSASend(Socket, datas, count, NULL, 0, overlap, routine);
 }
 
 void Session::ReceiveStartPosition(DWORD begin_bytes)
@@ -222,14 +210,13 @@ void Session::GenerateWorldData()
 	if (!Framework) return;
 
 	const auto number = Framework->GetClientsNumber();
-	const auto size = sizeof(PlayerCharacter) * number;
+	const ULONG size = sizeof(PlayerCharacter) * number;
 
 	LocalWorld = new PlayerCharacter[number];
 	ZeroMemory(LocalWorld, size);
 	int foundindex = 0; // 메모리 오류 방지
 	for (UINT i = 0; i < number; ++i)
 	{
-		//auto player = Framework->GetClientByIndex(i);
 		auto inst = (Framework->GetInstancesData(i));
 		if (inst)
 		{
@@ -240,6 +227,10 @@ void Session::GenerateWorldData()
 	World_desc.Size = size;
 	World_desc.Length = number;
 
+	ZeroMemory(World_blob, sizeof(World_blob));
+	auto& info_wbuffer = World_blob[0];
+	info_wbuffer.buf = reinterpret_cast<char*>(&World_desc);
+	info_wbuffer.len = sizeof(PacketInfo);
 	auto& contents_wbuffer = World_blob[1];
 	contents_wbuffer.buf = reinterpret_cast<char*>(LocalWorld);
 	contents_wbuffer.len = size;
@@ -258,12 +249,15 @@ void Session::SendWorld(DWORD begin_bytes)
 	int result = 0;
 	if (0 == begin_bytes)
 	{
-		result = SendPackets(World_blob, 2, CallbackWorld);
+		Overlap_send_world = new WSAOVERLAPPED;
+		Framework->AddClient(Overlap_send_world, this);
+
+		ClearOverlap(Overlap_send_world);
+
+		result = SendPackets(World_blob, 2, Overlap_send_world, CallbackWorld);
 	}
 	else
 	{
-		//result = SendPackets(World_blob, 2, CallbackWorld);
-
 		constexpr auto sz_info = sizeof(PacketInfo);
 
 		if (begin_bytes < sz_info) // 헤더가 잘림
@@ -272,7 +266,7 @@ void Session::SendWorld(DWORD begin_bytes)
 			info_wbuffer.buf += begin_bytes;
 			info_wbuffer.len -= begin_bytes;
 
-			result = SendPackets(World_blob, 2, CallbackWorld);
+			result = SendPackets(World_blob, 2, Overlap_send_world, CallbackWorld);
 		}
 		else // 뒤에 렌더링 정보가 잘림
 		{
@@ -280,7 +274,7 @@ void Session::SendWorld(DWORD begin_bytes)
 			contents_wbuffer.buf += begin_bytes;
 			contents_wbuffer.len -= begin_bytes;
 
-			result = SendPackets(World_blob + 1, 1, CallbackWorld);
+			result = SendPackets(World_blob + 1, 1, Overlap_send_world, CallbackWorld);
 		}
 	}
 	if (SOCKET_ERROR == result)
@@ -306,7 +300,8 @@ void Session::ProceedWorld(DWORD send_bytes)
 
 	if (sz_want <= Size_send_world)
 	{
-		ClearOverlap(Overlap_send_world);
+		Framework->RemoveClient(Overlap_send_world);
+		delete Overlap_send_world;
 		Size_send_world = 0;
 	}
 	else
