@@ -10,10 +10,10 @@ public:
 
 	void Init();
 	void Start();
-	void Accept();
+	bool Accept();
 	bool Update();
 
-	tuple<Session*, PID> CreateAndAssignClient(SOCKET nsocket);
+	pair<PID, Session*> CreateAndAssignClient(SOCKET nsocket);
 
 	Session* GetClient(PID id);
 	Session* GetClientByIndex(UINT index);
@@ -26,13 +26,18 @@ public:
 	SOCKADDR_IN Address;
 	INT szAddress;
 	HANDLE completionPort;
+	char cbufferAccept[BUFSIZ];
 
-	WSAOVERLAPPED overlapAccept;
-	DWORD byteListen;
+	LPWSAOVERLAPPED portOverlap;
+	DWORD portBytes;
+	ULONG_PTR portKey;
+	const ULONG_PTR serverKey;
+
 	vector<SOCKET> socketPool;
 	concurrency::concurrent_vector<PID> clientsID;
-	PID clientOrderID;
-	UINT Clients_number;
+	concurrency::concurrent_unordered_map<PID, Session*> Clients;
+	PID orderClientIDs;
+	UINT numberClients;
 
 	WSAOVERLAPPED overlapRecv;
 	WSABUF bufferRecv;

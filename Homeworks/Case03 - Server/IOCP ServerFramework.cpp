@@ -3,17 +3,21 @@
 #include "Session.h"
 
 IOCPFramework::IOCPFramework()
-	: overlapAccept(), socketPool()
-	, clientOrderID(CLIENTS_ORDER_BEGIN), Clients_number(0)
+	: cbufferAccept()
+	, portOverlap(new WSAOVERLAPPED), portBytes(0), portKey(0), serverKey(100)
+	, socketPool(), clientsID(), Clients()
+	, orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0)
 	, overlapRecv(), szRecv(0), szWantRecv(0), bufferRecv(), cbufferRecv()
 {
 	ClearOverlap(&overlapRecv);
+	ZeroMemory(cbufferAccept, sizeof(cbufferAccept));
 	ZeroMemory(&bufferRecv, sizeof(bufferRecv));
 	ZeroMemory(cbufferRecv, sizeof(cbufferRecv));
 	bufferRecv.buf = cbufferRecv;
 	bufferRecv.len = sizeof(cbufferRecv);
 
 	socketPool.reserve(CLIENTS_MAX_NUMBER);
+	clientsID.reserve(CLIENTS_MAX_NUMBER);
 
 	for (UINT i = 0; i < CLIENTS_MAX_NUMBER; ++i)
 	{
@@ -70,7 +74,8 @@ void IOCPFramework::Init()
 		return;
 	}
 
-	auto apply = CreateIoCompletionPort((HANDLE)(Listener), completionPort, 0, 0);
+	auto apply = CreateIoCompletionPort((HANDLE)(Listener)
+		, completionPort, serverKey, 0);
 	if (NULL == apply)
 	{
 		ErrorDisplay("CreateIoCompletionPort(Listener)");
@@ -89,20 +94,20 @@ void IOCPFramework::Start()
 	cout << "서버 시작\n";
 	while (true)
 	{
-		Accept();
+		if (!Accept()) break;
 		if (!Update()) break;
 	}
 	cout << "서버 종료\n";
 }
 
-void IOCPFramework::Accept()
+bool IOCPFramework::Accept()
 {
 	auto newbie = socketPool.back();
 
 	DWORD byte_recv = 0;
-	auto result = AcceptEx(Listener, newbie, cbufferRecv
+	auto result = AcceptEx(Listener, newbie, cbufferAccept
 		, 0, sizeof(SOCKADDR_IN) + 16, szAddress + 16, &byte_recv
-		, &overlapAccept);
+		, portOverlap);
 
 	if (FALSE == result)
 	{
@@ -110,26 +115,86 @@ void IOCPFramework::Accept()
 		if (ERROR_IO_PENDING != error)
 		{
 			ErrorDisplay("AcceptEx()");
-			return;
+			return false;
 		}
 	}
-	else
-	{
-		socketPool.pop_back();
-	}
+	return true;
 }
 
 bool IOCPFramework::Update()
 {
-	//auto result = GetQueuedCompletionStatus(completionPort, &byteListen, 0, 0, 0);
+	auto result = GetQueuedCompletionStatus(completionPort, &portBytes, &portKey, &portOverlap, INFINITE);
+	if (TRUE == result)
+	{
+		auto byte = portBytes;
+		auto key = portKey;
 
-	return false;
+		if (serverKey == key) // AcceptEx
+		{
+			auto newbie = socketPool.back();
+
+			auto result = CreateAndAssignClient(newbie);
+
+			socketPool.pop_back();
+			//GetAcceptExSockaddrs(0,);
+			ZeroMemory(cbufferAccept, sizeof(cbufferAccept));
+		}
+		else
+		{
+			auto client = GetClient(key);
+			if (!client)
+			{
+				//
+			}
+		}
+
+		return true;
+	}
+	else
+	{
+		ErrorDisplay("GetQueuedCompletionStatus()");
+		return false;
+	}
 }
 
-tuple<Session*, PID> IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
+pair<PID, Session*> IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
 {
 	PID nid;
-	auto session = new Session(0, nsocket, *this);
+	auto session = new Session(orderClientIDs, nsocket, *this);
+	if (!session)
+	{
+		throw std::exception("서버 메모리 부족!");
+	}
 
-	return make_tuple(session, nid);
+	auto result = make_pair(nid, session);
+	clientsID.push_back(orderClientIDs);
+	Clients.insert(result);
+	orderClientIDs++;
+
+	return result;
+}
+
+Session* IOCPFramework::GetClient(PID id)
+{
+	return nullptr;
+}
+
+Session* IOCPFramework::GetClientByIndex(UINT index)
+{
+	return nullptr;
+}
+
+UINT IOCPFramework::GetClientsNumber() const
+{
+	return numberClients;
+}
+
+void IOCPFramework::RemoveClient(PID rid)
+{
+
+}
+
+void IOCPFramework::RemoveSession(const PID id)
+{
+
 }

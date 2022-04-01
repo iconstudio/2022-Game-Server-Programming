@@ -73,11 +73,13 @@ struct CSPacketKeyInput : public Packet
 };
 
 /// <summary>
-/// 새로 접속한 플레이어에게 ID 부여
+/// 새로 접속한 플레이어에게 ID 부여, 현재 동접자 수, 최대 동접자 수 알리기
 /// </summary>
 struct SCPacketSignUp : public Packet
 {
-	SCPacketSignUp(PID nid);
+	SCPacketSignUp(PID nid, UINT users = 0, UINT usersmax = 0);
+
+	UINT usersCurrent, usersMax;
 };
 
 /// <summary>

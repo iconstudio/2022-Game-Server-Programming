@@ -16,3 +16,29 @@ void Session::ClearRecvBuffer()
 	ZeroMemory(cbufferRecv, sizeof(cbufferRecv));
 	szRecv = 0;
 }
+
+template<typename PACKET, typename ...Ty>
+	requires std::is_base_of_v<Packet, PACKET>
+int Session::SendPacket(Ty... value)
+{
+	auto packet = new PACKET{ value };
+
+	return Send(packet);
+}
+
+int Session::Send(Packet* packet)
+{
+	auto overlap = new WSAOVERLAPPED{};
+	auto wbuffer = new WSABUF{};
+	wbuffer->buf = reinterpret_cast<char*>(packet);
+	wbuffer->len = packet->Size;
+
+	return Send(wbuffer, 1, overlap, 0);
+}
+
+int Session::Send(LPWSABUF buffer, const UINT count, LPWSAOVERLAPPED overlap, DWORD begin_bytes)
+{
+	if (!buffer || !overlap) return 0;
+
+	return WSASend(Socket, buffer, count, NULL, 0, overlap, NULL);
+}
