@@ -15,6 +15,11 @@ using namespace std;
 
 class IOCPFramework;
 
+enum class OVERLAP_OPS
+{
+
+};
+
 class EXWSAOVERLAPPED : WSAOVERLAPPED
 {
 	SOCKET Socket;

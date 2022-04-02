@@ -10,7 +10,7 @@ public:
 
 	void Init();
 	void Start();
-	bool Accept();
+	void Accept();
 	bool Update();
 
 	pair<PID, Session*> CreateAndAssignClient(SOCKET nsocket);
@@ -20,12 +20,15 @@ public:
 	UINT GetClientsNumber() const;
 
 	void RemoveClient(PID rid);
-	void RemoveSession(const PID id);
+	void Disconnect(const PID id);
 
+private:
 	SOCKET Listener;
 	SOCKADDR_IN Address;
 	INT szAddress;
 	HANDLE completionPort;
+
+	DWORD bytesAccept;
 	char cbufferAccept[BUFSIZ];
 
 	LPWSAOVERLAPPED portOverlap;

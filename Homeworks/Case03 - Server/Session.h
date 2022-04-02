@@ -35,5 +35,5 @@ private:
 	EXWSAOVERLAPPED* overlapSendMoveChar;
 	EXWSAOVERLAPPED* overlapSendSignOut;
 
-	const IOCPFramework const& Framework;
+	const IOCPFramework& Framework;
 };

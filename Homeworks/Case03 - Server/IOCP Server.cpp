@@ -5,7 +5,8 @@ IOCPFramework framework{};
 
 int main()
 {
-
+	framework.Init();
+	framework.Start();
 
 	return 0;
 }

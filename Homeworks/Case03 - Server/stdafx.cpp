@@ -26,7 +26,7 @@ CSPacketKeyInput::CSPacketKeyInput(PID pid, WPARAM key)
 	: Packet(CS_KEY, sizeof(CSPacketKeyInput), pid), Key(key)
 {}
 
-SCPacketSignUp::SCPacketSignUp(PID nid, UINT users = 0, UINT usersmax = 0)
+SCPacketSignUp::SCPacketSignUp(PID nid, UINT users, UINT usersmax)
 	: Packet(SC_SIGNUP, sizeof(SCPacketSignUp), nid)
 	, usersCurrent(users), usersMax(usersmax)
 {}
