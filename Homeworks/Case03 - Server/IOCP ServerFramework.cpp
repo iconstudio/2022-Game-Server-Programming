@@ -3,12 +3,13 @@
 #include "Session.h"
 
 IOCPFramework::IOCPFramework()
-	: bytesAccept(0), cbufferAccept()
-	, portOverlap(new WSAOVERLAPPED), portBytes(0), portKey(0), serverKey(100)
+	: overlapAccept(), bytesAccept(0), cbufferAccept()
+	, portOverlap(), portBytes(0), portKey(0), serverKey(100)
 	, socketPool(), clientsID(), Clients()
 	, orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0)
 	, overlapRecv(), szRecv(0), szWantRecv(0), bufferRecv(), cbufferRecv()
 {
+	ClearOverlap(&overlapAccept);
 	ClearOverlap(&overlapRecv);
 	ZeroMemory(cbufferAccept, sizeof(cbufferAccept));
 	ZeroMemory(&bufferRecv, sizeof(bufferRecv));
@@ -103,19 +104,18 @@ void IOCPFramework::Start()
 
 void IOCPFramework::Accept()
 {
-	ClearOverlap(portOverlap);
 	auto newbie = socketPool.back();
 
 	auto result = AcceptEx(Listener, newbie, cbufferAccept
 		, 0, sizeof(SOCKADDR_IN) + 16, szAddress + 16, &bytesAccept
-		, portOverlap);
+		, &overlapAccept);
 
 	if (FALSE == result)
 	{
 		auto error = WSAGetLastError();
 		if (ERROR_IO_PENDING != error)
 		{
-			ClearOverlap(portOverlap);
+			ClearOverlap(&overlapAccept);
 			ZeroMemory(cbufferAccept, sizeof(cbufferAccept));
 			ErrorDisplay("AcceptEx()");
 		}
@@ -138,11 +138,13 @@ bool IOCPFramework::Update()
 			CreateAndAssignClient(newbie);
 			socketPool.pop_back();
 
-			ClearOverlap(portOverlap);
+			ClearOverlap(&overlapAccept);
 			ZeroMemory(cbufferAccept, sizeof(cbufferAccept));
 		}
 		else
 		{
+			auto overlap = static_cast<EXOVERLAPPED*>(portOverlap);
+
 			auto client = GetClient(PID(key));
 			if (!client)
 			{

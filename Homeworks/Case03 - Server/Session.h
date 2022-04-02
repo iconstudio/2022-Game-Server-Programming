@@ -30,10 +30,10 @@ private:
 	char cbufferRecv[BUFSIZ];
 	Packet recvPacketDescriptor;
 
-	EXWSAOVERLAPPED* overlapSendSignUp;
-	EXWSAOVERLAPPED* overlapSendCreateChar;
-	EXWSAOVERLAPPED* overlapSendMoveChar;
-	EXWSAOVERLAPPED* overlapSendSignOut;
+	EXOVERLAPPED* overlapSendSignUp;
+	EXOVERLAPPED* overlapSendCreateChar;
+	EXOVERLAPPED* overlapSendMoveChar;
+	EXOVERLAPPED* overlapSendSignOut;
 
 	const IOCPFramework& Framework;
 };

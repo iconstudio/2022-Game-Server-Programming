@@ -28,6 +28,7 @@ private:
 	INT szAddress;
 	HANDLE completionPort;
 
+	WSAOVERLAPPED overlapAccept;
 	DWORD bytesAccept;
 	char cbufferAccept[BUFSIZ];
 

@@ -20,7 +20,7 @@ enum class OVERLAP_OPS
 
 };
 
-class EXWSAOVERLAPPED : WSAOVERLAPPED
+class EXOVERLAPPED : public WSAOVERLAPPED
 {
 	SOCKET Socket;
 };
