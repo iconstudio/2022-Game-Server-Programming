@@ -20,13 +20,8 @@ enum class OVERLAP_OPS
 
 };
 
-class EXOVERLAPPED : public WSAOVERLAPPED
-{
-	SOCKET Socket;
-};
-
 #pragma pack(push, 1)
-enum PACKET_TYPES : USHORT
+enum PACKET_TYPES : UCHAR
 {
 	NONE = 0,
 	CS_SIGNIN,
@@ -36,6 +31,13 @@ enum PACKET_TYPES : USHORT
 	SC_CREATE_CHARACTER,
 	SC_MOVE_CHARACTER,
 	SC_SIGNOUT
+};
+
+class EXOVERLAPPED : public WSAOVERLAPPED
+{
+public:
+	SOCKET Socket;
+	PACKET_TYPES Operation;
 };
 
 using PID = UINT;

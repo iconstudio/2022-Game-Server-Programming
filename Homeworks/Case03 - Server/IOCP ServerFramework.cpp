@@ -23,6 +23,7 @@ IOCPFramework::IOCPFramework()
 
 IOCPFramework::~IOCPFramework()
 {
+	CloseHandle(completionPort);
 	closesocket(Listener);
 	WSACleanup();
 }
@@ -144,6 +145,7 @@ bool IOCPFramework::Update()
 		else
 		{
 			auto overlap = static_cast<EXOVERLAPPED*>(portOverlap);
+			auto op = overlap->Operation;
 
 			auto client = GetClient(PID(key));
 			if (!client)
