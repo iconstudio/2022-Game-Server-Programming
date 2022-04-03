@@ -14,6 +14,7 @@
 using namespace std;
 
 class IOCPFramework;
+class Session;
 
 enum class OVERLAP_OPS : UCHAR
 {
@@ -39,6 +40,7 @@ class EXOVERLAPPED : public WSAOVERLAPPED
 {
 public:
 	EXOVERLAPPED(OVERLAP_OPS operation);
+	~EXOVERLAPPED();
 
 	void SetRecvBuffer(WSABUF& buffer);
 	void SetRecvBuffer(LPWSABUF buffer);
@@ -48,7 +50,6 @@ public:
 	void SetSendBuffer(CHAR* cbuffer, DWORD size);
 
 	const OVERLAP_OPS Operation;
-	PACKET_TYPES Type;
 
 	LPWSABUF recvBuffer;
 	CHAR* recvCBuffer;

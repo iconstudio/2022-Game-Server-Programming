@@ -204,6 +204,8 @@ pair<PID, Session*> IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
 	orderClientIDs++;
 	numberClients++;
 
+	session->ReceiveSignIn(); // IO ÁøÀÔ
+
 	return result;
 }
 

@@ -3,10 +3,21 @@
 TCHAR* Msg_buffer = NULL;
 
 EXOVERLAPPED::EXOVERLAPPED(OVERLAP_OPS operation)
-	: Operation(operation), Type()
+	: Operation(operation)
 	, recvBuffer(), recvCBuffer(), recvSize(0), recvSzWant(0)
 	, sendBuffer(), sendCBuffer(), sendSize(0), sendSzWant(0)
 {}
+
+EXOVERLAPPED::~EXOVERLAPPED()
+{
+	if (recvBuffer) delete recvBuffer;
+	if (sendBuffer) delete sendBuffer;
+	if (recvCBuffer) delete recvCBuffer;
+	if (sendCBuffer) delete sendCBuffer;
+
+	recvSzWant = 0;
+	sendSzWant = 0;
+}
 
 void EXOVERLAPPED::SetRecvBuffer(WSABUF& buffer)
 {
