@@ -3,7 +3,8 @@
 TCHAR* Msg_buffer = NULL;
 
 EXOVERLAPPED::EXOVERLAPPED()
-	: szRecv(0), szWantRecv(0), szSend(0), szWantSend(0)
+	: Operation(), Type()
+	, szRecv(0), szWantRecv(0), szSend(0), szWantSend(0)
 {}
 
 Packet::Packet(PACKET_TYPES type, USHORT size, PID pid)

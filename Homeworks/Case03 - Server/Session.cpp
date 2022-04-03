@@ -32,7 +32,6 @@ int Session::Send(Packet* packet)
 	wbuffer->len = packet->Size;
 
 	auto overlap = new EXOVERLAPPED{};
-	overlap->Socket = Socket;
 	overlap->Operation = OVERLAP_OPS::SEND;
 	overlap->szWantSend = packet->Size;
 
@@ -59,7 +58,7 @@ int Session::Send(LPWSABUF buffer, const UINT count, LPWSAOVERLAPPED overlap, DW
 	return result;
 }
 
-bool Session::ProceedPacket(EXOVERLAPPED* overlap, DWORD byte)
+void Session::BeginPacket(EXOVERLAPPED* overlap, DWORD byte)
 {
 	auto op = overlap->Operation;
 
@@ -71,10 +70,7 @@ bool Session::ProceedPacket(EXOVERLAPPED* overlap, DWORD byte)
 
 		case OVERLAP_OPS::RECV:
 		{
-			auto& sz_recv = overlap->szRecv;
-			auto& tr_recv = overlap->szWantRecv;
-
-			ClearOverlap(overlap); // recvOverlap
+			ProceedRecvPacket(overlap, byte);
 		}
 		break;
 
@@ -87,6 +83,30 @@ bool Session::ProceedPacket(EXOVERLAPPED* overlap, DWORD byte)
 		}
 		break;
 	}
+}
 
-	return false;
+void Session::ProceedRecvPacket(EXOVERLAPPED* overlap, DWORD byte)
+{
+	auto type = overlap->Type;
+	auto& buffer = recvCBuffer;
+	auto& sz_recv = overlap->szRecv;
+	auto& tr_recv = overlap->szWantRecv;
+
+	sz_recv += byte;
+	if (tr_recv <= sz_recv)
+	{
+		ProceedRecvPacket(overlap, sz_recv);
+
+		//sz_recv -= tr_recv;
+	}
+
+	ClearRecvBuffer();
+	ClearOverlap(overlap); // recvOverlap
+	//sz_recv = 0;
+	//tr_recv = 0;
+}
+
+void Session::ProceedSendPacket(EXOVERLAPPED* overlap, DWORD byte)
+{
+
 }

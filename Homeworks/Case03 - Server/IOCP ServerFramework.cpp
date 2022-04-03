@@ -161,7 +161,7 @@ bool IOCPFramework::Update()
 			else
 			{
 				auto overlap = static_cast<EXOVERLAPPED*>(portOverlap);
-				client->ProceedPacket(overlap, byte);
+				client->BeginPacket(overlap, byte);
 			}
 		}
 

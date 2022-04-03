@@ -17,7 +17,9 @@ public:
 
 	void ReceiveStartPosition(DWORD begin_bytes = 0);
 
-	bool ProceedPacket(EXOVERLAPPED* overlap, DWORD byte);
+	void BeginPacket(EXOVERLAPPED* overlap, DWORD byte);
+	void ProceedRecvPacket(EXOVERLAPPED* overlap, DWORD byte);
+	void ProceedSendPacket(EXOVERLAPPED* overlap, DWORD byte);
 
 	const PID ID;
 	const SOCKET Socket;

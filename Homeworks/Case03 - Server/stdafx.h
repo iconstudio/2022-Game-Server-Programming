@@ -40,8 +40,8 @@ class EXOVERLAPPED : public WSAOVERLAPPED
 public:
 	EXOVERLAPPED();
 
-	SOCKET Socket;
 	OVERLAP_OPS Operation;
+	PACKET_TYPES Type;
 	UINT szRecv, szWantRecv;
 	UINT szSend, szWantSend;
 };
