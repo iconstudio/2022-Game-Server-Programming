@@ -44,7 +44,7 @@ private:
 	PID orderClientIDs;
 	UINT numberClients;
 
-	WSAOVERLAPPED overlapRecv;
+	WSAOVERLAPPED recvOverlap;
 	WSABUF bufferRecv;
 	char cbufferRecv[BUFSIZ];
 	UINT szRecv, szWantRecv;

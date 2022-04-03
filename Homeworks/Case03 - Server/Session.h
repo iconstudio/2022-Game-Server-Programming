@@ -17,23 +17,22 @@ public:
 
 	void ReceiveStartPosition(DWORD begin_bytes = 0);
 
+	bool ProceedPacket(EXOVERLAPPED* overlap, DWORD byte);
+
 	const PID ID;
 	const SOCKET Socket;
-
-	UINT szRecv, szWantRecv;
 
 	PlayerCharacter const* Instance;
 
 private:
-	WSAOVERLAPPED overlapRecv;
-	WSABUF bufferRecv;
-	char cbufferRecv[BUFSIZ];
-	Packet recvPacketDescriptor;
+	WSAOVERLAPPED recvOverlap;
+	WSABUF recvBuffer;
+	char recvCBuffer[BUFSIZ];
 
 	EXOVERLAPPED* overlapSendSignUp;
 	EXOVERLAPPED* overlapSendCreateChar;
 	EXOVERLAPPED* overlapSendMoveChar;
 	EXOVERLAPPED* overlapSendSignOut;
 
-	const IOCPFramework& Framework;
+	IOCPFramework& Framework;
 };

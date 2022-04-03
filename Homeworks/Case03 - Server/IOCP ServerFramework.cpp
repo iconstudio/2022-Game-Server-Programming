@@ -7,10 +7,10 @@ IOCPFramework::IOCPFramework()
 	, portOverlap(), portBytes(0), portKey(0), serverKey(100)
 	, socketPool(), clientsID(), Clients()
 	, orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0)
-	, overlapRecv(), szRecv(0), szWantRecv(0), bufferRecv(), cbufferRecv()
+	, recvOverlap(), szRecv(0), szWantRecv(0), bufferRecv(), cbufferRecv()
 {
 	ClearOverlap(&overlapAccept);
-	ClearOverlap(&overlapRecv);
+	ClearOverlap(&recvOverlap);
 	ZeroMemory(cbufferAccept, sizeof(cbufferAccept));
 	ZeroMemory(&bufferRecv, sizeof(bufferRecv));
 	ZeroMemory(cbufferRecv, sizeof(cbufferRecv));
@@ -130,6 +130,8 @@ bool IOCPFramework::Update()
 		auto key = portKey;
 
 		cout << "GQCS: " << key << ", Bytes: " << byte << "\n";
+		if (0 == byte)
+		{}
 
 		if (serverKey == key) // AcceptEx
 		{
@@ -152,36 +154,15 @@ bool IOCPFramework::Update()
 		else
 		{
 			auto client = GetClient(PID(key));
-			auto overlap = static_cast<EXOVERLAPPED*>(portOverlap);
-			auto op = overlap->Operation;
-
-			switch (op)
+			if (!client) // 작업은 완료됐으나 클라이언트가 없다.
 			{
-				case OVERLAP_OPS::NONE:
-				{}
-				break;
-
-				case OVERLAP_OPS::RECV:
-				{
-					if (!client)
-					{
-
-					}
-				}
-				break;
-
-				case OVERLAP_OPS::SEND:
-				{
-					auto client = GetClient(PID(key));
-					if (!client)
-					{
-
-					}
-				}
-				break;
+				delete portOverlap;
 			}
-
-			ClearOverlap(portOverlap);
+			else
+			{
+				auto overlap = static_cast<EXOVERLAPPED*>(portOverlap);
+				client->ProceedPacket(overlap, byte);
+			}
 		}
 
 		return true;

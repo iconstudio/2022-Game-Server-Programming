@@ -1,20 +1,19 @@
 #include "stdafx.h"
 #include "Session.h"
+#include "IOCP ServerFramework.hpp"
 
 Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
 	: ID(id), Socket(sock), Framework(framework)
-	, overlapRecv(), szRecv(0), szWantRecv(0), bufferRecv(), cbufferRecv()
-	, recvPacketDescriptor(PACKET_TYPES::NONE, id)
+	, recvOverlap(), recvBuffer(), recvCBuffer()
 	, Instance(nullptr)
 {
 	ClearRecvBuffer();
-	ClearOverlap(&overlapRecv);
+	ClearOverlap(&recvOverlap);
 }
 
 void Session::ClearRecvBuffer()
 {
-	ZeroMemory(cbufferRecv, sizeof(cbufferRecv));
-	szRecv = 0;
+	ZeroMemory(recvCBuffer, sizeof(recvCBuffer));
 }
 
 template<typename PACKET, typename ...Ty>
@@ -45,5 +44,49 @@ int Session::Send(LPWSABUF buffer, const UINT count, LPWSAOVERLAPPED overlap, DW
 {
 	if (!buffer || !overlap) return 0;
 
-	return WSASend(Socket, buffer, count, NULL, 0, overlap, NULL);
+	auto result = WSASend(Socket, buffer, count, NULL, 0, overlap, NULL);
+	if (SOCKET_ERROR == result)
+	{
+		int error = WSAGetLastError();
+		if (WSA_IO_PENDING != error)
+		{
+			Framework.Disconnect(ID);
+			ErrorDisplay("Session ¡æ Send()");
+			return 0;
+		}
+	}
+
+	return result;
+}
+
+bool Session::ProceedPacket(EXOVERLAPPED* overlap, DWORD byte)
+{
+	auto op = overlap->Operation;
+
+	switch (op)
+	{
+		case OVERLAP_OPS::NONE:
+		{}
+		break;
+
+		case OVERLAP_OPS::RECV:
+		{
+			auto& sz_recv = overlap->szRecv;
+			auto& tr_recv = overlap->szWantRecv;
+
+			ClearOverlap(overlap); // recvOverlap
+		}
+		break;
+
+		case OVERLAP_OPS::SEND:
+		{
+			auto& sz_send = overlap->szSend;
+			auto& tr_send = overlap->szWantSend;
+
+			ClearOverlap(overlap);
+		}
+		break;
+	}
+
+	return false;
 }
