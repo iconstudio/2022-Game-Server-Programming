@@ -2,10 +2,51 @@
 
 TCHAR* Msg_buffer = NULL;
 
-EXOVERLAPPED::EXOVERLAPPED()
-	: Operation(), Type()
-	, szRecv(0), szWantRecv(0), szSend(0), szWantSend(0)
+EXOVERLAPPED::EXOVERLAPPED(OVERLAP_OPS operation)
+	: Operation(operation), Type()
+	, recvBuffer(), recvCBuffer(), recvSize(0), recvSzWant(0)
+	, sendBuffer(), sendCBuffer(), sendSize(0), sendSzWant(0)
 {}
+
+void EXOVERLAPPED::SetRecvBuffer(WSABUF& buffer)
+{
+	*recvBuffer = buffer;
+	recvSzWant = buffer.len;
+}
+
+void EXOVERLAPPED::SetRecvBuffer(LPWSABUF buffer)
+{
+	SetRecvBuffer(*buffer);
+}
+
+void EXOVERLAPPED::SetRecvBuffer(CHAR* cbuffer, DWORD size)
+{
+	if (!recvBuffer) recvBuffer = new WSABUF;
+
+	recvBuffer->buf = cbuffer;
+	recvBuffer->len = size;
+	recvSzWant = size;
+}
+
+void EXOVERLAPPED::SetSendBuffer(WSABUF& buffer)
+{
+	*sendBuffer = buffer;
+	sendSzWant = buffer.len;
+}
+
+void EXOVERLAPPED::SetSendBuffer(LPWSABUF buffer)
+{
+	SetSendBuffer(*buffer);
+}
+
+void EXOVERLAPPED::SetSendBuffer(CHAR* cbuffer, DWORD size)
+{
+	if (!sendBuffer) sendBuffer = new WSABUF;
+
+	sendBuffer->buf = cbuffer;
+	sendBuffer->len = size;
+	sendSzWant = size;
+}
 
 Packet::Packet(PACKET_TYPES type, USHORT size, PID pid)
 	: Type(type), Size(size), playerID(pid)

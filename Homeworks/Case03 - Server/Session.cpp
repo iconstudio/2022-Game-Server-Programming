@@ -4,16 +4,42 @@
 
 Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
 	: ID(id), Socket(sock), Framework(framework)
-	, recvOverlap(), recvBuffer(), recvCBuffer()
+	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer()
 	, Instance(nullptr)
 {
 	ClearRecvBuffer();
 	ClearOverlap(&recvOverlap);
+
+	recvBuffer.buf = recvCBuffer;
+	recvBuffer.len = BUFFSIZE;
 }
 
 void Session::ClearRecvBuffer()
 {
 	ZeroMemory(recvCBuffer, sizeof(recvCBuffer));
+}
+
+int Session::Recv(LPWSABUF datas, UINT count, DWORD flags)
+{
+	if (!datas) return 0;
+
+	return WSARecv(Socket, datas, count, NULL, &flags, &recvOverlap, NULL);
+}
+
+int Session::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap)
+{
+	if (!datas || !overlap) return 0;
+
+	return WSASend(Socket, datas, count, NULL, 0, overlap, NULL);
+}
+
+int Session::RecvPacket(PACKET_TYPES type, DWORD begin_bytes = 0)
+{
+	recvOverlap.Type = type;
+	recvBuffer.buf = recvCBuffer + begin_bytes;
+	recvBuffer.len = BUFFSIZE;
+
+	return 0;
 }
 
 template<typename PACKET, typename ...Ty>
@@ -22,40 +48,16 @@ int Session::SendPacket(Ty... value)
 {
 	auto packet = new PACKET{ value };
 
-	return Send(packet);
-}
-
-int Session::Send(Packet* packet)
-{
 	auto wbuffer = new WSABUF{};
 	wbuffer->buf = reinterpret_cast<char*>(packet);
 	wbuffer->len = packet->Size;
 
-	auto overlap = new EXOVERLAPPED{};
-	overlap->Operation = OVERLAP_OPS::SEND;
-	overlap->szWantSend = packet->Size;
+	auto overlap = new EXOVERLAPPED{ OVERLAP_OPS::SEND };
+	overlap->Type = packet->Type;
+	overlap->SetSendBuffer((wbuffer));
 
-	auto woverlap = static_cast<WSAOVERLAPPED*>(overlap);
-	return Send(wbuffer, 1, woverlap, 0);
-}
-
-int Session::Send(LPWSABUF buffer, const UINT count, LPWSAOVERLAPPED overlap, DWORD begin_bytes)
-{
-	if (!buffer || !overlap) return 0;
-
-	auto result = WSASend(Socket, buffer, count, NULL, 0, overlap, NULL);
-	if (SOCKET_ERROR == result)
-	{
-		int error = WSAGetLastError();
-		if (WSA_IO_PENDING != error)
-		{
-			Framework.Disconnect(ID);
-			ErrorDisplay("Session → Send()");
-			return 0;
-		}
-	}
-
-	return result;
+	auto woverlap = static_cast<LPWSAOVERLAPPED>(overlap);
+	return Send(wbuffer, 1, woverlap);
 }
 
 void Session::BeginPacket(EXOVERLAPPED* overlap, DWORD byte)
@@ -76,37 +78,89 @@ void Session::BeginPacket(EXOVERLAPPED* overlap, DWORD byte)
 
 		case OVERLAP_OPS::SEND:
 		{
-			auto& sz_send = overlap->szSend;
-			auto& tr_send = overlap->szWantSend;
-
-			ClearOverlap(overlap);
+			ProceedSendPacket(overlap, byte);
 		}
 		break;
 	}
 }
 
-void Session::ProceedRecvPacket(EXOVERLAPPED* overlap, DWORD byte)
+bool Session::ProceedRecvPacket(EXOVERLAPPED* overlap, DWORD byte)
 {
-	auto type = overlap->Type;
-	auto& buffer = recvCBuffer;
-	auto& sz_recv = overlap->szRecv;
-	auto& tr_recv = overlap->szWantRecv;
+	auto type = overlap->Type; // 클라이언트 → 서버
+	auto& wbuffer = overlap->recvBuffer; // 세션의 recvBuffer
+	auto& cbuffer = wbuffer->buf;
+	auto& sz_recv = overlap->recvSize;
+	auto& tr_recv = overlap->recvSzWant;
+	auto check_bytes = [&]() -> bool { return tr_recv <= sz_recv; };
 
 	sz_recv += byte;
-	if (tr_recv <= sz_recv)
+
+	switch (type)
 	{
-		ProceedRecvPacket(overlap, sz_recv);
+		case PACKET_TYPES::CS_SIGNIN:
+		{
+			if (check_bytes())
+			{
 
-		//sz_recv -= tr_recv;
+				sz_recv -= tr_recv;
+			}
+			else
+			{
+				ReceiveSignIn();
+				return false;
+			}
+		}
+		break;
+
+		case PACKET_TYPES::CS_SIGNOUT:
+		{
+
+		}
+		break;
+
+		case PACKET_TYPES::CS_KEY:
+		{
+			if (check_bytes())
+			{
+				return ProceedRecvPacket(overlap, 0);
+			}
+			else
+			{
+				return false;
+			}
+		}
+		break;
+
+		default:
+		{
+			ClearRecvBuffer();
+			ClearOverlap(overlap); // recvOverlap
+			ErrorDisplay("ProceedRecvPacket: 잘못된 패킷 받음");
+			return false;
+		}
+		break;
 	}
-
-	ClearRecvBuffer();
-	ClearOverlap(overlap); // recvOverlap
-	//sz_recv = 0;
-	//tr_recv = 0;
 }
 
-void Session::ProceedSendPacket(EXOVERLAPPED* overlap, DWORD byte)
+bool Session::ProceedSendPacket(EXOVERLAPPED* overlap, DWORD byte)
 {
+	auto& sz_send = overlap->sendSize;
+	auto& tr_send = overlap->sendSzWant;
 
+	ClearOverlap(overlap);
+}
+
+bool Session::ReceiveSignIn(DWORD begin_bytes)
+{
+	return false;
+}
+
+bool Session::ReceiveSignOut(DWORD begin_bytes)
+{
+	return false;
+}
+
+bool Session::ReceiveKey(DWORD begin_bytes)
+{
+	return false;
 }

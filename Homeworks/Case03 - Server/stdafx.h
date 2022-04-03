@@ -38,12 +38,25 @@ enum class PACKET_TYPES : UCHAR
 class EXOVERLAPPED : public WSAOVERLAPPED
 {
 public:
-	EXOVERLAPPED();
+	EXOVERLAPPED(OVERLAP_OPS operation);
 
-	OVERLAP_OPS Operation;
+	void SetRecvBuffer(WSABUF& buffer);
+	void SetRecvBuffer(LPWSABUF buffer);
+	void SetRecvBuffer(CHAR* cbuffer, DWORD size);
+	void SetSendBuffer(WSABUF& buffer);
+	void SetSendBuffer(LPWSABUF buffer);
+	void SetSendBuffer(CHAR* cbuffer, DWORD size);
+
+	const OVERLAP_OPS Operation;
 	PACKET_TYPES Type;
-	UINT szRecv, szWantRecv;
-	UINT szSend, szWantSend;
+
+	LPWSABUF recvBuffer;
+	CHAR* recvCBuffer;
+	DWORD recvSize, recvSzWant;
+
+	LPWSABUF sendBuffer;
+	CHAR* sendCBuffer;
+	DWORD sendSize, sendSzWant;
 };
 
 using PID = UINT;
