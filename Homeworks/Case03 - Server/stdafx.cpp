@@ -2,6 +2,9 @@
 
 TCHAR* Msg_buffer = NULL;
 
+EXOVERLAPPED::EXOVERLAPPED() : szRecv(0), szSend(0)
+{}
+
 Packet::Packet(PACKET_TYPES type, USHORT size, PID pid)
 	: Type(type), Size(size), playerID(pid)
 {}

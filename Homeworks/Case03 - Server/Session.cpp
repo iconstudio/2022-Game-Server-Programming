@@ -28,12 +28,16 @@ int Session::SendPacket(Ty... value)
 
 int Session::Send(Packet* packet)
 {
-	auto overlap = new WSAOVERLAPPED{};
+	auto overlap = new EXOVERLAPPED{};
+	overlap->Socket = Socket;
+	overlap->Operation = OVERLAP_OPS::SEND;
+
 	auto wbuffer = new WSABUF{};
 	wbuffer->buf = reinterpret_cast<char*>(packet);
 	wbuffer->len = packet->Size;
 
-	return Send(wbuffer, 1, overlap, 0);
+	auto woverlap = static_cast<WSAOVERLAPPED*>(overlap);
+	return Send(wbuffer, 1, woverlap, 0);
 }
 
 int Session::Send(LPWSABUF buffer, const UINT count, LPWSAOVERLAPPED overlap, DWORD begin_bytes)

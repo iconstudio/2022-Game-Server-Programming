@@ -15,12 +15,13 @@ using namespace std;
 
 class IOCPFramework;
 
-enum class OVERLAP_OPS
+enum class OVERLAP_OPS : UCHAR
 {
-
+	NONE = 0,
+	RECV,
+	SEND,
 };
 
-#pragma pack(push, 1)
 enum PACKET_TYPES : UCHAR
 {
 	NONE = 0,
@@ -33,11 +34,15 @@ enum PACKET_TYPES : UCHAR
 	SC_SIGNOUT
 };
 
+#pragma pack(push, 1)
 class EXOVERLAPPED : public WSAOVERLAPPED
 {
 public:
+	EXOVERLAPPED();
+
 	SOCKET Socket;
-	PACKET_TYPES Operation;
+	OVERLAP_OPS Operation;
+	UINT szRecv, szSend;
 };
 
 using PID = UINT;

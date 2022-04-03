@@ -147,10 +147,29 @@ bool IOCPFramework::Update()
 			auto overlap = static_cast<EXOVERLAPPED*>(portOverlap);
 			auto op = overlap->Operation;
 
-			auto client = GetClient(PID(key));
-			if (!client)
+			switch (op)
 			{
-				//
+				case OVERLAP_OPS::NONE:
+				{}
+				break;
+
+				case OVERLAP_OPS::RECV:
+				{}
+				break;
+
+				case OVERLAP_OPS::SEND:
+				{}
+				break;
+			}
+
+			if (OVERLAP_OPS::NONE != op)
+			{
+				auto client = GetClient(PID(key));
+				if (!client)
+				{
+				}
+
+
 			}
 
 			ClearOverlap(portOverlap);
