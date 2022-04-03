@@ -2,7 +2,8 @@
 
 TCHAR* Msg_buffer = NULL;
 
-EXOVERLAPPED::EXOVERLAPPED() : szRecv(0), szSend(0)
+EXOVERLAPPED::EXOVERLAPPED()
+	: szRecv(0), szWantRecv(0), szSend(0), szWantSend(0)
 {}
 
 Packet::Packet(PACKET_TYPES type, USHORT size, PID pid)
@@ -14,7 +15,7 @@ Packet::Packet(PACKET_TYPES type, PID pid)
 {}
 
 CSPacketSignIn::CSPacketSignIn(const CHAR* nickname)
-	: Packet(CS_SIGNIN, sizeof(CSPacketSignIn), 0)
+	: Packet(PACKET_TYPES::CS_SIGNIN, sizeof(CSPacketSignIn), 0)
 	, Nickname()
 {
 	ZeroMemory(Nickname, sizeof(Nickname));
@@ -22,30 +23,31 @@ CSPacketSignIn::CSPacketSignIn(const CHAR* nickname)
 }
 
 CSPacketSignOut::CSPacketSignOut(PID pid)
-	: Packet(CS_SIGNOUT, pid)
+	: Packet(PACKET_TYPES::CS_SIGNOUT, pid)
 {}
 
 CSPacketKeyInput::CSPacketKeyInput(PID pid, WPARAM key)
-	: Packet(CS_KEY, sizeof(CSPacketKeyInput), pid), Key(key)
+	: Packet(PACKET_TYPES::CS_KEY, sizeof(CSPacketKeyInput), pid)
+	, Key(key)
 {}
 
 SCPacketSignUp::SCPacketSignUp(PID nid, UINT users, UINT usersmax)
-	: Packet(SC_SIGNUP, sizeof(SCPacketSignUp), nid)
+	: Packet(PACKET_TYPES::SC_SIGNUP, sizeof(SCPacketSignUp), nid)
 	, usersCurrent(users), usersMax(usersmax)
 {}
 
-SCPacketCreateCharacter::SCPacketCreateCharacter(PID pid, UCHAR cx, UCHAR cy)
-	: Packet(SC_CREATE_CHARACTER, sizeof(SCPacketCreateCharacter), pid)
+SCPacketCreateCharacter::SCPacketCreateCharacter(PID pid, CHAR cx, CHAR cy)
+	: Packet(PACKET_TYPES::SC_CREATE_CHARACTER, sizeof(SCPacketCreateCharacter), pid)
 	, x(cx), y(cy)
 {}
 
-SCPacketMoveCharacter::SCPacketMoveCharacter(PID pid, UCHAR nx, UCHAR ny)
-	: Packet(SC_MOVE_CHARACTER, sizeof(SCPacketMoveCharacter), pid)
+SCPacketMoveCharacter::SCPacketMoveCharacter(PID pid, CHAR nx, CHAR ny)
+	: Packet(PACKET_TYPES::SC_MOVE_CHARACTER, sizeof(SCPacketMoveCharacter), pid)
 	, x(nx), y(ny)
 {}
 
 SCPacketSignOut::SCPacketSignOut(PID pid)
-	: Packet(SC_SIGNOUT, pid)
+	: Packet(PACKET_TYPES::SC_SIGNOUT, pid)
 {}
 
 bool PlayerCharacter::TryMoveLT()

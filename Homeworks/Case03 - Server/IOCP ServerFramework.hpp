@@ -13,6 +13,7 @@ public:
 	void Accept();
 	bool Update();
 
+	SOCKET CreateSocket() const;
 	pair<PID, Session*> CreateAndAssignClient(SOCKET nsocket);
 
 	Session* GetClient(PID id);

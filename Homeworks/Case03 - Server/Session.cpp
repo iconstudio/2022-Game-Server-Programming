@@ -4,7 +4,7 @@
 Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
 	: ID(id), Socket(sock), Framework(framework)
 	, overlapRecv(), szRecv(0), szWantRecv(0), bufferRecv(), cbufferRecv()
-	, recvPacketDescriptor(NONE, id)
+	, recvPacketDescriptor(PACKET_TYPES::NONE, id)
 	, Instance(nullptr)
 {
 	ClearRecvBuffer();
@@ -28,13 +28,14 @@ int Session::SendPacket(Ty... value)
 
 int Session::Send(Packet* packet)
 {
-	auto overlap = new EXOVERLAPPED{};
-	overlap->Socket = Socket;
-	overlap->Operation = OVERLAP_OPS::SEND;
-
 	auto wbuffer = new WSABUF{};
 	wbuffer->buf = reinterpret_cast<char*>(packet);
 	wbuffer->len = packet->Size;
+
+	auto overlap = new EXOVERLAPPED{};
+	overlap->Socket = Socket;
+	overlap->Operation = OVERLAP_OPS::SEND;
+	overlap->szWantSend = packet->Size;
 
 	auto woverlap = static_cast<WSAOVERLAPPED*>(overlap);
 	return Send(wbuffer, 1, woverlap, 0);

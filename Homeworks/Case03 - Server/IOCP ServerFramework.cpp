@@ -37,8 +37,7 @@ void IOCPFramework::Init()
 		return;
 	}
 
-	Listener = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP
-		, NULL, 0, WSA_FLAG_OVERLAPPED);
+	Listener = CreateSocket();
 	if (INVALID_SOCKET == Listener)
 	{
 		ErrorDisplay("Init → WSASocket()");
@@ -72,9 +71,9 @@ void IOCPFramework::Init()
 		return;
 	}
 
-	for (UINT i = 0; i < CLIENTS_MAX_NUMBER; ++i)
+	for (UINT i = 0; i < socketPool.capacity(); ++i)
 	{
-		auto sk = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+		auto sk = CreateSocket();
 		if (INVALID_SOCKET == sk)
 		{
 			ErrorDisplay("IOCPFramework → WSASocket()");
@@ -97,7 +96,6 @@ void IOCPFramework::Start()
 	while (true)
 	{
 		Accept();
-		//if (!Accept()) break;
 		if (!Update()) break;
 	}
 	cout << "서버 종료\n";
@@ -135,15 +133,25 @@ bool IOCPFramework::Update()
 
 		if (serverKey == key) // AcceptEx
 		{
-			auto newbie = socketPool.back();
-			CreateAndAssignClient(newbie);
-			socketPool.pop_back();
+			auto& newbie = socketPool.back();
+
+			if (socketPool.empty())
+			{
+				closesocket(newbie);
+				newbie = CreateSocket();
+			}
+			else
+			{
+				CreateAndAssignClient(newbie);
+				socketPool.pop_back();
+			}
 
 			ClearOverlap(&overlapAccept);
 			ZeroMemory(cbufferAccept, sizeof(cbufferAccept));
 		}
 		else
 		{
+			auto client = GetClient(PID(key));
 			auto overlap = static_cast<EXOVERLAPPED*>(portOverlap);
 			auto op = overlap->Operation;
 
@@ -154,22 +162,23 @@ bool IOCPFramework::Update()
 				break;
 
 				case OVERLAP_OPS::RECV:
-				{}
+				{
+					if (!client)
+					{
+
+					}
+				}
 				break;
 
 				case OVERLAP_OPS::SEND:
-				{}
-				break;
-			}
-
-			if (OVERLAP_OPS::NONE != op)
-			{
-				auto client = GetClient(PID(key));
-				if (!client)
 				{
+					auto client = GetClient(PID(key));
+					if (!client)
+					{
+
+					}
 				}
-
-
+				break;
 			}
 
 			ClearOverlap(portOverlap);
@@ -182,6 +191,12 @@ bool IOCPFramework::Update()
 		ErrorDisplay("GetQueuedCompletionStatus()");
 		return false;
 	}
+}
+
+SOCKET IOCPFramework::CreateSocket() const
+{
+	return WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP
+		, NULL, 0, WSA_FLAG_OVERLAPPED);
 }
 
 pair<PID, Session*> IOCPFramework::CreateAndAssignClient(SOCKET nsocket)

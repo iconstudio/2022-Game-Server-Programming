@@ -22,7 +22,7 @@ enum class OVERLAP_OPS : UCHAR
 	SEND,
 };
 
-enum PACKET_TYPES : UCHAR
+enum class PACKET_TYPES : UCHAR
 {
 	NONE = 0,
 	CS_SIGNIN,
@@ -42,7 +42,8 @@ public:
 
 	SOCKET Socket;
 	OVERLAP_OPS Operation;
-	UINT szRecv, szSend;
+	UINT szRecv, szWantRecv;
+	UINT szSend, szWantSend;
 };
 
 using PID = UINT;
@@ -99,9 +100,9 @@ struct SCPacketSignUp : public Packet
 /// </summary>
 struct SCPacketCreateCharacter : public Packet
 {
-	SCPacketCreateCharacter(PID pid, UCHAR cx, UCHAR cy);
+	SCPacketCreateCharacter(PID pid, CHAR cx, CHAR cy);
 
-	UCHAR x, y;
+	CHAR x, y;
 };
 
 /// <summary>
@@ -109,9 +110,9 @@ struct SCPacketCreateCharacter : public Packet
 /// </summary>
 struct SCPacketMoveCharacter : public Packet
 {
-	SCPacketMoveCharacter(PID pid, UCHAR nx, UCHAR ny);
+	SCPacketMoveCharacter(PID pid, CHAR nx, CHAR ny);
 
-	UCHAR x, y;
+	CHAR x, y;
 };
 
 /// <summary>
@@ -133,7 +134,7 @@ public:
 	bool TryMoveUP();
 	bool TryMoveDW();
 
-	UCHAR x, y;
+	CHAR x, y;
 };
 #pragma pack(pop)
 
