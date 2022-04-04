@@ -1,100 +1,229 @@
 #include "iocp server.hpp"
-class SESSION;
 
-enum COMPLETION_TYPES : int
-{
-	ACCEPT, RECV, SEND
-};
+const DWORD serverKey = 99999;
 
-struct OVER_EXP
-{
-	WSAOVERLAPPED Overlap;
-	WSABUF Buffer;
-	char CBuffer[BUF_SIZE];
+SOCKET listener;
+SOCKET client_sock;
+OVER_EXP acceptOverlap{};
 
-	COMPLETION_TYPES Completion_type;
-
-	OVER_EXP()
-	{
-		Completion_type = RECV;
-
-		Buffer.len = BUF_SIZE;
-		Buffer.buf = CBuffer;
-
-		ZeroMemory(&Overlap, sizeof(Overlap));
-	}
-
-	OVER_EXP(char* data, int size)
-	{
-		Completion_type = SEND;
-
-		Buffer.len = size;
-		Buffer.buf = data;
-
-		ZeroMemory(&Overlap, sizeof(Overlap));
-		CopyMemory(CBuffer, data, size);
-	}
-};
-
-array<SESSION, MAX_USER> Clients;
-
-#include "chat server.hpp"
-
-unordered_map<int, SESSION> clients;
+array<SESSION, MAX_USER> ClientIDs;
+unordered_map<UINT, SESSION*> Clients;
 unordered_map<WSAOVERLAPPED*, int> over_to_session;
 
-class SEND_DATA
+UINT orderClients = 0;
+UINT numberClients = 0;
+
+void do_accept();
+
+int GetNewbieID()
 {
-public:
-	WSAOVERLAPPED _over;
-	WSABUF _wsabuf;
-	char _send_buf[BUF_SIZE];
-	SEND_DATA(char* n_data, int size, int client_id)
+	for (int i = 0; i < MAX_USER; ++i)
 	{
-		_wsabuf.len = size + 2;
-		_wsabuf.buf = _send_buf;
-		ZeroMemory(&_over, sizeof(_over));
-		_send_buf[0] = size + 2;
-		_send_buf[1] = client_id;
-		memcpy(_send_buf + 2, n_data, size);
+		auto session = Clients[i];
+		if (!session->used)
+		{
+			return i;
+		}
 	}
-};
 
-class SESSION
+	return -1;
+}
+
+void ProcessPacket(void* data, UINT sz_remain)
 {
-	WSAOVERLAPPED _c_over;
-	WSABUF _c_wsabuf[1];
-public:
-	int _id;
-	SOCKET _socket;
-	CHAR _c_mess[BUF_SIZE];
-public:
-	SESSION() {}
-	SESSION(int id, SOCKET s) : _id(id), _socket(s)
-	{
-		_c_wsabuf[0].buf = _c_mess;
-		_c_wsabuf[0].len = sizeof(_c_mess);
-		over_to_session[&_c_over] = id;
-	}
-	~SESSION() {}
+	auto packet = reinterpret_cast<PACKET*>(data);
+	auto size = packet->Size;
+	auto type = packet->Type;
+	auto pid = packet->ID;
 
-	void do_recv()
+	auto session = Clients.at(pid);
+
+	switch (type)
 	{
-		DWORD recv_flag = 0;
-		memset(&_c_over, 0, sizeof(_c_over));
-		WSARecv(_socket, _c_wsabuf, 1, 0, &recv_flag, &_c_over, recv_callback);
+		case CS_LOGIN:
+		{
+			auto result = reinterpret_cast<CSPacketLogin*>(data);
+
+			session->_id = result->ID;
+
+			strcpy_s(session->Name, result->Name);
+		}
+		break;
+
+		case CS_MOVE:
+		{
+			auto result = reinterpret_cast<CSPacketMove*>(data);
+
+			session->x += result->aX;
+			session->y += result->aY;
+
+			if (session->x < 0) session->x = 0;
+			else if (WORLD_SZ <= session->x) session->x = WORLD_SZ - 1;
+
+			if (session->y < 0) session->y = 0;
+			else if (WORLD_SZ <= session->y) session->y = WORLD_SZ - 1;
+		}
+		break;
+
+		case SC_ACCEPT:
+		{
+
+		}
+		break;
+
+		case SC_ADD_PLAYER:
+		{
+
+		}
+		break;
+
+		case SC_RMV_PLAYER:
+		{
+
+		}
+		break;
+
+		case SC_MOV_PLAYER:
+		{
+
+		}
+		break;
 	}
 
-	void do_send(int num_bytes, char* mess, int client_id)
+}
+
+int main()
+{
+	WSADATA WSAData;
+	WSAStartup(MAKEWORD(2, 2), &WSAData);
+
+	SOCKET listener = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+
+	SOCKADDR_IN server_addr;
+	memset(&server_addr, 0, sizeof(server_addr));
+	server_addr.sin_family = AF_INET;
+	server_addr.sin_port = htons(PORT_NUM);
+	server_addr.sin_addr.S_un.S_addr = INADDR_ANY;
+
+	bind(listener, reinterpret_cast<sockaddr*>(&server_addr), sizeof(server_addr));
+
+	listen(listener, SOMAXCONN);
+
+	HANDLE completionPort;
+
+	WSABUF acceptBuffer{};
+	CHAR acceptCBuffer[BUF_SIZE]{};
+	acceptBuffer.buf = acceptCBuffer;
+	acceptBuffer.len = BUF_SIZE;
+
+	acceptOverlap.Completion_type = ACCEPT;
+	acceptOverlap.recvBuffer = acceptBuffer;
+
+	completionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	CreateIoCompletionPort(HANDLE(listener), completionPort, serverKey, 0);
+
+	cout << "서버 시작\n";
+	do_accept();
+
+	LPWSAOVERLAPPED overlap = NULL;
+	DWORD bytes = 0;
+	ULONGLONG key = 0;
+
+	while (true)
 	{
-		SEND_DATA* sdata = new SEND_DATA{ mess, num_bytes, client_id };
-		WSASend(_socket, &sdata->_wsabuf, 1, 0, 0, &sdata->_over, send_callback);
+		auto gqcs = GetQueuedCompletionStatus(completionPort, &bytes, &key, &overlap, INFINITE);
+
+		if (TRUE == gqcs)
+		{
+			auto over = reinterpret_cast<OVER_EXP*>(&overlap);
+			auto type = over->Completion_type;
+
+			switch (type)
+			{
+				case ACCEPT:
+				{
+					if (MAX_USER <= numberClients)
+					{
+						cout << "Cannot accept the client!\n";
+						closesocket(client_sock);
+					}
+					else
+					{
+						int new_id = GetNewbieID();
+
+						auto session = new SESSION(orderClients, client_sock);
+						CreateIoCompletionPort(HANDLE(client_sock), completionPort, new_id, 0);
+
+						Clients.try_emplace(orderClients, session);
+
+						session->do_recv();
+
+						cout << "Client (ID: " << orderClients << ") connected.\n";
+						orderClients++;
+						numberClients++;
+					}
+
+					ZeroMemory(overlap, sizeof(WSAOVERLAPPED));
+					do_accept();
+				}
+				break;
+
+				case RECV:
+				{
+					auto session = Clients[key];
+
+					if (session)
+					{
+						auto& recv_remain = session->recv_remain;
+						auto& recv_wbuffer = session->recvOverlap.recvBuffer;
+						auto& recv_cbuffer = recv_wbuffer.buf;
+						auto& recv_size = recv_wbuffer.len;
+
+						recv_remain += bytes;
+
+						const auto sz_want = sizeof(PACKET);
+
+						while (0 < recv_remain)
+						{
+							auto packet_size = int(&recv_cbuffer[0]);
+
+							ProcessPacket(recv_cbuffer, recv_remain);
+
+							recv_cbuffer += recv_remain;
+							recv_remain -= packet_size;
+						}
+
+						//session->recv_remain = re
+
+					}
+				}
+				break;
+			}
+		}
 	}
-};
+
+	closesocket(listener);
+	WSACleanup();
+}
+
+void do_accept()
+{
+	SOCKADDR_IN cl_addr;
+	int addr_size = sizeof(cl_addr);
+
+	SOCKET c_sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+
+	const auto sz_addr = sizeof(SOCKADDR_IN) + 16;
+	auto try_accept = AcceptEx(listener, c_sock, NULL
+		, 0, sz_addr, sz_addr, NULL
+		, &acceptOverlap);
+}
 
 void CALLBACK send_callback(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DWORD flags)
 {
-	SEND_DATA* sdata = reinterpret_cast<SEND_DATA*>(over);
+	auto sdata = reinterpret_cast<OVER_EXP*>(over);
+
+	delete[] sdata->sendCBuffer;
 	delete sdata;
 }
 
@@ -104,40 +233,19 @@ void CALLBACK recv_callback(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DW
 	if (0 == num_bytes)
 	{
 		cout << "Client disconnected\n";
-		clients.erase(client_id);
+		Clients.erase(client_id);
 		over_to_session.erase(over);
 		return;
 	};
-	cout << "Client " << client_id << " sent: " << clients[client_id]._c_mess << endl;
-	for (auto& cl : clients)
-		cl.second.do_send(num_bytes, clients[client_id]._c_mess, client_id);
-	clients[client_id].do_recv();
-}
 
-int main()
-{
-	WSADATA WSAData;
-	WSAStartup(MAKEWORD(2, 2), &WSAData);
-	SOCKET server = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	SOCKADDR_IN server_addr;
-	memset(&server_addr, 0, sizeof(server_addr));
-	server_addr.sin_family = AF_INET;
-	server_addr.sin_port = htons(PORT_NUM);
-	server_addr.sin_addr.S_un.S_addr = INADDR_ANY;
-	bind(server, reinterpret_cast<sockaddr*>(&server_addr), sizeof(server_addr));
-	listen(server, SOMAXCONN);
-	SOCKADDR_IN cl_addr;
-	int addr_size = sizeof(cl_addr);
-	int client_id = 0;
-	while (true)
+	cout << "Client " << client_id << " sent: " << Clients[client_id]->_c_mess << endl;
+
+	for (auto& cl : Clients)
 	{
-		SOCKET client = WSAAccept(server, reinterpret_cast<sockaddr*>(&cl_addr), &addr_size, 0, 0);
-		clients.try_emplace(client_id, client_id, client);
-		clients[client_id].do_recv();
-		cout << "Client " << client_id << " connected.\n";
-		client_id++;
+		auto session = cl.second;
+		session->do_send(client_id, session->_c_mess);
 	}
-	closesocket(server);
-	WSACleanup();
+
+	Clients[client_id]->do_recv();
 }
 
