@@ -76,7 +76,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 	sz_recv += byte;
 
 	const auto sz_min = sizeof(Packet);
-	if (sz_min <= sz_recv)
+	while (sz_min <= sz_recv)
 	{
 		auto packet = reinterpret_cast<Packet*>(cbuffer); // 클라이언트 → 서버
 		auto sz_want = packet->Size;
@@ -107,10 +107,10 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 				else
 				{
 					auto lack = sz_want - sz_recv;
-					cout << "CS_SIGNIN: 클라이언트 " << ID << "에게 받아온 정보가 "
+					std::cout << "CS_SIGNIN: 클라이언트 " << ID << "에게 받아온 정보가 "
 						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
 
-					ReceiveSignIn(sz_recv);
+					//RecvStream(sz_recv);
 				}
 			}
 			break;
@@ -136,10 +136,10 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 				else
 				{
 					auto lack = sz_want - sz_recv;
-					cout << "CS_SIGNOUT: 클라이언트 " << ID << "에게 받아온 정보가 "
+					std::cout << "CS_SIGNOUT: 클라이언트 " << ID << "에게 받아온 정보가 "
 						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
 
-					ReceiveSignOut(sz_recv);
+					//RecvStream(sz_recv);
 				}
 			}
 			break;
@@ -157,15 +157,14 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 						if (!moved)
 						{
-							cout << "플레이어 " << ID << " - 움직이지 않음.\n";
+							std::cout << "플레이어 " << ID << " - 움직이지 않음.\n";
 						}
 						else
 						{
-							cout << "플레이어 " << ID << " - 위치: ("
+							std::cout << "플레이어 " << ID << " - 위치: ("
 								<< Instance->x << ", " << Instance->y << ")\n";
 						}
 
-						ReceiveKey(0);
 						if (moved)
 						{
 							//Framework.BroadcastWorld();
@@ -181,10 +180,10 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 				else
 				{
 					auto lack = sz_want - sz_recv;
-					cout << "CS_KEY: 클라이언트 " << ID << "에게 받아온 정보가 "
+					std::cout << "CS_KEY: 클라이언트 " << ID << "에게 받아온 정보가 "
 						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
 
-					ReceiveKey(sz_recv);
+					//RecvStream(sz_recv);
 				}
 			}
 			break;
@@ -199,10 +198,9 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 			break;
 		}
 	}
-	else // 아무거나 다 받는다.
-	{
-		RecvStream(recvCBuffer, sz_recv);
-	}
+
+	// 아무거나 다 받는다.
+	RecvStream(sz_recv);
 }
 
 void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
@@ -213,19 +211,17 @@ void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
 	ClearOverlap(overlap);
 }
 
-bool Session::ReceiveSignIn(DWORD begin_bytes)
+int Session::RecvStream(DWORD size, DWORD begin_bytes)
 {
-	return false;
+	recvBuffer.buf = recvCBuffer + begin_bytes;
+	recvBuffer.len = size - begin_bytes;
+
+	return Recv(0);
 }
 
-bool Session::ReceiveSignOut(DWORD begin_bytes)
+int Session::RecvStream(DWORD begin_bytes)
 {
-	return false;
-}
-
-bool Session::ReceiveKey(DWORD begin_bytes)
-{
-	return false;
+	return RecvStream(BUFFSIZE, begin_bytes);
 }
 
 bool Session::SendSignUp(DWORD begin_bytes)
@@ -253,19 +249,6 @@ int Session::Recv(DWORD flags)
 	if (!recvBuffer.buf) return 0;
 
 	return WSARecv(Socket, &recvBuffer, 1, 0, &flags, &recvOverlap, NULL);
-}
-
-int Session::RecvStream(DWORD size, DWORD begin_bytes)
-{
-	recvBuffer.buf = recvCBuffer + begin_bytes;
-	recvBuffer.len = size - begin_bytes;
-
-	return Recv(0);
-}
-
-int Session::RecvStream(DWORD begin_bytes)
-{
-	return RecvStream(BUFFSIZE, begin_bytes);
 }
 
 int Session::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap)
