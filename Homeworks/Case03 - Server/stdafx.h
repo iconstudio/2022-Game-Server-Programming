@@ -11,7 +11,6 @@
 #include <concurrent_unordered_map.h>
 #include <algorithm>
 #include <tuple>
-using namespace std;
 
 class IOCPFramework;
 class Session;

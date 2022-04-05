@@ -12,9 +12,8 @@ public:
 	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
 	void ProceedSent(EXOVERLAPPED* overlap, DWORD byte);
 
-	bool ReceiveSignIn(DWORD begin_bytes = 0);
-	bool ReceiveSignOut(DWORD begin_bytes = 0);
-	bool ReceiveKey(DWORD begin_bytes = 0);
+	int RecvStream(DWORD size, DWORD begin_bytes);
+	int RecvStream(DWORD begin_bytes = 0);
 
 	bool SendSignUp(DWORD begin_bytes = 0);
 	bool SendCreateCharacter(DWORD begin_bytes = 0);
@@ -36,8 +35,6 @@ private:
 	void ClearRecvBuffer();
 
 	int Recv(DWORD flags = 0);
-	int RecvStream(DWORD size, DWORD begin_bytes);
-	int RecvStream(DWORD begin_bytes = 0);
 
 	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
 	template<typename PACKET, typename ...Ty>

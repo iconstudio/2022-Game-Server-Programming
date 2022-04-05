@@ -81,7 +81,7 @@ void IOCPFramework::Init()
 			return;
 		}
 
-		socketPool.push_back(move(sk));
+		socketPool.push_back(std::move(sk));
 	}
 }
 
@@ -93,13 +93,13 @@ void IOCPFramework::Start()
 		return;
 	}
 
-	cout << "서버 시작\n";
+	std::cout << "서버 시작\n";
 	while (true)
 	{
 		Accept();
 		if (!Update()) break;
 	}
-	cout << "서버 종료\n";
+	std::cout << "서버 종료\n";
 }
 
 void IOCPFramework::Accept()
@@ -130,7 +130,7 @@ bool IOCPFramework::Update()
 		auto bytes = portBytes;
 		auto key = portKey;
 
-		cout << "GQCS: " << key << ", Bytes: " << bytes << "\n";
+		std::cout << "GQCS: " << key << ", Bytes: " << bytes << "\n";
 		if (0 == bytes)
 		{
 			ErrorDisplay("GetQueuedCompletionStatus()");
@@ -143,7 +143,7 @@ bool IOCPFramework::Update()
 		}
 		else // recv / send
 		{
-			ProceedPacket(key, bytes);
+			ProceedPacket(portOverlap, key, bytes);
 		}
 
 		return true;
@@ -161,7 +161,7 @@ void IOCPFramework::ProceedAccept()
 
 	if (socketPool.empty())
 	{
-		cout << "새 접속을 받을 수 없습니다!\n";
+		std::cout << "새 접속을 받을 수 없습니다!\n";
 		closesocket(newbie);
 		newbie = CreateSocket();
 	}
@@ -175,17 +175,17 @@ void IOCPFramework::ProceedAccept()
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
 }
 
-void IOCPFramework::ProceedPacket(ULONG_PTR key, DWORD bytes)
+void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes)
 {
 	auto client = GetClient(PID(key));
 	if (!client) // 작업은 완료됐으나 클라이언트가 없다.
 	{
-		delete portOverlap;
+		delete overlap;
 	}
 	else
 	{
-		auto overlap = static_cast<EXOVERLAPPED*>(portOverlap);
-		client->RoutePacket(overlap, bytes);
+		auto exoverlap = static_cast<EXOVERLAPPED*>(overlap);
+		client->RoutePacket(exoverlap, bytes);
 	}
 }
 
@@ -195,33 +195,31 @@ SOCKET IOCPFramework::CreateSocket() const
 		, NULL, 0, WSA_FLAG_OVERLAPPED);
 }
 
-pair<PID, Session*> IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
+void IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
 {
 	auto session = new Session(orderClientIDs, nsocket, *this);
 	if (!session)
 	{
 		throw std::exception("서버 메모리 부족!");
-		return make_pair(0, nullptr);
+		return;
 	}
 
 	auto io = CreateIoCompletionPort((HANDLE)(nsocket), completionPort, orderClientIDs, 0);
 	if (NULL == io)
 	{
 		ErrorDisplay("CreateAndAssignClient → CreateIoCompletionPort()");
-		return make_pair(0, nullptr);
+		return;
 	}
 
-	cout << "클라이언트 " << orderClientIDs << " 접속 → 소켓: " << nsocket << "\n";
+	std::cout << "클라이언트 " << orderClientIDs << " 접속 → 소켓: " << nsocket << "\n";
 
-	auto result = make_pair(orderClientIDs, session);
+	auto result = std::make_pair(orderClientIDs, session);
 	clientsID.push_back(orderClientIDs);
 	Clients.insert(result);
 	orderClientIDs++;
 	numberClients++;
 
 	session->ReceiveSignIn(); // IO 진입
-
-	return result;
 }
 
 Session* IOCPFramework::GetClient(PID id)
@@ -241,7 +239,18 @@ UINT IOCPFramework::GetClientsNumber() const
 
 void IOCPFramework::RemoveClient(const PID rid)
 {
+	auto vit = std::find(clientsID.begin(), clientsID.end(), rid);
+	if (clientsID.end() != vit)
+	{
+		clientsID.erase(vit);
+	}
 
+	auto mit = Clients.find(rid);
+	if (Clients.end() != mit)
+	{
+		Clients.unsafe_erase(mit);
+		numberClients--;
+	}
 }
 
 void IOCPFramework::Disconnect(const PID id)

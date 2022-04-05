@@ -23,10 +23,10 @@ private:
 	void Accept();
 	bool Update();
 	void ProceedAccept();
-	void ProceedPacket(ULONG_PTR key, DWORD bytes);
+	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
 	SOCKET CreateSocket() const;
-	pair<PID, Session*> CreateAndAssignClient(SOCKET nsocket);
+	void CreateAndAssignClient(SOCKET nsocket);
 
 	SOCKET Listener;
 	SOCKADDR_IN Address;
@@ -42,8 +42,8 @@ private:
 	ULONG_PTR portKey;
 	const ULONG_PTR serverKey;
 
-	vector<SOCKET> socketPool;
-	concurrency::concurrent_vector<PID> clientsID;
+	std::vector<SOCKET> socketPool;
+	std::vector<PID> clientsID;
 	concurrency::concurrent_unordered_map<PID, Session*> Clients;
 	PID orderClientIDs;
 	UINT numberClients;
