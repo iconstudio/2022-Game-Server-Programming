@@ -29,6 +29,51 @@ int GetNewbieID()
 	return -1;
 }
 
+void Disconnect(const UINT pid)
+{
+	auto session = Clients[pid];
+	if (session->used)
+	{
+		session->used = false;
+		//delete session;
+
+		NotifyPlayerDisconnectionToAll(pid);
+	}
+}
+
+void NotifyPlayerConnectionToAll(const UINT pid)
+{
+	for (auto& player : Clients)
+	{
+		auto target_session = player.second;
+		if (target_session->used && target_session->_id != pid)
+		{
+			auto packet = new SCPacketAccept(pid);
+
+			target_session->do_send(packet);
+		}
+	}
+}
+
+void NotifyPlayerDisconnectionToAll(const UINT pid)
+{
+	for (auto& player : Clients)
+	{
+		auto target_session = player.second;
+		if (target_session->used && target_session->_id != pid)
+		{
+			auto packet = new SCPacketRemovePlayer(pid,);
+
+			target_session->do_send(packet);
+		}
+	}
+}
+
+void NotifyPlayerActionToAll(const UINT pid)
+{
+
+}
+
 void ProcessPacket(void* data, UINT sz_remain)
 {
 	auto packet = reinterpret_cast<PACKET*>(data);
@@ -44,9 +89,12 @@ void ProcessPacket(void* data, UINT sz_remain)
 		{
 			auto result = reinterpret_cast<CSPacketLogin*>(data);
 
-			session->_id = result->ID;
+			auto nid = result->ID;
+			session->_id = nid;
 
 			strcpy_s(session->Name, result->Name);
+
+			//
 		}
 		break;
 
@@ -94,10 +142,22 @@ void ProcessPacket(void* data, UINT sz_remain)
 
 int main()
 {
+	int checksum = 0;
+
 	WSADATA WSAData;
-	WSAStartup(MAKEWORD(2, 2), &WSAData);
+	checksum = WSAStartup(MAKEWORD(2, 2), &WSAData);
+	if (SOCKET_ERROR == checksum)
+	{
+		cout << "WSAStartup() 오류!\n";
+		return;
+	}
 
 	SOCKET listener = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+	if (INVALID_SOCKET == listener)
+	{
+		cout << "WSASocket(listener) 오류!\n";
+		return;
+	}
 
 	SOCKADDR_IN server_addr;
 	memset(&server_addr, 0, sizeof(server_addr));
@@ -105,12 +165,22 @@ int main()
 	server_addr.sin_port = htons(PORT_NUM);
 	server_addr.sin_addr.S_un.S_addr = INADDR_ANY;
 
-	bind(listener, reinterpret_cast<sockaddr*>(&server_addr), sizeof(server_addr));
+	auto server_addr_ptr = reinterpret_cast<SOCKADDR*>(&server_addr);
+	checksum = bind(listener, server_addr_ptr, sizeof(server_addr));
+	if (SOCKET_ERROR == checksum)
+	{
+		cout << "bind() 오류! \n";
+		return;
+	}
 
-	listen(listener, SOMAXCONN);
+	checksum = listen(listener, SOMAXCONN);
+	if (SOCKET_ERROR == checksum)
+	{
+		cout << "listen() 오류! \n";
+		return;
+	}
 
-	HANDLE completionPort;
-
+	HANDLE completionPort = NULL;
 	WSABUF acceptBuffer{};
 	CHAR acceptCBuffer[BUF_SIZE]{};
 	acceptBuffer.buf = acceptCBuffer;
@@ -120,6 +190,12 @@ int main()
 	acceptOverlap.recvBuffer = acceptBuffer;
 
 	completionPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+	if (NULL == completionPort)
+	{
+		cout << "CreateIoCompletionPort(INVALID_HANDLE_VALUE) 오류! \n";
+		return;
+	}
+
 	CreateIoCompletionPort(HANDLE(listener), completionPort, serverKey, 0);
 
 	cout << "서버 시작\n";
@@ -154,6 +230,7 @@ int main()
 						auto session = new SESSION(orderClients, client_sock);
 						CreateIoCompletionPort(HANDLE(client_sock), completionPort, new_id, 0);
 
+						session->used = true;
 						Clients.try_emplace(orderClients, session);
 
 						session->do_recv();
@@ -196,6 +273,12 @@ int main()
 						//session->recv_remain = re
 
 					}
+				}
+				break;
+
+				case SEND:
+				{
+
 				}
 				break;
 			}
@@ -243,7 +326,7 @@ void CALLBACK recv_callback(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DW
 	for (auto& cl : Clients)
 	{
 		auto session = cl.second;
-		session->do_send(client_id, session->_c_mess);
+		session->do_send(session->_c_mess);
 	}
 
 	Clients[client_id]->do_recv();

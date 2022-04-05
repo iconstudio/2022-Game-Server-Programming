@@ -76,7 +76,11 @@ struct CSPacketMove : public PACKET
 };
 
 struct SCPacketAccept : public PACKET
-{};
+{
+	SCPacketAccept(UINT id)
+		: PACKET(sizeof(SCPacketAccept), SC_ADD_PLAYER, id)
+	{}
+};
 
 struct SCPacketAddPlayer : public PACKET
 {
@@ -85,11 +89,18 @@ struct SCPacketAddPlayer : public PACKET
 
 struct SCPacketRemovePlayer : public PACKET
 {
-	UINT x, y;
+	SCPacketRemovePlayer(UINT id)
+		: PACKET(sizeof(SCPacketRemovePlayer), SC_RMV_PLAYER, id)
+	{}
 };
 
 struct SCPacketMovePlayer : public PACKET
 {
+	SCPacketMovePlayer(UINT id, UINT nx, UINT ny)
+		: PACKET(sizeof(SCPacketRemovePlayer), SC_MOV_PLAYER, id)
+		, x(nx), y(ny)
+	{}
+
 	UINT x, y;
 };
 #pragma pack(pop)
@@ -153,7 +164,7 @@ public:
 		WSARecv(_socket, _c_wsabuf, 1, 0, &recv_flag, &recvOverlap, NULL);
 	}
 
-	void do_send(int client_id, void* packet)
+	void do_send(void* packet)
 	{
 		auto sdata = new OVER_EXP(reinterpret_cast<char*>(packet), BUF_SIZE);
 
@@ -165,7 +176,7 @@ public:
 		auto packet = new CSPacketLogin("Nickname", _id);
 		auto data = reinterpret_cast<char*>(packet);
 
-		do_send(_id, data);
+		do_send(data);
 	}
 
 	void SendSCMovePackets() // 모든 클라이언트가 받는다. (broadcasting)
@@ -173,7 +184,7 @@ public:
 		auto packet = new CSPacketLogin("Nickname", _id);
 		auto data = reinterpret_cast<char*>(packet);
 
-		do_send(_id, data);
+		do_send(data);
 	}
 
 	SOCKET _socket;
