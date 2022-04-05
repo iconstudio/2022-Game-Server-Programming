@@ -33,7 +33,7 @@ int Session::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap)
 	return WSASend(Socket, datas, count, NULL, 0, overlap, NULL);
 }
 
-void Session::BeginPacket(EXOVERLAPPED* overlap, DWORD byte)
+void Session::RoutePacket(EXOVERLAPPED* overlap, DWORD byte)
 {
 	auto op = overlap->Operation;
 
@@ -45,19 +45,19 @@ void Session::BeginPacket(EXOVERLAPPED* overlap, DWORD byte)
 
 		case OVERLAP_OPS::RECV:
 		{
-			ProceedRecvPacket(overlap, byte);
+			ProceedReceived(overlap, byte);
 		}
 		break;
 
 		case OVERLAP_OPS::SEND:
 		{
-			ProceedSendPacket(overlap, byte);
+			ProceedSent(overlap, byte);
 		}
 		break;
 	}
 }
 
-void Session::ProceedRecvPacket(EXOVERLAPPED* overlap, DWORD byte)
+void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 {
 	auto& wbuffer = overlap->recvBuffer; // 세션의 recvBuffer
 	auto& cbuffer = wbuffer->buf;
@@ -65,140 +65,137 @@ void Session::ProceedRecvPacket(EXOVERLAPPED* overlap, DWORD byte)
 
 	sz_recv += byte;
 
-
-
 	const auto sz_min = sizeof(Packet);
 	if (sz_min <= sz_recv)
 	{
-	}
-	else
-	{
+		auto packet = reinterpret_cast<Packet*>(cbuffer); // 클라이언트 → 서버
+		auto sz_want = packet->Size;
+		auto type = packet->Type;
+		auto pid = packet->playerID;
 
-	}
-
-	auto packet = reinterpret_cast<Packet*>(cbuffer); // 클라이언트 → 서버
-	auto sz_want = packet->Size;
-	auto type = packet->Type;
-	auto pid = packet->playerID;
-
-	switch (type)
-	{
-		case PACKET_TYPES::CS_SIGNIN:
+		switch (type)
 		{
-			if (sz_want <= sz_recv)
+			case PACKET_TYPES::CS_SIGNIN:
 			{
-				auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
-
-				if (pid == ID)
+				if (sz_want <= sz_recv)
 				{
-					strcpy_s(Nickname, result->Nickname);
+					auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
 
-					SendSignUp();
-				}
+					if (pid == ID)
+					{
+						strcpy_s(Nickname, result->Nickname);
 
-				sz_recv -= sz_want;
-				if (0 < sz_recv)
-				{
-					MoveMemory(cbuffer, cbuffer + sz_want, BUFFSIZE - sz_want);
-				}
-			}
-			else
-			{
-				auto lack = sz_want - sz_recv;
-				cout << "CS_SIGNIN: 클라이언트 " << ID << "에게 받아온 정보가 "
-					<< lack << " 만큼 모자라서 다시 수신합니다.\n";
+						SendSignUp();
+					}
 
-				ReceiveSignIn(sz_recv);
-			}
-		}
-		break;
-
-		case PACKET_TYPES::CS_SIGNOUT:
-		{
-			if (sz_want <= sz_recv)
-			{
-				if (pid == ID)
-				{
-					Framework.Disconnect(ID);
-					return;
-				}
-				else
-				{
 					sz_recv -= sz_want;
 					if (0 < sz_recv)
 					{
-						MoveMemory(cbuffer, cbuffer + sz_want, BUFFSIZE - sz_want);
+						MoveStream(cbuffer, sz_want, BUFFSIZE);
 					}
 				}
-			}
-			else
-			{
-				auto lack = sz_want - sz_recv;
-				cout << "CS_SIGNOUT: 클라이언트 " << ID << "에게 받아온 정보가 "
-					<< lack << " 만큼 모자라서 다시 수신합니다.\n";
-
-				ReceiveSignOut(sz_recv);
-			}
-		}
-		break;
-
-		case PACKET_TYPES::CS_KEY:
-		{
-			if (sz_want <= sz_recv)
-			{
-				auto result = reinterpret_cast<CSPacketKeyInput*>(cbuffer);
-
-				if (pid == ID && Instance)
+				else
 				{
-					auto key = result->Key;
-					bool moved = TryMove(key);
+					auto lack = sz_want - sz_recv;
+					cout << "CS_SIGNIN: 클라이언트 " << ID << "에게 받아온 정보가 "
+						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
 
-					if (!moved)
+					ReceiveSignIn(sz_recv);
+				}
+			}
+			break;
+
+			case PACKET_TYPES::CS_SIGNOUT:
+			{
+				if (sz_want <= sz_recv)
+				{
+					if (pid == ID)
 					{
-						cout << "플레이어 " << ID << " - 움직이지 않음.\n";
+						Framework.Disconnect(ID);
+						return;
 					}
 					else
 					{
-						cout << "플레이어 " << ID << " - 위치: ("
-							<< Instance->x << ", " << Instance->y << ")\n";
-					}
-
-					ReceiveKey(0);
-					if (moved)
-					{
-						//Framework.BroadcastWorld();
+						sz_recv -= sz_want;
+						if (0 < sz_recv)
+						{
+							MoveStream(cbuffer, sz_want, BUFFSIZE);
+						}
 					}
 				}
-
-				sz_recv -= sz_want;
-				if (0 < sz_recv)
+				else
 				{
-					MoveMemory(cbuffer, cbuffer + sz_want, BUFFSIZE - sz_want);
+					auto lack = sz_want - sz_recv;
+					cout << "CS_SIGNOUT: 클라이언트 " << ID << "에게 받아온 정보가 "
+						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
+
+					ReceiveSignOut(sz_recv);
 				}
 			}
-			else
+			break;
+
+			case PACKET_TYPES::CS_KEY:
 			{
-				auto lack = sz_want - sz_recv;
-				cout << "CS_KEY: 클라이언트 " << ID << "에게 받아온 정보가 "
-					<< lack << " 만큼 모자라서 다시 수신합니다.\n";
+				if (sz_want <= sz_recv)
+				{
+					auto result = reinterpret_cast<CSPacketKeyInput*>(cbuffer);
 
-				ReceiveKey(sz_recv);
+					if (pid == ID && Instance)
+					{
+						auto key = result->Key;
+						bool moved = TryMove(key);
+
+						if (!moved)
+						{
+							cout << "플레이어 " << ID << " - 움직이지 않음.\n";
+						}
+						else
+						{
+							cout << "플레이어 " << ID << " - 위치: ("
+								<< Instance->x << ", " << Instance->y << ")\n";
+						}
+
+						ReceiveKey(0);
+						if (moved)
+						{
+							//Framework.BroadcastWorld();
+						}
+					}
+
+					sz_recv -= sz_want;
+					if (0 < sz_recv)
+					{
+						MoveStream(cbuffer, sz_want, BUFFSIZE);
+					}
+				}
+				else
+				{
+					auto lack = sz_want - sz_recv;
+					cout << "CS_KEY: 클라이언트 " << ID << "에게 받아온 정보가 "
+						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
+
+					ReceiveKey(sz_recv);
+				}
 			}
-		}
-		break;
+			break;
 
-		default:
-		{
-			ClearRecvBuffer();
-			ClearOverlap(overlap); // recvOverlap
-			ErrorDisplay("ProceedRecvPacket: 잘못된 패킷 받음");
-			return;
+			default:
+			{
+				ClearRecvBuffer();
+				ClearOverlap(overlap); // recvOverlap
+				ErrorDisplay("ProceedReceived: 잘못된 패킷 받음");
+				return;
+			}
+			break;
 		}
-		break;
+	}
+	else // 아무거나 다 받는다.
+	{
+		RecvStream(recvCBuffer, sz_recv);
 	}
 }
 
-void Session::ProceedSendPacket(EXOVERLAPPED* overlap, DWORD byte)
+void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
 {
 	auto& sz_send = overlap->sendSize;
 	auto& tr_send = overlap->sendSzWant;
@@ -241,24 +238,29 @@ bool Session::SendSignOut(DWORD begin_bytes)
 	return false;
 }
 
-int Session::RecvPacket(DWORD size, DWORD begin_bytes)
+void Session::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
 {
-	recvBuffer.buf = recvCBuffer + begin_bytes;
+	MoveMemory(buffer, buffer + position, max_size - position);
+}
+
+int Session::RecvStream(CHAR* buffer, DWORD size, DWORD begin_bytes)
+{
+	recvBuffer.buf = buffer + begin_bytes;
 	recvBuffer.len = size - begin_bytes;
 
 	return Recv(&recvBuffer, 1);
 }
 
-int Session::RecvPacket(DWORD begin_bytes = 0)
+int Session::RecvStream(CHAR* buffer, DWORD begin_bytes = 0)
 {
-	return RecvPacket(BUFFSIZE, begin_bytes);
+	return RecvStream(buffer, BUFFSIZE, begin_bytes);
 }
 
 template<typename PACKET, typename ...Ty>
 	requires std::is_base_of_v<Packet, PACKET>
 int Session::SendPacket(Ty... value)
 {
-	auto packet = new PACKET{ value };
+	auto packet = new PACKET{ value... };
 
 	auto wbuffer = new WSABUF{};
 	wbuffer->buf = reinterpret_cast<char*>(packet);

@@ -9,9 +9,9 @@ public:
 
 	void ClearRecvBuffer();
 
-	void BeginPacket(EXOVERLAPPED* overlap, DWORD byte);
-	void ProceedRecvPacket(EXOVERLAPPED* overlap, DWORD byte);
-	void ProceedSendPacket(EXOVERLAPPED* overlap, DWORD byte);
+	void RoutePacket(EXOVERLAPPED* overlap, DWORD byte);
+	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
+	void ProceedSent(EXOVERLAPPED* overlap, DWORD byte);
 
 	bool ReceiveSignIn(DWORD begin_bytes = 0);
 	bool ReceiveSignOut(DWORD begin_bytes = 0);
@@ -34,8 +34,10 @@ private:
 	int Recv(LPWSABUF datas, UINT count, DWORD flags = 0);
 	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
 
-	int RecvPacket(DWORD size, DWORD begin_bytes);
-	int RecvPacket(DWORD begin_bytes = 0);
+	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
+
+	int RecvStream(CHAR* buffer, DWORD size, DWORD begin_bytes);
+	int RecvStream(CHAR* buffer, DWORD begin_bytes = 0);
 	template<typename PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, PACKET>
 	int SendPacket(Ty... value);

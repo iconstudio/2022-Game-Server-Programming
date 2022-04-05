@@ -10,28 +10,31 @@ public:
 
 	void Init();
 	void Start();
-	void Accept();
-	bool Update();
-
-	SOCKET CreateSocket() const;
-	pair<PID, Session*> CreateAndAssignClient(SOCKET nsocket);
 
 	Session* GetClient(PID id);
 	Session* GetClientByIndex(UINT index);
 	UINT GetClientsNumber() const;
 
-	void RemoveClient(PID rid);
+	void RemoveClient(const PID rid);
 	void Disconnect(const PID id);
 
 private:
+	void Accept();
+	bool Update();
+	void ProceedAccept();
+	void ProceedPacket(ULONG_PTR key, DWORD bytes);
+
+	SOCKET CreateSocket() const;
+	pair<PID, Session*> CreateAndAssignClient(SOCKET nsocket);
+
 	SOCKET Listener;
 	SOCKADDR_IN Address;
 	INT szAddress;
 	HANDLE completionPort;
 
-	WSAOVERLAPPED overlapAccept;
-	DWORD bytesAccept;
-	char cbufferAccept[BUFSIZ];
+	WSAOVERLAPPED acceptOverlap;
+	DWORD acceptBytes;
+	char acceptCBuffer[BUFSIZ];
 
 	LPWSAOVERLAPPED portOverlap;
 	DWORD portBytes;
