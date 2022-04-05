@@ -219,7 +219,7 @@ void IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
 	orderClientIDs++;
 	numberClients++;
 
-	session->ReceiveSignIn(); // IO 진입
+	session->RecvStream(); // IO 진입
 }
 
 Session* IOCPFramework::GetClient(PID id)

@@ -35,8 +35,8 @@ private:
 	void ClearRecvBuffer();
 
 	int Recv(DWORD flags = 0);
-
 	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
+
 	template<typename PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, PACKET>
 	int SendPacket(Ty... value);
