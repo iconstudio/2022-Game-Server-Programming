@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Framework.h"
+#include "Network.hpp"
 #include "Player.h"
 
 Framework::Framework()

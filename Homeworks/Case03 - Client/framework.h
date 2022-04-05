@@ -1,4 +1,5 @@
 #pragma once
+#include "Network.hpp"
 #include "Player.h"
 
 #define WM_SOCKET (WM_USER + 1)

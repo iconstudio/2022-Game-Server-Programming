@@ -19,15 +19,6 @@ constexpr COLORREF C_WHITE = RGB(255, 255, 255);
 constexpr COLORREF C_GREEN = RGB(0, 128, 0);
 constexpr COLORREF C_GOLD = RGB(223, 130, 20);
 
-#pragma pack(push, 1)
-struct PacketInfo
-{
-	USHORT Length = 0;
-	ULONG Size = 0;
-	ULONG Player_id = 0;
-};
-#pragma pack(pop)
-
 void ErrorAbort(const wchar_t* title);
 void ErrorDisplay(const wchar_t* title);
 
@@ -41,7 +32,6 @@ namespace Draw
 	BOOL Ellipse(HDC canvas, int x1, int y1, int x2, int y2);
 }
 
-constexpr UINT BUFFSIZE = 512;
 constexpr SIZE_T WND_SZ_W = 800, WND_SZ_H = 600; // 창 크기
 constexpr SIZE_T CELL_SIZE = 64;
 constexpr int CELL_W = CELL_SIZE;
