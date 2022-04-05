@@ -44,3 +44,8 @@ SCPacketMoveCharacter::SCPacketMoveCharacter(PID pid, CHAR nx, CHAR ny)
 SCPacketSignOut::SCPacketSignOut(PID pid)
 	: Packet(PACKET_TYPES::SC_SIGNOUT, pid)
 {}
+
+void ClearOverlap(LPWSAOVERLAPPED overlap)
+{
+	ZeroMemory(overlap, sizeof(WSAOVERLAPPED));
+}

@@ -1,55 +1,68 @@
 #pragma once
+#define WM_SOCKET (WM_USER + 1)
 #include "Network.hpp"
 #include "Player.h"
 
-#define WM_SOCKET (WM_USER + 1)
-
-enum class States : int
+enum class GAME_STATES : UCHAR
 {
 	Begin = 0,
 	Game = 1
 };
 
-class Framework
+class Session
 {
 public:
-	Framework();
+	PlayerCharacter* Instance;
+};
+
+void CALLBACK CallbackRecv(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags);
+void CALLBACK CallbackSend(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags);
+
+class ClientFramework
+{
+public:
+	ClientFramework();
 
 	void Init(HWND window);
 	void Start();
-	void WINAPI Communicate(UINT msg, WPARAM sock, LPARAM state);
+	void Update();
+	void Communicate(UINT msg, WPARAM sock, LPARAM state);
 	void Render(HWND window);
+
+	friend void CALLBACK CallbackRecv(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
+	friend void CALLBACK CallbackSend(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
+
 	void InputEvent(WPARAM key);
 	void EnterIpChar(WPARAM key);
 	void SendKey(WPARAM key);
 
+	UINT ID = -1; // 네트워크 상에서 플레이어의 번호
+
 	COLORREF background_color = C_WHITE;
 
 private:
-	States Status = States::Begin;
-
-	ULONG ID = -1; // 네트워크 상에서 플레이어의 번호
+	GAME_STATES Status = GAME_STATES::Begin;
 
 	SOCKET Socket;
-	SOCKADDR_IN Server_address;
-	std::string Server_IP;
-	INT sz_Address;
+	SOCKADDR_IN serverAddress;
+	INT serverAddressSize;
+	std::string serverIP;
 
-	WSABUF Buffer_recv;
-	WSABUF Buffer_world[2];
-	CHAR CBuffer_world[BUFFSIZE];
-	INT Buffer_world_length;
-	vector<PlayerCharacter> World_instances;
-
-	WSABUF Buffer_send;
-	PlayerCharacter m_Player;
+	vector<Session*> Clients;
+	PlayerCharacter* myCharacter;
 	WPARAM Lastkey;
 
-	HWND Window;
-	HDC DC_double;
-	HBITMAP Surface_double;
+	WSAOVERLAPPED recvOverlap;
+	WSABUF recvBuffer;
+	CHAR recvCBuffer[BUFFSIZE];
+	DWORD recvBytes;
 
-	HDC Board_canvas;
-	HBITMAP Board_image;
-	RECT Board_rect;
+	HWND Window;
+
+	HDC doubleDCSurface;
+	HBITMAP doubleDCBitmap;
+
+	HDC boardSurface;
+	HBITMAP boardBitmap;
+	RECT boardArea;
 };

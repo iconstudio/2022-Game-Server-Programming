@@ -1,12 +1,11 @@
 #pragma once
+#include "stdafx.h"
 
-#pragma pack(push, 1)
 class PlayerCharacter
 {
 public:
 	void Render(HDC canvas);
 
-	USHORT x, y;
-	ULONG ID;
+	PID ID;
+	UCHAR x, y;
 };
-#pragma pack(pop)

@@ -1,14 +1,15 @@
 ﻿#include "stdafx.h"
-#include "client.h"
+#include "Client.h"
 #include "WindowsForm.h"
 #include "Framework.h"
+#include "Network.hpp"
 
 #define MAX_LOADSTRING 100
 WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
 
 WindowsForm window{ WND_SZ_W, WND_SZ_H };
-Framework framework{};
+ClientFramework framework{};
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -48,7 +49,6 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		case WM_CREATE:
 		{
 			framework.Init(hWnd);
-			//SetTimer(hWnd, 0, window.frames * 1000, NULL);
 		}
 		break;
 

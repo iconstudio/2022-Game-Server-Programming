@@ -99,6 +99,8 @@ struct SCPacketSignOut : public Packet
 };
 #pragma pack(pop)
 
+void ClearOverlap(LPWSAOVERLAPPED overlap);
+
 constexpr USHORT PORT = 6000;
 constexpr UINT CLIENTS_MAX_NUMBER = 10;
 constexpr PID CLIENTS_ORDER_BEGIN = 10000;
