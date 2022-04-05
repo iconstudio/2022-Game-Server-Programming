@@ -146,11 +146,13 @@
   <ItemGroup>
     <ClCompile Include="IOCP Server.cpp" />
     <ClCompile Include="IOCP ServerFramework.cpp" />
+    <ClCompile Include="Network.cpp" />
     <ClCompile Include="Session.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="IOCP ServerFramework.hpp" />
+    <ClInclude Include="Network.hpp" />
     <ClInclude Include="Session.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>

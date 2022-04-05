@@ -1,13 +1,12 @@
 #pragma once
 #include "stdafx.h"
+#include "Network.hpp"
 
 class Session
 {
 public:
 	Session(PID id, SOCKET sock, IOCPFramework& framework);
 	~Session();
-
-	void ClearRecvBuffer();
 
 	void RoutePacket(EXOVERLAPPED* overlap, DWORD byte);
 	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
@@ -31,16 +30,21 @@ public:
 	PlayerCharacter* Instance;
 
 private:
-	int Recv(LPWSABUF datas, UINT count, DWORD flags = 0);
+	void SetRecvBuffer(const WSABUF& buffer);
+	void SetRecvBuffer(LPWSABUF buffer);
+	void SetRecvBuffer(CHAR* cbuffer, DWORD size);
+	void ClearRecvBuffer();
+
+	int Recv(DWORD flags = 0);
+	int RecvStream(DWORD size, DWORD begin_bytes);
+	int RecvStream(DWORD begin_bytes = 0);
+
 	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
-
-	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
-
-	int RecvStream(CHAR* buffer, DWORD size, DWORD begin_bytes);
-	int RecvStream(CHAR* buffer, DWORD begin_bytes = 0);
 	template<typename PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, PACKET>
 	int SendPacket(Ty... value);
+
+	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
 
 	EXOVERLAPPED recvOverlap;
 	WSABUF recvBuffer;

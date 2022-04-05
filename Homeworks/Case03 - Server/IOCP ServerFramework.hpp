@@ -1,5 +1,6 @@
 #pragma once
 #include "stdafx.h"
+#include "Network.hpp"
 #include "Session.h"
 
 class IOCPFramework

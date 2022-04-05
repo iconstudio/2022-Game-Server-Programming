@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "Session.h"
+#include "Network.hpp"
 #include "IOCP ServerFramework.hpp"
 
 Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
@@ -14,23 +15,32 @@ Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
 	recvBuffer.len = BUFFSIZE;
 }
 
+Session::~Session()
+{
+	if (recvCBuffer) delete recvCBuffer;
+
+	delete &recvOverlap;
+}
+
+void Session::SetRecvBuffer(const WSABUF& buffer)
+{
+	recvBuffer = buffer;
+}
+
+void Session::SetRecvBuffer(LPWSABUF buffer)
+{
+	SetRecvBuffer(*buffer);
+}
+
+void Session::SetRecvBuffer(CHAR* cbuffer, DWORD size)
+{
+	recvBuffer.buf = cbuffer;
+	recvBuffer.len = size;
+}
+
 void Session::ClearRecvBuffer()
 {
 	ZeroMemory(recvCBuffer, sizeof(recvCBuffer));
-}
-
-int Session::Recv(LPWSABUF datas, UINT count, DWORD flags)
-{
-	if (!datas) return 0;
-
-	return WSARecv(Socket, datas, count, NULL, &flags, &recvOverlap, NULL);
-}
-
-int Session::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap)
-{
-	if (!datas || !overlap) return 0;
-
-	return WSASend(Socket, datas, count, NULL, 0, overlap, NULL);
 }
 
 void Session::RoutePacket(EXOVERLAPPED* overlap, DWORD byte)
@@ -238,22 +248,31 @@ bool Session::SendSignOut(DWORD begin_bytes)
 	return false;
 }
 
-void Session::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
+int Session::Recv(DWORD flags)
 {
-	MoveMemory(buffer, buffer + position, max_size - position);
+	if (!recvBuffer.buf) return 0;
+
+	return WSARecv(Socket, &recvBuffer, 1, 0, &flags, &recvOverlap, NULL);
 }
 
-int Session::RecvStream(CHAR* buffer, DWORD size, DWORD begin_bytes)
+int Session::RecvStream(DWORD size, DWORD begin_bytes)
 {
-	recvBuffer.buf = buffer + begin_bytes;
+	recvBuffer.buf = recvCBuffer + begin_bytes;
 	recvBuffer.len = size - begin_bytes;
 
-	return Recv(&recvBuffer, 1);
+	return Recv(0);
 }
 
-int Session::RecvStream(CHAR* buffer, DWORD begin_bytes = 0)
+int Session::RecvStream(DWORD begin_bytes)
 {
-	return RecvStream(buffer, BUFFSIZE, begin_bytes);
+	return RecvStream(BUFFSIZE, begin_bytes);
+}
+
+int Session::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap)
+{
+	if (!datas || !overlap) return 0;
+
+	return WSASend(Socket, datas, count, NULL, 0, overlap, NULL);
 }
 
 template<typename PACKET, typename ...Ty>
@@ -272,6 +291,11 @@ int Session::SendPacket(Ty... value)
 
 	auto woverlap = static_cast<LPWSAOVERLAPPED>(overlap);
 	return Send(wbuffer, 1, woverlap);
+}
+
+void Session::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
+{
+	MoveMemory(buffer, buffer + position, max_size - position);
 }
 
 bool Session::TryMove(WPARAM input)

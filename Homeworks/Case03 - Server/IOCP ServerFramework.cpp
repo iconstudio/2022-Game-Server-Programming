@@ -1,5 +1,6 @@
 #include "stdafx.h"
 #include "IOCP ServerFramework.hpp"
+#include "Network.hpp"
 #include "Session.h"
 
 IOCPFramework::IOCPFramework()
