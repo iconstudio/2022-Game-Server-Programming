@@ -65,133 +65,136 @@ void Session::ProceedRecvPacket(EXOVERLAPPED* overlap, DWORD byte)
 
 	sz_recv += byte;
 
+
+
 	const auto sz_min = sizeof(Packet);
 	if (sz_min <= sz_recv)
 	{
-		auto packet = reinterpret_cast<Packet*>(cbuffer); // 클라이언트 → 서버
-		auto sz_want = packet->Size;
-		auto type = packet->Type;
-		auto pid = packet->playerID;
-
-		switch (type)
-		{
-			case PACKET_TYPES::CS_SIGNIN:
-			{
-				if (sz_want <= sz_recv)
-				{
-					auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
-
-					if (pid == ID)
-					{
-						strcpy_s(Nickname, result->Nickname);
-
-						SendSignUp();
-					}
-
-					sz_recv -= sz_want;
-					if (0 < sz_recv)
-					{
-						MoveMemory(cbuffer, cbuffer + sz_want, BUFFSIZE - sz_want);
-					}
-				}
-				else
-				{
-					auto lack = sz_want - sz_recv;
-					cout << "CS_SIGNIN: 클라이언트 " << ID << "에게 받아온 정보가 "
-						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
-
-					ReceiveSignIn(sz_recv);
-				}
-			}
-			break;
-
-			case PACKET_TYPES::CS_SIGNOUT:
-			{
-				if (sz_want <= sz_recv)
-				{
-					if (pid == ID)
-					{
-						Framework.Disconnect(ID);
-						return;
-					}
-					else
-					{
-						sz_recv -= sz_want;
-						if (0 < sz_recv)
-						{
-							MoveMemory(cbuffer, cbuffer + sz_want, BUFFSIZE - sz_want);
-						}
-					}
-				}
-				else
-				{
-					auto lack = sz_want - sz_recv;
-					cout << "CS_SIGNOUT: 클라이언트 " << ID << "에게 받아온 정보가 "
-						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
-
-					ReceiveSignOut(sz_recv);
-				}
-			}
-			break;
-
-			case PACKET_TYPES::CS_KEY:
-			{
-				if (sz_want <= sz_recv)
-				{
-					auto result = reinterpret_cast<CSPacketKeyInput*>(cbuffer);
-
-					if (pid == ID && Instance)
-					{
-						auto key = result->Key;
-						bool moved = TryMove(key);
-
-						if (!moved)
-						{
-							cout << "플레이어 " << ID << " - 움직이지 않음.\n";
-						}
-						else
-						{
-							cout << "플레이어 " << ID << " - 위치: ("
-								<< Instance->x << ", " << Instance->y << ")\n";
-						}
-
-						ReceiveKey(0);
-						if (moved)
-						{
-							//Framework.BroadcastWorld();
-						}
-					}
-
-					sz_recv -= sz_want;
-					if (0 < sz_recv)
-					{
-						MoveMemory(cbuffer, cbuffer + sz_want, BUFFSIZE - sz_want);
-					}
-				}
-				else
-				{
-					auto lack = sz_want - sz_recv;
-					cout << "CS_KEY: 클라이언트 " << ID << "에게 받아온 정보가 "
-						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
-
-					ReceiveKey(sz_recv);
-				}
-			}
-			break;
-
-			default:
-			{
-				ClearRecvBuffer();
-				ClearOverlap(overlap); // recvOverlap
-				ErrorDisplay("ProceedRecvPacket: 잘못된 패킷 받음");
-				return;
-			}
-			break;
-		}
 	}
 	else
 	{
-		
+
+	}
+
+	auto packet = reinterpret_cast<Packet*>(cbuffer); // 클라이언트 → 서버
+	auto sz_want = packet->Size;
+	auto type = packet->Type;
+	auto pid = packet->playerID;
+
+	switch (type)
+	{
+		case PACKET_TYPES::CS_SIGNIN:
+		{
+			if (sz_want <= sz_recv)
+			{
+				auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
+
+				if (pid == ID)
+				{
+					strcpy_s(Nickname, result->Nickname);
+
+					SendSignUp();
+				}
+
+				sz_recv -= sz_want;
+				if (0 < sz_recv)
+				{
+					MoveMemory(cbuffer, cbuffer + sz_want, BUFFSIZE - sz_want);
+				}
+			}
+			else
+			{
+				auto lack = sz_want - sz_recv;
+				cout << "CS_SIGNIN: 클라이언트 " << ID << "에게 받아온 정보가 "
+					<< lack << " 만큼 모자라서 다시 수신합니다.\n";
+
+				ReceiveSignIn(sz_recv);
+			}
+		}
+		break;
+
+		case PACKET_TYPES::CS_SIGNOUT:
+		{
+			if (sz_want <= sz_recv)
+			{
+				if (pid == ID)
+				{
+					Framework.Disconnect(ID);
+					return;
+				}
+				else
+				{
+					sz_recv -= sz_want;
+					if (0 < sz_recv)
+					{
+						MoveMemory(cbuffer, cbuffer + sz_want, BUFFSIZE - sz_want);
+					}
+				}
+			}
+			else
+			{
+				auto lack = sz_want - sz_recv;
+				cout << "CS_SIGNOUT: 클라이언트 " << ID << "에게 받아온 정보가 "
+					<< lack << " 만큼 모자라서 다시 수신합니다.\n";
+
+				ReceiveSignOut(sz_recv);
+			}
+		}
+		break;
+
+		case PACKET_TYPES::CS_KEY:
+		{
+			if (sz_want <= sz_recv)
+			{
+				auto result = reinterpret_cast<CSPacketKeyInput*>(cbuffer);
+
+				if (pid == ID && Instance)
+				{
+					auto key = result->Key;
+					bool moved = TryMove(key);
+
+					if (!moved)
+					{
+						cout << "플레이어 " << ID << " - 움직이지 않음.\n";
+					}
+					else
+					{
+						cout << "플레이어 " << ID << " - 위치: ("
+							<< Instance->x << ", " << Instance->y << ")\n";
+					}
+
+					ReceiveKey(0);
+					if (moved)
+					{
+						//Framework.BroadcastWorld();
+					}
+				}
+
+				sz_recv -= sz_want;
+				if (0 < sz_recv)
+				{
+					MoveMemory(cbuffer, cbuffer + sz_want, BUFFSIZE - sz_want);
+				}
+			}
+			else
+			{
+				auto lack = sz_want - sz_recv;
+				cout << "CS_KEY: 클라이언트 " << ID << "에게 받아온 정보가 "
+					<< lack << " 만큼 모자라서 다시 수신합니다.\n";
+
+				ReceiveKey(sz_recv);
+			}
+		}
+		break;
+
+		default:
+		{
+			ClearRecvBuffer();
+			ClearOverlap(overlap); // recvOverlap
+			ErrorDisplay("ProceedRecvPacket: 잘못된 패킷 받음");
+			return;
+		}
+		break;
 	}
 }
 
