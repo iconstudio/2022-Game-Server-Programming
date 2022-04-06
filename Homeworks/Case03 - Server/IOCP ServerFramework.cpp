@@ -7,16 +7,10 @@ IOCPFramework::IOCPFramework()
 	: acceptOverlap(), acceptBytes(0), acceptCBuffer()
 	, portOverlap(), portBytes(0), portKey(0), serverKey(100)
 	, socketPool(), clientsID(), Clients()
-	, orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0)
-	, recvOverlap(), szRecv(0), szWantRecv(0), bufferRecv(), cbufferRecv()
+	, orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
 {
 	ClearOverlap(&acceptOverlap);
-	ClearOverlap(&recvOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
-	ZeroMemory(&bufferRecv, sizeof(bufferRecv));
-	ZeroMemory(cbufferRecv, sizeof(cbufferRecv));
-	bufferRecv.buf = cbufferRecv;
-	bufferRecv.len = sizeof(cbufferRecv);
 
 	socketPool.reserve(CLIENTS_MAX_NUMBER);
 	clientsID.reserve(CLIENTS_MAX_NUMBER);
@@ -128,10 +122,11 @@ void IOCPFramework::Accept()
 void IOCPFramework::Update()
 {
 	auto result = GetQueuedCompletionStatus(completionPort, &portBytes, &portKey, &portOverlap, INFINITE);
+	auto key = portKey;
+
 	if (TRUE == result)
 	{
 		auto bytes = portBytes;
-		auto key = portKey;
 
 		std::cout << "GQCS: " << key << ", Bytes: " << bytes << "\n";
 		
@@ -143,7 +138,7 @@ void IOCPFramework::Update()
 		{
 			if (0 == bytes)
 			{
-				ErrorDisplay("GetQueuedCompletionStatus()");
+				ErrorDisplay("GetQueuedCompletionStatus(1)");
 			}
 
 			ProceedPacket(portOverlap, key, bytes);
@@ -153,7 +148,11 @@ void IOCPFramework::Update()
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
-			ErrorDisplay("GetQueuedCompletionStatus()");
+			if (serverKey != key)
+			{
+				RemoveClient(key);
+			}
+			ErrorDisplay("GetQueuedCompletionStatus(2)");
 		}
 	}
 }
@@ -183,13 +182,19 @@ void IOCPFramework::ProceedAccept()
 void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes)
 {
 	auto client = GetClient(PID(key));
-	if (!client) // 작업은 완료됐으나 클라이언트가 없다.
+	if (!client)
 	{
 		std::cout << "No client - key is " << key << ".\n";
 		delete overlap;
 	}
 	else
 	{
+		if (client->Dead)
+		{
+			delete overlap;
+			return;
+		}
+
 		auto exoverlap = static_cast<EXOVERLAPPED*>(overlap);
 		auto op = exoverlap->Operation;
 
@@ -269,27 +274,19 @@ void IOCPFramework::BroadcastSignUp(const PID who)
 	if (session)
 	{
 		ForeachClient([&](Session* other) {
-			//if (session != other)
-			{
-				session->SendSignUp(other->ID);
-			}
+			other->SendSignUp(who);
 		});
 	}
 }
 
 void IOCPFramework::BroadcastSignOut(const PID who)
 {
-	auto session = GetClient(who);
-
-	if (session)
-	{
-		ForeachClient([&](Session* other) {
-			//if (session != other)
-			{
-				session->SendSignOut(other->ID);
-			}
-		});
-	}
+	ForeachClient([&](Session* other) {
+		if (other->ID != who)
+		{
+			other->SendSignOut(who);
+		}
+	});
 }
 
 void IOCPFramework::BroadcastCreateCharacter(const PID who, CHAR cx, CHAR cy)
@@ -299,10 +296,7 @@ void IOCPFramework::BroadcastCreateCharacter(const PID who, CHAR cx, CHAR cy)
 	if (session)
 	{
 		ForeachClient([&](Session* other) {
-			//if (session != other)
-			{
-				session->SendCreateCharacter(other->ID, cx, cy);
-			}
+			other->SendCreateCharacter(who, cx, cy);
 		});
 	}
 }
@@ -314,27 +308,25 @@ void IOCPFramework::BroadcastMoveCharacter(const PID who, CHAR nx, CHAR ny)
 	if (session)
 	{
 		ForeachClient([&](Session* other) {
-			//if (session != other)
-			{
-				session->SendMoveCharacter(other->ID, nx, ny);
-			}
+			other->SendMoveCharacter(who, nx, ny);
 		});
 	}
 }
 
-void IOCPFramework::SendWorldDataTo(Session* session)
+void IOCPFramework::SendWorldDataTo(Session* target)
 {
-	if (session)
-	{
-		ForeachClient([&](Session* other) {
-			if (other != session)
+	ForeachClient([&](Session* other) {
+		if (other != target)
+		{
+			target->SendSignUp(other->ID);
+
+			auto instance = other->Instance;
+			if (instance)
 			{
-				auto instance = other->Instance;
-				session->SendSignUp(other->ID);
-				session->SendCreateCharacter(other->ID, instance->x, instance->y);
+				target->SendCreateCharacter(other->ID, instance->x, instance->y);
 			}
-		});
-	}
+		}
+	});
 }
 
 void IOCPFramework::RemoveClient(const PID rid)
@@ -348,16 +340,16 @@ void IOCPFramework::RemoveClient(const PID rid)
 	auto mit = Clients.find(rid);
 	if (Clients.end() != mit)
 	{
-		Clients.unsafe_erase(mit);
+		Clients.erase(mit);
 		numberClients--;
 	}
 }
 
 void IOCPFramework::Disconnect(const PID who)
 {
+	RemoveClient(who);
+
 	BroadcastSignOut(who);
 
 	socketPool.push_back(std::move(CreateSocket()));
-
-	RemoveClient(who);
 }

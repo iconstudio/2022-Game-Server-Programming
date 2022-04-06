@@ -4,7 +4,7 @@
 #include "IOCP ServerFramework.hpp"
 
 Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
-	: ID(id), Nickname(), Socket(sock), Framework(framework)
+	: ID(id), Nickname(), Socket(sock), Dead(false), Framework(framework)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 	, Instance(nullptr)
 {
@@ -17,18 +17,23 @@ Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
 
 Session::~Session()
 {
-	if (recvCBuffer) delete[] recvCBuffer;
+	if (recvCBuffer) delete[] &recvCBuffer;
 
-	delete& recvOverlap;
+	delete Instance;
+	delete &recvOverlap;
 }
 
 void Session::Disconnect()
 {
+	Dead = true;
+
 	Framework.Disconnect(ID);
 }
 
 void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 {
+	if (Dead) return;
+
 	std::cout << "ProceedReceived (" << ID << ")" << "\n";
 	auto& wbuffer = recvBuffer;
 	auto& cbuffer = wbuffer.buf;
@@ -54,17 +59,15 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 					strcpy_s(Nickname, result->Nickname);
 					std::cout << ID << "'s Nickname: " << Nickname << ".\n";
 
-					// 1
-					Framework.SendWorldDataTo(this);
-
-					// 2
-					Framework.BroadcastSignUp(ID);
-
-					// 3
 					Instance = new PlayerCharacter;
 					Instance->x = 4;
 					Instance->y = 4;
+
+					Framework.BroadcastSignUp(ID);
+
 					Framework.BroadcastCreateCharacter(ID, Instance->x, Instance->y);
+
+					Framework.SendWorldDataTo(this);
 
 					recvBytes -= sz_want;
 					if (0 < recvBytes)
@@ -170,12 +173,11 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
 {
-	std::cout << "ProceedSent (" << ID << ")" << "\n";
-
-	auto& sz_send = overlap->sendSize;
-	auto& tr_send = overlap->sendSzWant;
-
-	if (0 == byte)
+	if (Dead)
+	{
+		return;
+	}
+	else if (0 == byte)
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
@@ -183,6 +185,10 @@ void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
 			Disconnect();
 		}
 	}
+
+	std::cout << "ProceedSent (" << ID << ")" << "\n";
+	auto& sz_send = overlap->sendSize;
+	auto& tr_send = overlap->sendSzWant;
 
 	ClearOverlap(overlap);
 }

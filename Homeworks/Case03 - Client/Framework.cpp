@@ -287,14 +287,13 @@ void ClientFramework::ProceedRecv(DWORD bytes)
 						background_color = C_GREEN;
 
 						ID = pid;
+						InvalidateRect(Window, NULL, TRUE);
 					}
 
 					AddClient(pid);
 
 					clientNumber = rp->usersCurrent;
 					clientMaxNumber = rp->usersMax;
-
-					InvalidateRect(Window, NULL, TRUE);
 				}
 				break;
 
@@ -327,6 +326,7 @@ void ClientFramework::ProceedRecv(DWORD bytes)
 						auto character = new PlayerCharacter;
 						character->x = rp->x;
 						character->y = rp->y;
+						character->ID = pid;
 
 						session->Instance = character;
 

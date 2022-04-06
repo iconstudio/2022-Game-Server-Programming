@@ -51,21 +51,20 @@ private:
 	ULONG_PTR portKey;
 	const ULONG_PTR serverKey;
 
+	std::mutex mutexClient;
 	std::vector<SOCKET> socketPool;
 	std::vector<PID> clientsID;
-	concurrency::concurrent_unordered_map<PID, Session*> Clients;
+	std::unordered_map<PID, Session*> Clients;
 	PID orderClientIDs;
 	UINT numberClients;
-
-	WSAOVERLAPPED recvOverlap;
-	WSABUF bufferRecv;
-	char cbufferRecv[BUFSIZ];
-	UINT szRecv, szWantRecv;
 };
 
 template<typename Predicate>
 inline void IOCPFramework::ForeachClient(Predicate predicate)
 {
+	//std::scoped_lock<std::mutex> dd;
+	//std::unique_lock<std::mutex> lock;
+	//lock.lock();
 	for (auto& comp : Clients)
 	{
 		auto session = comp.second;

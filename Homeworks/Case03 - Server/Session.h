@@ -24,6 +24,7 @@ public:
 
 	const PID ID;
 	const SOCKET Socket;
+	bool Dead;
 
 	CHAR Nickname[30];
 	PlayerCharacter* Instance;
