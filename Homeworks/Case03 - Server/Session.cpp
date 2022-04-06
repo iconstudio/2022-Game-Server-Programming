@@ -73,7 +73,11 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 					//TODO: ¹æ¼Û
 					SendSignUp(ID);
-					SendCreateCharacter(ID, 4, 4);
+
+					Instance = new PlayerCharacter;
+					Instance->x = 4;
+					Instance->y = 4;
+					SendCreateCharacter(ID, Instance->x, Instance->y);
 
 					recvBytes -= sz_want;
 					if (0 < recvBytes)

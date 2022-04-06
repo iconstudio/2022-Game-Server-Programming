@@ -7,8 +7,8 @@ void PlayerCharacter::Render(HDC canvas)
 	auto filler = CreateSolidBrush(C_GOLD);
 	auto old_filler = Draw::Attach(canvas, filler);
 
-	auto dx = BOARD_X + x * CELL_W;
-	auto dy = BOARD_Y + y * CELL_H;
+	auto dx = BOARD_X + x * CELL_W + CELL_W * 0.5;
+	auto dy = BOARD_Y + y * CELL_H + CELL_W * 0.5;
 
 	Draw::Ellipse(canvas, dx - 16, dy - 16, dx + 16, dy + 16);
 	Draw::Detach(canvas, old_filler, filler);
