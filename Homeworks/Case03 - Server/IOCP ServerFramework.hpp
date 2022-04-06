@@ -12,12 +12,20 @@ public:
 	void Init();
 	void Start();
 
-	Session* GetClient(PID id);
-	Session* GetClientByIndex(UINT index);
+	Session* GetClient(const PID id);
+	Session* GetClientByIndex(const UINT index);
 	UINT GetClientsNumber() const;
 
-	void RemoveClient(const PID rid);
-	void Disconnect(const PID id);
+	void BroadcastSignUp(const PID who);
+	void BroadcastSignOut(const PID who);
+	void BroadcastCreateCharacter(const PID who, CHAR cx, CHAR cy);
+	void BroadcastMoveCharacter(const PID who, CHAR nx, CHAR ny);
+
+	void SendWorldDataTo(Session* session);
+	template<typename Predicate>
+	void ForeachClient(Predicate predicate);
+
+	void Disconnect(const PID who);
 
 private:
 	void Accept();
@@ -27,6 +35,7 @@ private:
 
 	SOCKET CreateSocket() const;
 	void CreateAndAssignClient(SOCKET nsocket);
+	void RemoveClient(const PID rid);
 
 	SOCKET Listener;
 	SOCKADDR_IN Address;
@@ -53,3 +62,13 @@ private:
 	char cbufferRecv[BUFSIZ];
 	UINT szRecv, szWantRecv;
 };
+
+template<typename Predicate>
+inline void IOCPFramework::ForeachClient(Predicate predicate)
+{
+	for (auto& comp : Clients)
+	{
+		auto session = comp.second;
+		predicate(session);
+	}
+}

@@ -8,16 +8,17 @@ public:
 	Session(PID id, SOCKET sock, IOCPFramework& framework);
 	~Session();
 
-	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
-	void ProceedSent(EXOVERLAPPED* overlap, DWORD byte);
+	void Disconnect();
 
+	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
 	int RecvStream(DWORD size, DWORD begin_bytes);
 	int RecvStream(DWORD begin_bytes = 0);
 
+	void ProceedSent(EXOVERLAPPED* overlap, DWORD byte);
 	void SendSignUp(PID nid);
+	void SendSignOut(PID rid);
 	void SendCreateCharacter(PID id, CHAR cx, CHAR cy);
 	void SendMoveCharacter(PID id, CHAR nx, CHAR ny);
-	void SendSignOut(PID rid);
 
 	bool TryMove(WPARAM input);
 

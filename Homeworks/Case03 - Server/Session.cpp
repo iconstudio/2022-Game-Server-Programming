@@ -22,27 +22,10 @@ Session::~Session()
 	delete& recvOverlap;
 }
 
-void Session::SetRecvBuffer(const WSABUF& buffer)
+void Session::Disconnect()
 {
-	recvBuffer = buffer;
+	Framework.Disconnect(ID);
 }
-
-void Session::SetRecvBuffer(LPWSABUF buffer)
-{
-	SetRecvBuffer(*buffer);
-}
-
-void Session::SetRecvBuffer(CHAR* cbuffer, DWORD size)
-{
-	recvBuffer.buf = cbuffer;
-	recvBuffer.len = size;
-}
-
-void Session::ClearRecvBuffer()
-{
-	ZeroMemory(recvCBuffer, sizeof(recvCBuffer));
-}
-
 
 void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 {
@@ -71,13 +54,17 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 					strcpy_s(Nickname, result->Nickname);
 					std::cout << ID << "'s Nickname: " << Nickname << ".\n";
 
-					//TODO: 规价
-					SendSignUp(ID);
+					// 1
+					Framework.SendWorldDataTo(this);
 
+					// 2
+					Framework.BroadcastSignUp(ID);
+
+					// 3
 					Instance = new PlayerCharacter;
 					Instance->x = 4;
 					Instance->y = 4;
-					SendCreateCharacter(ID, Instance->x, Instance->y);
+					Framework.BroadcastCreateCharacter(ID, Instance->x, Instance->y);
 
 					recvBytes -= sz_want;
 					if (0 < recvBytes)
@@ -100,7 +87,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 				{
 					if (pid == ID)
 					{
-						Framework.Disconnect(ID);
+						Disconnect();
 						return;
 					}
 					else
@@ -147,8 +134,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 						if (moved)
 						{
-							//TODO: 规价 BroadcastWorld();
-							SendMoveCharacter(ID, Instance->x, Instance->y);
+							Framework.BroadcastMoveCharacter(ID, Instance->x, Instance->y);
 						}
 					}
 
@@ -185,8 +171,18 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
 {
 	std::cout << "ProceedSent (" << ID << ")" << "\n";
+
 	auto& sz_send = overlap->sendSize;
 	auto& tr_send = overlap->sendSzWant;
+
+	if (0 == byte)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay("ProceedSent()");
+			Disconnect();
+		}
+	}
 
 	ClearOverlap(overlap);
 }
@@ -196,7 +192,17 @@ int Session::RecvStream(DWORD size, DWORD begin_bytes)
 	recvBuffer.buf = recvCBuffer + begin_bytes;
 	recvBuffer.len = size - begin_bytes;
 
-	return Recv(0);
+	auto result = Recv(0);
+	if (SOCKET_ERROR == result)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay("RecvStream()");
+			Disconnect();
+			return 0;
+		}
+	}
+	return result;
 }
 
 int Session::RecvStream(DWORD begin_bytes)
@@ -214,6 +220,7 @@ void Session::SendSignUp(PID nid)
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
 			ErrorDisplay("SendSignUp()");
+			Disconnect();
 			return;
 		}
 	}
@@ -228,6 +235,7 @@ void Session::SendCreateCharacter(PID id, CHAR cx, CHAR cy)
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
 			ErrorDisplay("SendSignUp()");
+			Disconnect();
 			return;
 		}
 	}
@@ -242,6 +250,7 @@ void Session::SendMoveCharacter(PID id, CHAR nx, CHAR ny)
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
 			ErrorDisplay("SendSignUp()");
+			Disconnect();
 			return;
 		}
 	}
@@ -256,9 +265,31 @@ void Session::SendSignOut(PID rid)
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
 			ErrorDisplay("SendSignUp()");
+			Disconnect();
 			return;
 		}
 	}
+}
+
+void Session::ClearRecvBuffer()
+{
+	ZeroMemory(recvCBuffer, sizeof(recvCBuffer));
+}
+
+void Session::SetRecvBuffer(const WSABUF& buffer)
+{
+	recvBuffer = buffer;
+}
+
+void Session::SetRecvBuffer(LPWSABUF buffer)
+{
+	SetRecvBuffer(*buffer);
+}
+
+void Session::SetRecvBuffer(CHAR* cbuffer, DWORD size)
+{
+	recvBuffer.buf = cbuffer;
+	recvBuffer.len = size;
 }
 
 int Session::Recv(DWORD flags)

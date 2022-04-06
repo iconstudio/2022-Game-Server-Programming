@@ -306,8 +306,11 @@ void ClientFramework::ProceedRecv(DWORD bytes)
 						clientNumber = rp->usersCurrent;
 						RemoveClient(pid);
 
-						Status = GAME_STATES::Begin;
-						background_color = C_WHITE;
+						if (pid == ID)
+						{
+							Status = GAME_STATES::Begin;
+							background_color = C_WHITE;
+						}
 
 						InvalidateRect(Window, NULL, FALSE);
 					}

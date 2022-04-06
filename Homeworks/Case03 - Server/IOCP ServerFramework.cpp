@@ -247,12 +247,12 @@ void IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
 	session->RecvStream(); // IO ÁøÀÔ
 }
 
-Session* IOCPFramework::GetClient(PID id)
+Session* IOCPFramework::GetClient(const PID id)
 {
 	return Clients[id];
 }
 
-Session* IOCPFramework::GetClientByIndex(UINT index)
+Session* IOCPFramework::GetClientByIndex(const UINT index)
 {
 	return Clients[clientsID[index]];
 }
@@ -260,6 +260,81 @@ Session* IOCPFramework::GetClientByIndex(UINT index)
 UINT IOCPFramework::GetClientsNumber() const
 {
 	return numberClients;
+}
+
+void IOCPFramework::BroadcastSignUp(const PID who)
+{
+	auto session = GetClient(who);
+
+	if (session)
+	{
+		ForeachClient([&](Session* other) {
+			//if (session != other)
+			{
+				session->SendSignUp(other->ID);
+			}
+		});
+	}
+}
+
+void IOCPFramework::BroadcastSignOut(const PID who)
+{
+	auto session = GetClient(who);
+
+	if (session)
+	{
+		ForeachClient([&](Session* other) {
+			//if (session != other)
+			{
+				session->SendSignOut(other->ID);
+			}
+		});
+	}
+}
+
+void IOCPFramework::BroadcastCreateCharacter(const PID who, CHAR cx, CHAR cy)
+{
+	auto session = GetClient(who);
+
+	if (session)
+	{
+		ForeachClient([&](Session* other) {
+			//if (session != other)
+			{
+				session->SendCreateCharacter(other->ID, cx, cy);
+			}
+		});
+	}
+}
+
+void IOCPFramework::BroadcastMoveCharacter(const PID who, CHAR nx, CHAR ny)
+{
+	auto session = GetClient(who);
+
+	if (session)
+	{
+		ForeachClient([&](Session* other) {
+			//if (session != other)
+			{
+				session->SendMoveCharacter(other->ID, nx, ny);
+			}
+		});
+	}
+}
+
+void IOCPFramework::SendWorldDataTo(Session* session)
+{
+	if (session)
+	{
+		ForeachClient([&](Session* other) {
+			if (other != session)
+			{
+				auto instance = other->Instance;
+				session->SendSignUp(other->ID);
+				session->SendCreateCharacter(other->ID, instance->x, instance->y);
+			}
+		});
+	}
 }
 
 void IOCPFramework::RemoveClient(const PID rid)
@@ -278,10 +353,11 @@ void IOCPFramework::RemoveClient(const PID rid)
 	}
 }
 
-void IOCPFramework::Disconnect(const PID id)
+void IOCPFramework::Disconnect(const PID who)
 {
-	//closesocket(newbie);
-	//newbie = CreateSocket();
+	BroadcastSignOut(who);
 
-	RemoveClient(id);
+	socketPool.push_back(std::move(CreateSocket()));
+
+	RemoveClient(who);
 }
