@@ -1,12 +1,16 @@
 #include "stdafx.h"
 #include "Player.h"
+#include "Network.hpp"
 
 void PlayerCharacter::Render(HDC canvas)
 {
 	auto filler = CreateSolidBrush(C_GOLD);
 	auto old_filler = Draw::Attach(canvas, filler);
 
-	Draw::Ellipse(canvas, x - 16, y - 16, x + 16, y + 16);
+	auto dx = BOARD_X + x * CELL_W;
+	auto dy = BOARD_Y + y * CELL_H;
+
+	Draw::Ellipse(canvas, dx - 16, dy - 16, dx + 16, dy + 16);
 	Draw::Detach(canvas, old_filler, filler);
 
 	filler = CreateSolidBrush(C_WHITE);
@@ -20,7 +24,7 @@ void PlayerCharacter::Render(HDC canvas)
 	ZeroMemory(text_id, sizeof(text_id));
 	wsprintf(text_id, L"ID: %u", ID);
 
-	TextOut(canvas, x, y, text_id, lstrlen(text_id));
+	TextOut(canvas, dx, dy, text_id, lstrlen(text_id));
 	SetTextAlign(canvas, old_align);
 	Draw::Detach(canvas, old_filler, filler);
 	Draw::Detach(canvas, old_liner, liner);

@@ -21,7 +21,7 @@ public:
 
 private:
 	void Accept();
-	bool Update();
+	void Update();
 	void ProceedAccept();
 	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 

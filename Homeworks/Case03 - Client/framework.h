@@ -1,18 +1,19 @@
 #pragma once
-#define WM_SOCKET (WM_USER + 1)
 #include "Network.hpp"
 #include "Player.h"
 
 enum class GAME_STATES : UCHAR
 {
 	Begin = 0,
-	Game = 1
+	Connect,
+	Game
 };
 
-class Session
+class LocalSession
 {
 public:
-	PlayerCharacter* Instance;
+	PID ID = -1;
+	PlayerCharacter* Instance = nullptr;
 };
 
 void CALLBACK CallbackRecv(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags);
@@ -24,33 +25,44 @@ public:
 	ClientFramework();
 
 	void Init(HWND window);
+	void Connect();
 	void Start();
-	void Update();
-	void Communicate(UINT msg, WPARAM sock, LPARAM state);
+
+	void InputEvent(WPARAM key);
+	void InputIpChar(WPARAM key);
+	void InputKey(WPARAM key);
 	void Render(HWND window);
+
+	void ProceedRecv(DWORD bytes);
+	void ProceedSend(EXOVERLAPPED* overlap, DWORD bytes);
+
+	void AddClient(const PID id);
+	LocalSession* GetClient(const PID id);
+	void RemoveClient(const PID id);
 
 	friend void CALLBACK CallbackRecv(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 	friend void CALLBACK CallbackSend(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 
-	void InputEvent(WPARAM key);
-	void EnterIpChar(WPARAM key);
-	void SendKey(WPARAM key);
-
-	UINT ID = -1; // 네트워크 상에서 플레이어의 번호
+	GAME_STATES Status;
+	UINT ID; // 플레이어의 번호
+	std::string Nickname;
+	PlayerCharacter* myCharacter;
 
 	COLORREF background_color = C_WHITE;
 
 private:
-	GAME_STATES Status = GAME_STATES::Begin;
+	void SendSignInMsg();
+	void SendSignOutMsg();
+	void SendSignKeyMsg();
+
+	int Recv(DWORD begin_bytes = 0);
+	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
+	int SendPacket(Packet* packet, ULONG size);
 
 	SOCKET Socket;
 	SOCKADDR_IN serverAddress;
 	INT serverAddressSize;
 	std::string serverIP;
-
-	vector<Session*> Clients;
-	PlayerCharacter* myCharacter;
-	WPARAM Lastkey;
 
 	WSAOVERLAPPED recvOverlap;
 	WSABUF recvBuffer;
@@ -58,11 +70,15 @@ private:
 	DWORD recvBytes;
 
 	HWND Window;
-
 	HDC doubleDCSurface;
 	HBITMAP doubleDCBitmap;
 
 	HDC boardSurface;
 	HBITMAP boardBitmap;
 	RECT boardArea;
+
+	std::vector<LocalSession*> Clients;
+	std::unordered_map<PID, LocalSession*> ClientsDict;
+	UINT clientNumber, clientMaxNumber;
+	WPARAM Lastkey;
 };

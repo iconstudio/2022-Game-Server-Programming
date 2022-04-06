@@ -51,7 +51,7 @@ void ErrorDisplay(const char* title)
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
 		(TCHAR*)&Msg_buffer, 0, NULL);
 
-	std::cout << title << " -> 오류: ";
+	std::cout << title << " → 오류: ";
 	setlocale(LC_ALL, "KOREAN");
 	wprintf(L"%s\n", Msg_buffer);
 

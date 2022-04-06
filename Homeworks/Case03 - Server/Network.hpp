@@ -34,17 +34,15 @@ public:
 	const OVERLAP_OPS Operation;
 	PACKET_TYPES Type;
 
-	LPWSABUF recvBuffer;
-	DWORD recvSize;
-
 	LPWSABUF sendBuffer;
 	CHAR* sendCBuffer;
 	DWORD sendSize, sendSzWant;
 };
 
 using PID = UINT;
-struct Packet
+class Packet
 {
+public:
 	Packet(PACKET_TYPES type, USHORT size, PID pid);
 	Packet(PACKET_TYPES type, PID pid = 0);
 
@@ -86,7 +84,7 @@ struct CSPacketKeyInput : public Packet
 /// </summary>
 struct SCPacketSignUp : public Packet
 {
-	SCPacketSignUp(PID nid, UINT users = 0, UINT usersmax = 0);
+	SCPacketSignUp(PID nid, UINT users, UINT usersmax);
 
 	UINT usersCurrent, usersMax;
 };
@@ -116,7 +114,9 @@ struct SCPacketMoveCharacter : public Packet
 /// </summary>
 struct SCPacketSignOut : public Packet
 {
-	SCPacketSignOut(PID pid);
+	SCPacketSignOut(PID pid, UINT users);
+	
+	UINT usersCurrent;
 };
 #pragma pack(pop)
 

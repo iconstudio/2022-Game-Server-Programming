@@ -94,10 +94,11 @@ void IOCPFramework::Start()
 	}
 
 	std::cout << "서버 시작\n";
+	Accept();
+
 	while (true)
 	{
-		Accept();
-		if (!Update()) break;
+		Update();
 	}
 	std::cout << "서버 종료\n";
 }
@@ -107,8 +108,10 @@ void IOCPFramework::Accept()
 	auto newbie = socketPool.back();
 
 	auto result = AcceptEx(Listener, newbie, acceptCBuffer
-		, 0, sizeof(SOCKADDR_IN) + 16, szAddress + 16, &acceptBytes
-		, &acceptOverlap);
+		, 0
+		, sizeof(SOCKADDR_IN) + 16
+		, szAddress + 16
+		, &acceptBytes, &acceptOverlap);
 
 	if (FALSE == result)
 	{
@@ -122,7 +125,7 @@ void IOCPFramework::Accept()
 	}
 }
 
-bool IOCPFramework::Update()
+void IOCPFramework::Update()
 {
 	auto result = GetQueuedCompletionStatus(completionPort, &portBytes, &portKey, &portOverlap, INFINITE);
 	if (TRUE == result)
@@ -131,27 +134,27 @@ bool IOCPFramework::Update()
 		auto key = portKey;
 
 		std::cout << "GQCS: " << key << ", Bytes: " << bytes << "\n";
-		if (0 == bytes)
-		{
-			ErrorDisplay("GetQueuedCompletionStatus()");
-			return true;
-		}
-
+		
 		if (serverKey == key) // AcceptEx
 		{
 			ProceedAccept();
 		}
-		else // recv / send
+		else // Recv / Send
 		{
+			if (0 == bytes)
+			{
+				ErrorDisplay("GetQueuedCompletionStatus()");
+			}
+
 			ProceedPacket(portOverlap, key, bytes);
 		}
-
-		return true;
 	}
-	else
+	else 
 	{
-		ErrorDisplay("GetQueuedCompletionStatus()");
-		return false;
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay("GetQueuedCompletionStatus()");
+		}
 	}
 }
 
@@ -162,8 +165,6 @@ void IOCPFramework::ProceedAccept()
 	if (socketPool.empty())
 	{
 		std::cout << "새 접속을 받을 수 없습니다!\n";
-		closesocket(newbie);
-		newbie = CreateSocket();
 	}
 	else
 	{
@@ -173,6 +174,10 @@ void IOCPFramework::ProceedAccept()
 
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
+	if (!socketPool.empty())
+	{
+		Accept();
+	}
 }
 
 void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes)
@@ -180,12 +185,32 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 	auto client = GetClient(PID(key));
 	if (!client) // 작업은 완료됐으나 클라이언트가 없다.
 	{
+		std::cout << "No client - key is " << key << ".\n";
 		delete overlap;
 	}
 	else
 	{
 		auto exoverlap = static_cast<EXOVERLAPPED*>(overlap);
-		client->RoutePacket(exoverlap, bytes);
+		auto op = exoverlap->Operation;
+
+		switch (op)
+		{
+			case OVERLAP_OPS::NONE:
+			{}
+			break;
+
+			case OVERLAP_OPS::RECV:
+			{
+				client->ProceedReceived(exoverlap, bytes);
+			}
+			break;
+
+			case OVERLAP_OPS::SEND:
+			{
+				client->ProceedSent(exoverlap, bytes);
+			}
+			break;
+		}
 	}
 }
 
@@ -211,11 +236,11 @@ void IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
 		return;
 	}
 
-	std::cout << "클라이언트 " << orderClientIDs << " 접속 → 소켓: " << nsocket << "\n";
+	auto nid = orderClientIDs;
+	std::cout << "클라이언트 " << nid << " 접속 → 소켓: " << nsocket << "\n";
 
-	auto result = std::make_pair(orderClientIDs, session);
-	clientsID.push_back(orderClientIDs);
-	Clients.insert(result);
+	clientsID.push_back(nid);
+	Clients.insert(std::move(std::make_pair(nid, session)));
 	orderClientIDs++;
 	numberClients++;
 
@@ -255,5 +280,8 @@ void IOCPFramework::RemoveClient(const PID rid)
 
 void IOCPFramework::Disconnect(const PID id)
 {
+	//closesocket(newbie);
+	//newbie = CreateSocket();
 
+	RemoveClient(id);
 }

@@ -8,17 +8,16 @@ public:
 	Session(PID id, SOCKET sock, IOCPFramework& framework);
 	~Session();
 
-	void RoutePacket(EXOVERLAPPED* overlap, DWORD byte);
 	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
 	void ProceedSent(EXOVERLAPPED* overlap, DWORD byte);
 
 	int RecvStream(DWORD size, DWORD begin_bytes);
 	int RecvStream(DWORD begin_bytes = 0);
 
-	bool SendSignUp(DWORD begin_bytes = 0);
-	bool SendCreateCharacter(DWORD begin_bytes = 0);
-	bool SendMoveCharacter(DWORD begin_bytes = 0);
-	bool SendSignOut(DWORD begin_bytes = 0);
+	void SendSignUp(PID nid);
+	void SendCreateCharacter(PID id, CHAR cx, CHAR cy);
+	void SendMoveCharacter(PID id, CHAR nx, CHAR ny);
+	void SendSignOut(PID rid);
 
 	bool TryMove(WPARAM input);
 
@@ -46,6 +45,7 @@ private:
 	EXOVERLAPPED recvOverlap;
 	WSABUF recvBuffer;
 	char recvCBuffer[BUFFSIZE];
+	DWORD recvBytes;
 
 	EXOVERLAPPED* overlapSendSignUp;
 	EXOVERLAPPED* overlapSendCreateChar;

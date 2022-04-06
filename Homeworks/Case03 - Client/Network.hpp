@@ -21,9 +21,25 @@ enum class PACKET_TYPES : UCHAR
 };
 
 #pragma pack(push, 1)
-using PID = UINT;
-struct Packet
+class EXOVERLAPPED : public WSAOVERLAPPED
 {
+public:
+	EXOVERLAPPED();
+	virtual ~EXOVERLAPPED();
+
+	void SetSendBuffer(const WSABUF& buffer);
+	void SetSendBuffer(LPWSABUF buffer);
+	void SetSendBuffer(CHAR* cbuffer, DWORD size);
+
+	LPWSABUF sendBuffer;
+	CHAR* sendCBuffer;
+	DWORD sendSize, sendSzWant;
+};
+
+using PID = UINT;
+class Packet
+{
+public:
 	Packet(PACKET_TYPES type, USHORT size, PID pid);
 	Packet(PACKET_TYPES type, PID pid = 0);
 
@@ -93,9 +109,12 @@ struct SCPacketMoveCharacter : public Packet
 /// <summary>
 /// 특정 플레이어의 캐릭터 삭제 (나간 플레이어 이외에 다른 플레이어에 전송)
 /// </summary>
+
 struct SCPacketSignOut : public Packet
 {
-	SCPacketSignOut(PID pid);
+	SCPacketSignOut(PID pid, UINT users);
+
+	UINT usersCurrent;
 };
 #pragma pack(pop)
 

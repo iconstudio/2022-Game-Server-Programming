@@ -3,13 +3,11 @@
 
 EXOVERLAPPED::EXOVERLAPPED(OVERLAP_OPS operation)
 	: Operation(operation), Type(PACKET_TYPES::NONE)
-	, recvBuffer(), recvSize(0)
 	, sendBuffer(), sendCBuffer(), sendSize(0), sendSzWant(0)
 {}
 
 EXOVERLAPPED::~EXOVERLAPPED()
 {
-	if (recvBuffer) delete recvBuffer;
 	if (sendBuffer) delete sendBuffer;
 	if (sendCBuffer) delete sendCBuffer;
 
@@ -24,7 +22,8 @@ void EXOVERLAPPED::SetSendBuffer(const WSABUF& buffer)
 
 void EXOVERLAPPED::SetSendBuffer(LPWSABUF buffer)
 {
-	SetSendBuffer(*buffer);
+	sendBuffer = buffer;
+	sendSzWant = buffer->len;
 }
 
 void EXOVERLAPPED::SetSendBuffer(CHAR* cbuffer, DWORD size)
@@ -76,8 +75,9 @@ SCPacketMoveCharacter::SCPacketMoveCharacter(PID pid, CHAR nx, CHAR ny)
 	, x(nx), y(ny)
 {}
 
-SCPacketSignOut::SCPacketSignOut(PID pid)
+SCPacketSignOut::SCPacketSignOut(PID pid, UINT users)
 	: Packet(PACKET_TYPES::SC_SIGNOUT, pid)
+	, usersCurrent(users)
 {}
 
 void ClearOverlap(LPWSAOVERLAPPED overlap)

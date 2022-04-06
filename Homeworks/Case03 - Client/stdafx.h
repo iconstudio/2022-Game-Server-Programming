@@ -11,8 +11,8 @@
 
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include <algorithm>
-using namespace std;
 
 constexpr COLORREF C_BLACK = RGB(0, 0, 0);
 constexpr COLORREF C_WHITE = RGB(255, 255, 255);

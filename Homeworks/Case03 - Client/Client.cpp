@@ -8,8 +8,8 @@
 WCHAR szTitle[MAX_LOADSTRING];
 WCHAR szWindowClass[MAX_LOADSTRING];
 
-WindowsForm window{ WND_SZ_W, WND_SZ_H };
-ClientFramework framework{};
+WindowsForm Window{ WND_SZ_W, WND_SZ_H };
+ClientFramework Framework{};
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -19,7 +19,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	LoadStringW(hInstance, IDS_APP_TITLE, szTitle, MAX_LOADSTRING);
 	LoadStringW(hInstance, IDS_APP_ID, szWindowClass, MAX_LOADSTRING);
 
-	if (!window.Initialize(hInstance, WndProc, szTitle, szWindowClass, nCmdShow))
+	if (!Window.Initialize(hInstance, WndProc, szTitle, szWindowClass, nCmdShow))
 	{
 		return FALSE;
 	}
@@ -37,9 +37,34 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 			::TranslateMessage(&msg);
 			::DispatchMessage(&msg);
 		}
+		else
+		{
+			SleepEx(10, TRUE);
+		}
 	}
 
 	return (int)msg.wParam;
+}
+
+void CallbackRecv(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags)
+{
+	if (0 != error || 0 == bytes)
+	{
+		ErrorDisplay(L"CallbackRecv()");
+	}
+
+	Framework.ProceedRecv(bytes);
+}
+
+void CallbackSend(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags)
+{
+	if (0 != error || 0 == bytes)
+	{
+		ErrorDisplay(L"CallbackSend()");
+	}
+
+	auto exoverlap = static_cast<EXOVERLAPPED*>(overlap);
+	Framework.ProceedSend(exoverlap, bytes);
 }
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
@@ -48,31 +73,19 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	{
 		case WM_CREATE:
 		{
-			framework.Init(hWnd);
-		}
-		break;
-
-		case WM_SOCKET:
-		{
-			framework.Communicate(message, wParam, lParam);
+			Framework.Init(hWnd);
 		}
 		break;
 
 		case WM_KEYDOWN:
 		{
-			framework.InputEvent(wParam);
-		}
-		break;
-
-		case WM_TIMER:
-		{
-			//InvalidateRect(hWnd, NULL, FALSE);
+			Framework.InputEvent(wParam);
 		}
 		break;
 
 		case WM_PAINT:
 		{
-			framework.Render(hWnd);
+			Framework.Render(hWnd);
 		}
 		break;
 

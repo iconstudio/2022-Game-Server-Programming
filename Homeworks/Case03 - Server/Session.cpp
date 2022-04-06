@@ -5,7 +5,7 @@
 
 Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
 	: ID(id), Nickname(), Socket(sock), Framework(framework)
-	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer()
+	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 	, Instance(nullptr)
 {
 	ClearRecvBuffer();
@@ -17,9 +17,9 @@ Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
 
 Session::~Session()
 {
-	if (recvCBuffer) delete recvCBuffer;
+	if (recvCBuffer) delete[] recvCBuffer;
 
-	delete &recvOverlap;
+	delete& recvOverlap;
 }
 
 void Session::SetRecvBuffer(const WSABUF& buffer)
@@ -43,40 +43,17 @@ void Session::ClearRecvBuffer()
 	ZeroMemory(recvCBuffer, sizeof(recvCBuffer));
 }
 
-void Session::RoutePacket(EXOVERLAPPED* overlap, DWORD byte)
-{
-	auto op = overlap->Operation;
-
-	switch (op)
-	{
-		case OVERLAP_OPS::NONE:
-		{}
-		break;
-
-		case OVERLAP_OPS::RECV:
-		{
-			ProceedReceived(overlap, byte);
-		}
-		break;
-
-		case OVERLAP_OPS::SEND:
-		{
-			ProceedSent(overlap, byte);
-		}
-		break;
-	}
-}
 
 void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 {
-	auto& wbuffer = overlap->recvBuffer; // 세션의 recvBuffer
-	auto& cbuffer = wbuffer->buf;
-	auto& sz_recv = overlap->recvSize;
+	std::cout << "ProceedReceived (" << ID << ")" << "\n";
+	auto& wbuffer = recvBuffer;
+	auto& cbuffer = wbuffer.buf;
 
-	sz_recv += byte;
+	recvBytes += byte;
 
 	const auto sz_min = sizeof(Packet);
-	while (sz_min <= sz_recv)
+	while (sz_min <= recvBytes)
 	{
 		auto packet = reinterpret_cast<Packet*>(cbuffer); // 클라이언트 → 서버
 		auto sz_want = packet->Size;
@@ -87,37 +64,35 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 		{
 			case PACKET_TYPES::CS_SIGNIN:
 			{
-				if (sz_want <= sz_recv)
+				if (sz_want <= recvBytes)
 				{
 					auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
 
-					if (pid == ID)
-					{
-						strcpy_s(Nickname, result->Nickname);
+					strcpy_s(Nickname, result->Nickname);
+					std::cout << ID << "'s Nickname: " << Nickname << ".\n";
 
-						SendSignUp();
-					}
+					//TODO: 방송
+					SendSignUp(ID);
+					SendCreateCharacter(ID, 4, 4);
 
-					sz_recv -= sz_want;
-					if (0 < sz_recv)
+					recvBytes -= sz_want;
+					if (0 < recvBytes)
 					{
 						MoveStream(cbuffer, sz_want, BUFFSIZE);
 					}
 				}
 				else
 				{
-					auto lack = sz_want - sz_recv;
+					auto lack = sz_want - recvBytes;
 					std::cout << "CS_SIGNIN: 클라이언트 " << ID << "에게 받아온 정보가 "
 						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
-
-					//RecvStream(sz_recv);
 				}
 			}
 			break;
 
 			case PACKET_TYPES::CS_SIGNOUT:
 			{
-				if (sz_want <= sz_recv)
+				if (sz_want <= recvBytes)
 				{
 					if (pid == ID)
 					{
@@ -126,8 +101,8 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 					}
 					else
 					{
-						sz_recv -= sz_want;
-						if (0 < sz_recv)
+						recvBytes -= sz_want;
+						if (0 < recvBytes)
 						{
 							MoveStream(cbuffer, sz_want, BUFFSIZE);
 						}
@@ -135,18 +110,16 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 				}
 				else
 				{
-					auto lack = sz_want - sz_recv;
+					auto lack = sz_want - recvBytes;
 					std::cout << "CS_SIGNOUT: 클라이언트 " << ID << "에게 받아온 정보가 "
 						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
-
-					//RecvStream(sz_recv);
 				}
 			}
 			break;
 
 			case PACKET_TYPES::CS_KEY:
 			{
-				if (sz_want <= sz_recv)
+				if (sz_want <= recvBytes)
 				{
 					auto result = reinterpret_cast<CSPacketKeyInput*>(cbuffer);
 
@@ -161,29 +134,31 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 						}
 						else
 						{
-							std::cout << "플레이어 " << ID << " - 위치: ("
-								<< Instance->x << ", " << Instance->y << ")\n";
+							std::cout << "플레이어 " << ID
+								<< " - 위치: ("
+								<< Instance->x * CELL_W
+								<< ", " << Instance->y * CELL_H
+								<< ")\n";
 						}
 
 						if (moved)
 						{
-							//Framework.BroadcastWorld();
+							//TODO: 방송 BroadcastWorld();
+							SendMoveCharacter(ID, Instance->x, Instance->y);
 						}
 					}
 
-					sz_recv -= sz_want;
-					if (0 < sz_recv)
+					recvBytes -= sz_want;
+					if (0 < recvBytes)
 					{
 						MoveStream(cbuffer, sz_want, BUFFSIZE);
 					}
 				}
 				else
 				{
-					auto lack = sz_want - sz_recv;
+					auto lack = sz_want - recvBytes;
 					std::cout << "CS_KEY: 클라이언트 " << ID << "에게 받아온 정보가 "
 						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
-
-					//RecvStream(sz_recv);
 				}
 			}
 			break;
@@ -200,11 +175,12 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 	}
 
 	// 아무거나 다 받는다.
-	RecvStream(sz_recv);
+	RecvStream(recvBytes);
 }
 
 void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
 {
+	std::cout << "ProceedSent (" << ID << ")" << "\n";
 	auto& sz_send = overlap->sendSize;
 	auto& tr_send = overlap->sendSzWant;
 
@@ -224,24 +200,61 @@ int Session::RecvStream(DWORD begin_bytes)
 	return RecvStream(BUFFSIZE, begin_bytes);
 }
 
-bool Session::SendSignUp(DWORD begin_bytes)
+void Session::SendSignUp(PID nid)
 {
-	return false;
+	std::cout << "SendSignUp(" << nid << ")\n";
+	auto result = SendPacket<SCPacketSignUp>(nid
+		, Framework.GetClientsNumber(), CLIENTS_MAX_NUMBER);
+	if (SOCKET_ERROR == result)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay("SendSignUp()");
+			return;
+		}
+	}
 }
 
-bool Session::SendCreateCharacter(DWORD begin_bytes)
+void Session::SendCreateCharacter(PID id, CHAR cx, CHAR cy)
 {
-	return false;
+	std::cout << "SendCreateCharacter(" << id << ")\n";
+	auto result = SendPacket<SCPacketCreateCharacter>(id, cx, cy);
+	if (SOCKET_ERROR == result)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay("SendSignUp()");
+			return;
+		}
+	}
 }
 
-bool Session::SendMoveCharacter(DWORD begin_bytes)
+void Session::SendMoveCharacter(PID id, CHAR nx, CHAR ny)
 {
-	return false;
+	std::cout << "SendMoveCharacter(" << id << ")\n";
+	auto result = SendPacket<SCPacketMoveCharacter>(id, nx, ny);
+	if (SOCKET_ERROR == result)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay("SendSignUp()");
+			return;
+		}
+	}
 }
 
-bool Session::SendSignOut(DWORD begin_bytes)
+void Session::SendSignOut(PID rid)
 {
-	return false;
+	std::cout << "SendSignOut(" << rid << ")\n";
+	auto result = SendPacket<SCPacketSignOut>(rid, Framework.GetClientsNumber());
+	if (SOCKET_ERROR == result)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay("SendSignUp()");
+			return;
+		}
+	}
 }
 
 int Session::Recv(DWORD flags)
@@ -272,8 +285,7 @@ int Session::SendPacket(Ty... value)
 	overlap->Type = packet->Type;
 	overlap->SetSendBuffer(wbuffer);
 
-	auto woverlap = static_cast<LPWSAOVERLAPPED>(overlap);
-	return Send(wbuffer, 1, woverlap);
+	return Send(wbuffer, 1, overlap);
 }
 
 void Session::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
