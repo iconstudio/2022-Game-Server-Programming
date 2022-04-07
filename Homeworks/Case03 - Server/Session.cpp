@@ -4,36 +4,30 @@
 #include "IOCP ServerFramework.hpp"
 
 Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
-	: ID(id), Nickname(), Socket(sock), Dead(false), Framework(framework)
+	: ID(id), Nickname(), Socket(sock), Framework(framework)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 	, Instance(nullptr)
 {
-	ClearRecvBuffer();
 	ClearOverlap(&recvOverlap);
 
 	recvBuffer.buf = recvCBuffer;
 	recvBuffer.len = BUFFSIZE;
+	ClearRecvBuffer();
 }
 
 Session::~Session()
 {
-	if (recvCBuffer) delete[] &recvCBuffer;
-
-	delete Instance;
-	delete &recvOverlap;
+	closesocket(Socket);
+	if (Instance) Instance.reset();
 }
 
 void Session::Disconnect()
 {
-	Dead = true;
-
 	Framework.Disconnect(ID);
 }
 
 void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 {
-	if (Dead) return;
-
 	std::cout << "ProceedReceived (" << ID << ")" << "\n";
 	auto& wbuffer = recvBuffer;
 	auto& cbuffer = wbuffer.buf;
@@ -59,9 +53,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 					strcpy_s(Nickname, result->Nickname);
 					std::cout << ID << "'s Nickname: " << Nickname << ".\n";
 
-					Instance = new PlayerCharacter;
-					Instance->x = 4;
-					Instance->y = 4;
+					Instance = std::make_shared<PlayerCharacter>(3, 3);
 
 					Framework.BroadcastSignUp(ID);
 
@@ -130,8 +122,8 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 						{
 							std::cout << "플레이어 " << ID
 								<< " - 위치: ("
-								<< Instance->x * CELL_W
-								<< ", " << Instance->y * CELL_H
+								<< Instance->x * CELL_W << ", "
+								<< Instance->y * CELL_H
 								<< ")\n";
 						}
 
@@ -173,11 +165,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
 {
-	if (Dead)
-	{
-		return;
-	}
-	else if (0 == byte)
+	 if (0 == byte)
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
@@ -279,6 +267,7 @@ void Session::SendSignOut(PID rid)
 
 void Session::ClearRecvBuffer()
 {
+	recvBytes = 0;
 	ZeroMemory(recvCBuffer, sizeof(recvCBuffer));
 }
 
@@ -314,9 +303,9 @@ int Session::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap)
 
 template<typename PACKET, typename ...Ty>
 	requires std::is_base_of_v<Packet, PACKET>
-int Session::SendPacket(Ty... value)
+int Session::SendPacket(Ty&&... args)
 {
-	auto packet = new PACKET{ value... };
+	auto packet = new PACKET{ std::forward<Ty>(args)... };
 
 	auto wbuffer = new WSABUF{};
 	wbuffer->buf = reinterpret_cast<char*>(packet);
@@ -332,6 +321,7 @@ int Session::SendPacket(Ty... value)
 void Session::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
 {
 	MoveMemory(buffer, buffer + position, max_size - position);
+	ZeroMemory(buffer + max_size - position, position);
 }
 
 bool Session::TryMove(WPARAM input)

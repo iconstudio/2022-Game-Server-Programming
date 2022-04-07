@@ -2,6 +2,9 @@
 
 TCHAR* Msg_buffer = NULL;
 
+PlayerCharacter::PlayerCharacter(CHAR ox, CHAR oy) : x(ox), y(oy)
+{}
+
 bool PlayerCharacter::TryMoveLT()
 {
 	if (0 < x)

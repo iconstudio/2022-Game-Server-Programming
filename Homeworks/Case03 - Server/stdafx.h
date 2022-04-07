@@ -6,12 +6,13 @@
 #include <MSWSock.h>
 
 #include <iostream>
+#include <memory>
 #include <vector>
 #include <unordered_map>
-#include <concurrent_vector.h>
 #include <concurrent_unordered_map.h>
 #include <algorithm>
 #include <mutex>
+#include <chrono>
 
 class IOCPFramework;
 class Session;
@@ -22,6 +23,8 @@ class Session;
 class PlayerCharacter
 {
 public:
+	PlayerCharacter(CHAR ox, CHAR oy);
+
 	bool TryMoveLT();
 	bool TryMoveRT();
 	bool TryMoveUP();

@@ -24,10 +24,9 @@ public:
 
 	const PID ID;
 	const SOCKET Socket;
-	bool Dead;
 
 	CHAR Nickname[30];
-	PlayerCharacter* Instance;
+	std::shared_ptr<PlayerCharacter> Instance;
 
 private:
 	void SetRecvBuffer(const WSABUF& buffer);
@@ -40,7 +39,7 @@ private:
 
 	template<typename PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, PACKET>
-	int SendPacket(Ty... value);
+	int SendPacket(Ty&&... args);
 
 	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
 
