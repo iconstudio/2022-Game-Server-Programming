@@ -37,8 +37,9 @@ private:
 	void ForeachClient(Predicate predicate);
 	void RemoveClient(const PID rid);
 
-	SOCKET CreateSocket() const;
-	void AssignToSocketPool();
+	SOCKET&& CreateSocket() const;
+	void AddCandidateSocketToPool(SOCKET&& sock);
+	void AddCandidateSocketToPool();
 
 	SOCKET Listener;
 	SOCKADDR_IN Address;

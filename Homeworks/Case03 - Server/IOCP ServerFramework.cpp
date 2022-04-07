@@ -66,12 +66,20 @@ void IOCPFramework::Init()
 		return;
 	}
 
-	for (UINT i = 0; i < socketPool.capacity(); ++i)
+	for (UINT i = 0; i < CLIENTS_MAX_NUMBER; ++i)
 	{
 		auto sk = CreateSocket();
 		if (INVALID_SOCKET == sk)
 		{
 			ErrorDisplay("IOCPFramework → WSASocket()");
+			return;
+		}
+
+		BOOL option = TRUE;
+		if (SOCKET_ERROR == setsockopt(sk, SOL_SOCKET, SO_REUSEADDR
+			, reinterpret_cast<char*>(&option), sizeof(option)))
+		{
+			ErrorDisplay("Init → setsockopt(socketPool)");
 			return;
 		}
 
@@ -81,6 +89,14 @@ void IOCPFramework::Init()
 
 void IOCPFramework::Start()
 {
+	BOOL option = TRUE;
+	if (SOCKET_ERROR == setsockopt(Listener, SOL_SOCKET, SO_REUSEADDR
+		, reinterpret_cast<char*>(&option), sizeof(option)))
+	{
+		ErrorDisplay("Start → setsockopt(Listener)");
+		return;
+	}
+
 	if (SOCKET_ERROR == listen(Listener, CLIENTS_MAX_NUMBER))
 	{
 		ErrorDisplay("listen()");
@@ -172,7 +188,7 @@ void IOCPFramework::ProceedAccept()
 		{
 			std::cout << "클라이언트 " << newbie << "가 접속에 실패했습니다.\n";
 			closesocket(newbie);
-			AssignToSocketPool();
+			AddCandidateSocketToPool();
 		}
 	}
 
@@ -336,12 +352,19 @@ bool IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
 		auto nid = orderClientIDs;
 		std::cout << "클라이언트 " << nid << " 접속 → 소켓: " << nsocket << "\n";
 
+		orderClientIDs++;
+
+		// IO 진입
+		if (SOCKET_ERROR == session->RecvStream())
+		{
+			std::cout << "클라이언트 " << nid << " 오류 → 0바이트 받음.\n";
+			return false;
+		};
+
 		clientsID.push_back(nid);
 		Clients.insert(std::move(std::make_pair(nid, session)));
-		orderClientIDs++;
 		numberClients++;
 
-		session->RecvStream(); // IO 진입
 		return true;
 	}
 	else
@@ -374,16 +397,21 @@ void IOCPFramework::Disconnect(const PID who)
 
 	BroadcastSignOut(who);
 
-	AssignToSocketPool();
+	AddCandidateSocketToPool();
 }
 
-SOCKET IOCPFramework::CreateSocket() const
+SOCKET&& IOCPFramework::CreateSocket() const
 {
-	return WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP
-		, NULL, 0, WSA_FLAG_OVERLAPPED);
+	return std::move(WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP
+		, NULL, 0, WSA_FLAG_OVERLAPPED));
 }
 
-void IOCPFramework::AssignToSocketPool()
+void IOCPFramework::AddCandidateSocketToPool(SOCKET&& sock)
+{
+	socketPool.push_back(std::move(sock));
+}
+
+void IOCPFramework::AddCandidateSocketToPool()
 {
 	socketPool.push_back(std::move(CreateSocket()));
 }
