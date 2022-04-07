@@ -83,7 +83,7 @@ void IOCPFramework::Init()
 			return;
 		}
 
-		socketPool.push_back(std::move(sk));
+		socketPool.push_back(sk);
 	}
 }
 
@@ -104,6 +104,8 @@ void IOCPFramework::Start()
 	}
 
 	std::cout << "서버 시작\n";
+
+	acceptNewbie = CreateSocket();
 	Accept();
 
 	while (true)
@@ -153,9 +155,7 @@ void IOCPFramework::Update()
 
 void IOCPFramework::Accept()
 {
-	auto newbie = socketPool.back();
-
-	auto result = AcceptEx(Listener, newbie, acceptCBuffer
+	auto result = AcceptEx(Listener, acceptNewbie, acceptCBuffer
 		, 0
 		, sizeof(SOCKADDR_IN) + 16
 		, szAddress + 16
@@ -181,15 +181,18 @@ void IOCPFramework::ProceedAccept()
 	}
 	else
 	{
-		auto newbie = socketPool.back();
-		socketPool.pop_back();
+		//auto newbie = socketPool.back();
+		//socketPool.pop_back();
+		//auto newbie = CreateSocket();
 
-		if (!CreateAndAssignClient(newbie))
+		if (!CreateAndAssignClient(acceptNewbie))
 		{
-			std::cout << "클라이언트 " << newbie << "가 접속에 실패했습니다.\n";
-			closesocket(newbie);
-			AddCandidateSocketToPool();
+			std::cout << "클라이언트 " << acceptNewbie << "가 접속에 실패했습니다.\n";
+			closesocket(acceptNewbie);
+			//AddCandidateSocketToPool();
 		}
+		
+		acceptNewbie = CreateSocket();
 	}
 
 	ClearOverlap(&acceptOverlap);

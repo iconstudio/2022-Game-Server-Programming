@@ -113,6 +113,8 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 					{
 						auto key = result->Key;
 						bool moved = TryMove(key);
+						auto px = Instance->x;
+						auto py = Instance->y;
 
 						if (!moved)
 						{
@@ -122,14 +124,14 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 						{
 							std::cout << "플레이어 " << ID
 								<< " - 위치: ("
-								<< Instance->x * CELL_W << ", "
-								<< Instance->y * CELL_H
+								<< px * CELL_W << ", "
+								<< py * CELL_H
 								<< ")\n";
 						}
 
 						if (moved)
 						{
-							Framework.BroadcastMoveCharacter(ID, Instance->x, Instance->y);
+							Framework.BroadcastMoveCharacter(ID, px, py);
 						}
 					}
 

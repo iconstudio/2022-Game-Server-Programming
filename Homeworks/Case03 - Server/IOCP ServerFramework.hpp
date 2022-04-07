@@ -49,6 +49,7 @@ private:
 	WSAOVERLAPPED acceptOverlap;
 	DWORD acceptBytes;
 	char acceptCBuffer[BUFSIZ];
+	SOCKET acceptNewbie;
 
 	LPWSAOVERLAPPED portOverlap;
 	DWORD portBytes;
