@@ -167,7 +167,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
 {
-	 if (0 == byte)
+	if (0 == byte)
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{

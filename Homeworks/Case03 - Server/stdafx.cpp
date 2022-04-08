@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-TCHAR* Msg_buffer = NULL;
+TCHAR* msgBuffer = NULL;
 
 PlayerCharacter::PlayerCharacter(CHAR ox, CHAR oy) : x(ox), y(oy)
 {}
@@ -52,11 +52,10 @@ void ErrorDisplay(const char* title)
 		FORMAT_MESSAGE_FROM_SYSTEM,
 		NULL, WSAGetLastError(),
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(TCHAR*)&Msg_buffer, 0, NULL);
+		(TCHAR*)&msgBuffer, 0, NULL);
 
 	std::cout << title << " ¡æ ¿À·ù: ";
-	setlocale(LC_ALL, "KOREAN");
-	wprintf(L"%s\n", Msg_buffer);
+	wprintf(L"%s\n", msgBuffer);
 
-	LocalFree(Msg_buffer);
+	LocalFree(msgBuffer);
 }

@@ -24,18 +24,18 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
-	MSG msg;
+	auto msg = new MSG;
 	while (true)
 	{
-		if (::PeekMessage(&msg, NULL, 0, 0, PM_REMOVE))
+		if (::PeekMessage(msg, NULL, 0, 0, PM_REMOVE))
 		{
-			if (msg.message == WM_QUIT)
+			if (msg->message == WM_QUIT)
 			{
 				break;
 			}
 
-			::TranslateMessage(&msg);
-			::DispatchMessage(&msg);
+			::TranslateMessage(msg);
+			::DispatchMessage(msg);
 		}
 		else
 		{
@@ -43,7 +43,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		}
 	}
 
-	return (int)msg.wParam;
+	return static_cast<int>(msg->wParam);
 }
 
 void CallbackRecv(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags)

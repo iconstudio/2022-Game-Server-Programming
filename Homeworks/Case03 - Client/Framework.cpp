@@ -17,6 +17,14 @@ ClientFramework::ClientFramework()
 	ClientsDict.reserve(CLIENTS_MAX_NUMBER);
 }
 
+ClientFramework::~ClientFramework()
+{
+	DeleteObject(boardSurface);
+	DeleteDC(doubleDCSurface);
+	DeleteObject(doubleDCBitmap);
+	DeleteDC(boardSurface);
+}
+
 void ClientFramework::Init(HWND window)
 {
 	Window = window;
@@ -49,9 +57,12 @@ void ClientFramework::Init(HWND window)
 	bool fill_flag = false;
 	auto outliner = CreatePen(PS_NULL, 1, C_BLACK);
 	auto filler = CreateSolidBrush(C_WHITE);
-	Draw::Attach(boardSurface, outliner);
-	Draw::Attach(boardSurface, filler);
+	auto old_outliner = Draw::Attach(boardSurface, outliner);
+	auto old_filler = Draw::Attach(boardSurface, filler);
 	Draw::Clear(boardSurface, BOARD_W, BOARD_H, 0);
+	Draw::Detach(boardSurface, old_outliner, outliner);
+	Draw::Detach(boardSurface, old_filler, filler);
+
 	ReleaseDC(Window, hdc);
 
 	for (int i = 0; i < CELLS_LENGTH; ++i)

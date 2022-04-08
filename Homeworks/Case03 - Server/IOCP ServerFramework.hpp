@@ -67,7 +67,7 @@ private:
 template<typename Predicate>
 inline void IOCPFramework::ForeachClient(Predicate predicate)
 {
-	for (auto comp : Clients)
+	for (auto& comp : Clients)
 	{
 		auto& session = comp.second;
 		predicate(session);

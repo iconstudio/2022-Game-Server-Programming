@@ -23,6 +23,7 @@ class ClientFramework
 {
 public:
 	ClientFramework();
+	~ClientFramework();
 
 	void Init(HWND window);
 	void Connect();

@@ -25,6 +25,8 @@ IOCPFramework::~IOCPFramework()
 
 void IOCPFramework::Init()
 {
+	setlocale(LC_ALL, "KOREAN");
+
 	WSADATA wsadata{};
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsadata))
 	{
@@ -241,7 +243,7 @@ void IOCPFramework::BroadcastSignUp(const PID who)
 {
 	std::unique_lock barrier(mutexClient, std::try_to_lock);
 
-	ForeachClient([&](SessionPtr other) {
+	ForeachClient([&](const SessionPtr& other) {
 		other->SendSignUp(who);
 	});
 }
@@ -250,7 +252,7 @@ void IOCPFramework::BroadcastSignOut(const PID who)
 {
 	std::unique_lock barrier(mutexClient, std::try_to_lock);
 
-	ForeachClient([&](SessionPtr other) {
+	ForeachClient([&](const SessionPtr& other) {
 		if (other->ID != who)
 		{
 			other->SendSignOut(who);
@@ -266,7 +268,7 @@ void IOCPFramework::BroadcastCreateCharacter(const PID who, CHAR cx, CHAR cy)
 
 	if (session)
 	{
-		ForeachClient([&](SessionPtr other) {
+		ForeachClient([&](const SessionPtr& other) {
 			other->SendCreateCharacter(who, cx, cy);
 		});
 	}
@@ -280,7 +282,7 @@ void IOCPFramework::BroadcastMoveCharacter(const PID who, CHAR nx, CHAR ny)
 
 	if (session)
 	{
-		ForeachClient([&](SessionPtr other) {
+		ForeachClient([&](const SessionPtr& other) {
 			other->SendMoveCharacter(who, nx, ny);
 		});
 	}
@@ -290,7 +292,7 @@ void IOCPFramework::SendWorldDataTo(Session* target)
 {
 	std::unique_lock barrier(mutexClient, std::try_to_lock);
 
-	ForeachClient([&](SessionPtr other) {
+	ForeachClient([&](const SessionPtr& other) {
 		if (other.get() != target)
 		{
 			target->SendSignUp(other->ID);

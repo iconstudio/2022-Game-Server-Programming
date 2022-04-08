@@ -1,8 +1,10 @@
 #include "stdafx.h"
 
+WCHAR* msgBuffer = NULL;
+WCHAR msgTitle[512]{};
+
 void ErrorAbort(const wchar_t* title)
 {
-	WCHAR* lpMsgBuf;
 	auto error = WSAGetLastError();
 
 	FormatMessage(
@@ -10,33 +12,32 @@ void ErrorAbort(const wchar_t* title)
 		FORMAT_MESSAGE_FROM_SYSTEM,
 		NULL, error,
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPWSTR)&lpMsgBuf, 0, NULL);
+		(LPWSTR)&msgBuffer, 0, NULL);
 
-	WCHAR wtitle[512];
-	wsprintf(wtitle, L"오류: %s", title);
+	ZeroMemory(msgTitle, sizeof(msgTitle));
+	wsprintf(msgTitle, L"오류 → %s", title);
 
-	MessageBox(NULL, lpMsgBuf, wtitle, MB_ICONERROR | MB_OK);
+	MessageBox(NULL, msgBuffer, msgTitle, MB_ICONERROR | MB_OK);
 
-	LocalFree(lpMsgBuf);
+	LocalFree(msgBuffer);
 	exit(error);
 }
 
 void ErrorDisplay(const wchar_t* title)
 {
-	WCHAR* lpMsgBuf;
 	FormatMessage(
 		FORMAT_MESSAGE_ALLOCATE_BUFFER |
 		FORMAT_MESSAGE_FROM_SYSTEM,
 		NULL, WSAGetLastError(),
 		MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
-		(LPWSTR)&lpMsgBuf, 0, NULL);
+		(LPWSTR)&msgBuffer, 0, NULL);
 
-	WCHAR wtitle[512];
-	wsprintf(wtitle, L"오류: %s", title);
+	ZeroMemory(msgTitle, sizeof(msgTitle));
+	wsprintf(msgTitle, L"오류 → %s", title);
 
-	MessageBox(NULL, lpMsgBuf, wtitle, MB_ICONERROR | MB_OK);
+	MessageBox(NULL, msgBuffer, msgTitle, MB_ICONERROR | MB_OK);
 
-	LocalFree(lpMsgBuf);
+	LocalFree(msgBuffer);
 }
 
 HGDIOBJ Draw::Attach(HDC canvas, HGDIOBJ object)
