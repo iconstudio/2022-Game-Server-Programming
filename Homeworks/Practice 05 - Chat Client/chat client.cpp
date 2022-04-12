@@ -1,4 +1,4 @@
-#include "chat client.hpp"v
+#include "chat client.hpp"
 
 char recv_buf[BUFSIZE];
 SOCKET s_socket;
