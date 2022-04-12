@@ -9,13 +9,14 @@
 #include <memory>
 #include <vector>
 #include <unordered_map>
-#include <concurrent_unordered_map.h>
 #include <algorithm>
 #include <mutex>
 #include <chrono>
+#include <array>
 
 class IOCPFramework;
 class Session;
+enum class SESSION_STATES;
 
 /// <summary>
 /// 플레이어 캐릭터

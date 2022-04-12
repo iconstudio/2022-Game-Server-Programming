@@ -10,3 +10,11 @@ int main()
 
 	return 0;
 }
+
+void IOCPWorker(const UINT index)
+{
+	while (true)
+	{
+		framework.Update();
+	}
+}

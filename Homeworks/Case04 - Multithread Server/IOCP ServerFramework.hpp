@@ -3,7 +3,11 @@
 #include "Network.hpp"
 #include "Session.h"
 
+const UINT THREADS_COUNT = 6;
 using SessionPtr = std::shared_ptr<Session>;
+
+void IOCPWorker(const UINT index);
+
 class IOCPFramework
 {
 public:
@@ -12,6 +16,9 @@ public:
 
 	void Init();
 	void Start();
+	void Update();
+
+	friend void IOCPWorker(const UINT index);
 
 	void SendWorldDataTo(Session* session);
 	void BroadcastSignUp(const PID who);
@@ -26,11 +33,11 @@ public:
 	void Disconnect(const PID who);
 
 private:
-	void Update();
 	void Accept();
 	void ProceedAccept();
 	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
+	PID MakeNewClientID();
 	bool CreateAndAssignClient(SOCKET nsocket);
 
 	template<typename Predicate>
@@ -51,17 +58,19 @@ private:
 	char acceptCBuffer[BUFSIZ];
 	SOCKET acceptNewbie;
 
-	LPWSAOVERLAPPED portOverlap;
-	DWORD portBytes;
-	ULONG_PTR portKey;
 	const ULONG_PTR serverKey;
 
 	std::timed_mutex mutexClient;
 	std::vector<SOCKET> socketPool;
 	std::vector<PID> clientsID;
 	std::unordered_map<PID, SessionPtr> Clients;
+
+	std::array<PID, CLIENTS_MAX_NUMBER> clientsIDPool;
+	std::array<SessionPtr, CLIENTS_MAX_NUMBER> clientsPool;
 	PID orderClientIDs;
 	UINT numberClients;
+
+	std::vector<std::thread> threadWorkers;
 };
 
 template<typename Predicate>

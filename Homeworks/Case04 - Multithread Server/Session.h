@@ -2,12 +2,21 @@
 #include "stdafx.h"
 #include "Network.hpp"
 
+enum class SESSION_STATES
+{
+	NONE, CONNECTED, ACCEPTED, 
+};
+
 class Session
 {
 public:
 	Session(PID id, SOCKET sock, IOCPFramework& framework);
 	~Session();
 
+	void SetStatus(SESSION_STATES state);
+	bool IsConnected() const;
+	bool IsDisconnected() const;
+	bool IsAccepted() const;
 	void Disconnect();
 
 	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
@@ -25,6 +34,7 @@ public:
 	const PID ID;
 	const SOCKET Socket;
 
+	SESSION_STATES Status;
 	CHAR Nickname[30];
 	std::shared_ptr<PlayerCharacter> Instance;
 

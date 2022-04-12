@@ -15,6 +15,8 @@
 #include <unordered_map>
 #include <concurrent_unordered_map.h>
 #include <array>
+#include <mutex>
+#include <thread>
 
 using namespace std;
 
@@ -23,6 +25,7 @@ constexpr int BUF_SIZE = 256;
 constexpr int MAX_USER = 10;
 constexpr int NAME_SZ = 10;
 constexpr int WORLD_SZ = 8;
+constexpr int THREADS_CNT = 4;
 
 enum COMPLETION_TYPES : INT
 {

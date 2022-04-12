@@ -5,9 +5,10 @@
 
 IOCPFramework::IOCPFramework()
 	: acceptOverlap(), acceptBytes(0), acceptCBuffer()
-	, portOverlap(), portBytes(0), portKey(0), serverKey(100)
-	, socketPool(), clientsID(), Clients()
+	, serverKey(100)
+	, socketPool(), clientsID(), Clients(), clientsPool()
 	, orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
+	, threadWorkers(THREADS_COUNT)
 {
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
@@ -110,15 +111,26 @@ void IOCPFramework::Start()
 	acceptNewbie = CreateSocket();
 	Accept();
 
+	threadWorkers.emplace_back(::IOCPWorker, 0);
+	threadWorkers.emplace_back(::IOCPWorker, 1);
+	threadWorkers.emplace_back(::IOCPWorker, 2);
+	threadWorkers.emplace_back(::IOCPWorker, 3);
+	threadWorkers.emplace_back(::IOCPWorker, 4);
+	threadWorkers.emplace_back(::IOCPWorker, 5);
+
 	while (true)
 	{
-		Update();
+		//
 	}
 	std::cout << "서버 종료\n";
 }
 
 void IOCPFramework::Update()
 {
+	DWORD portBytes = 0;
+	ULONG_PTR portKey = 0;
+	WSAOVERLAPPED* portOverlap = nullptr;
+
 	auto result = GetQueuedCompletionStatus(completionPort, &portBytes, &portKey, &portOverlap, INFINITE);
 	auto key = portKey;
 
@@ -183,17 +195,13 @@ void IOCPFramework::ProceedAccept()
 	}
 	else
 	{
-		//auto newbie = socketPool.back();
-		//socketPool.pop_back();
-		//auto newbie = CreateSocket();
-
 		if (!CreateAndAssignClient(acceptNewbie))
 		{
 			std::cout << "클라이언트 " << acceptNewbie << "가 접속에 실패했습니다.\n";
 			closesocket(acceptNewbie);
 			//AddCandidateSocketToPool();
 		}
-		
+
 		acceptNewbie = CreateSocket();
 	}
 
@@ -323,7 +331,7 @@ SessionPtr IOCPFramework::GetClient(const PID id)
 
 SessionPtr IOCPFramework::GetClientByIndex(const UINT index)
 {
-	std::unique_lock barrier(mutexClient, std::try_to_lock);
+	//std::unique_lock barrier(mutexClient, std::try_to_lock);
 
 	return Clients[clientsID[index]];
 }

@@ -5,6 +5,7 @@
 
 Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
 	: ID(id), Nickname(), Socket(sock), Framework(framework)
+	, Status(SESSION_STATES::NONE)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 	, Instance(nullptr)
 {
@@ -21,8 +22,28 @@ Session::~Session()
 	if (Instance) Instance.reset();
 }
 
+void Session::SetStatus(SESSION_STATES state)
+{}
+
+bool Session::IsConnected() const
+{
+	return false;
+}
+
+bool Session::IsDisconnected() const
+{
+	return false;
+}
+
+bool Session::IsAccepted() const
+{
+	return false;
+}
+
 void Session::Disconnect()
 {
+	/// TODO:
+
 	Framework.Disconnect(ID);
 }
 
