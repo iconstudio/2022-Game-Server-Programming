@@ -2,77 +2,30 @@
 
 const DWORD serverKey = 99999;
 
+HANDLE completionPort = NULL;
 SOCKET listener;
 SOCKET client_sock;
+
 OVER_EXP acceptOverlap{};
+WSABUF acceptBuffer{};
+CHAR acceptCBuffer[BUF_SIZE]{};
 
 array<SESSION, MAX_USER> ClientIDs;
 unordered_map<UINT, SESSION*> Clients;
 unordered_map<WSAOVERLAPPED*, int> over_to_session;
 
+std::vector<std::thread> Workers{ THREADS_CNT };
+
 UINT orderClients = 0;
 UINT numberClients = 0;
 
 void do_accept();
-
-int GetNewbieID()
-{
-	for (int i = 0; i < MAX_USER; ++i)
-	{
-		auto session = Clients[i];
-		if (!session->used)
-		{
-			return i;
-		}
-	}
-
-	return -1;
-}
-
-void Disconnect(const UINT pid)
-{
-	auto session = Clients[pid];
-	if (session->used)
-	{
-		session->used = false;
-		//delete session;
-
-		NotifyPlayerDisconnectionToAll(pid);
-	}
-}
-
-void NotifyPlayerConnectionToAll(const UINT pid)
-{
-	for (auto& player : Clients)
-	{
-		auto target_session = player.second;
-		if (target_session->used && target_session->_id != pid)
-		{
-			auto packet = new SCPacketAccept(pid);
-
-			target_session->do_send(packet);
-		}
-	}
-}
-
-void NotifyPlayerDisconnectionToAll(const UINT pid)
-{
-	for (auto& player : Clients)
-	{
-		auto target_session = player.second;
-		if (target_session->used && target_session->_id != pid)
-		{
-			auto packet = new SCPacketRemovePlayer(pid,);
-
-			target_session->do_send(packet);
-		}
-	}
-}
-
-void NotifyPlayerActionToAll(const UINT pid)
-{
-
-}
+void Worker(const UINT index);
+int GetNewbieID();
+void NotifyPlayerConnectionToAll(const UINT pid);
+void NotifyPlayerDisconnectionToAll(const UINT pid);
+void NotifyPlayerActionToAll(const UINT pid);
+void Disconnect(const UINT pid);
 
 void ProcessPacket(void* data, UINT sz_remain)
 {
@@ -180,12 +133,6 @@ int main()
 		return;
 	}
 
-	HANDLE completionPort = NULL;
-	WSABUF acceptBuffer{};
-	CHAR acceptCBuffer[BUF_SIZE]{};
-	acceptBuffer.buf = acceptCBuffer;
-	acceptBuffer.len = BUF_SIZE;
-
 	acceptOverlap.Completion_type = ACCEPT;
 	acceptOverlap.recvBuffer = acceptBuffer;
 
@@ -199,8 +146,37 @@ int main()
 	CreateIoCompletionPort(HANDLE(listener), completionPort, serverKey, 0);
 
 	cout << "서버 시작\n";
+	acceptBuffer.buf = acceptCBuffer;
+	acceptBuffer.len = BUF_SIZE;
 	do_accept();
+	
+	Workers.resize(THREADS_CNT);
+	for (int i = 0; i < THREADS_CNT; ++i)
+	{
+		Workers.emplace_back(Worker, 0);
+	}
 
+	while (true);
+
+	closesocket(listener);
+	WSACleanup();
+}
+
+void do_accept()
+{
+	SOCKADDR_IN cl_addr;
+	int addr_size = sizeof(cl_addr);
+
+	SOCKET c_sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+
+	const auto sz_addr = sizeof(SOCKADDR_IN) + 16;
+	auto try_accept = AcceptEx(listener, c_sock, NULL
+		, 0, sz_addr, sz_addr, NULL
+		, &acceptOverlap);
+}
+
+void Worker(const UINT index)
+{
 	LPWSAOVERLAPPED overlap = NULL;
 	DWORD bytes = 0;
 	ULONGLONG key = 0;
@@ -284,22 +260,6 @@ int main()
 			}
 		}
 	}
-
-	closesocket(listener);
-	WSACleanup();
-}
-
-void do_accept()
-{
-	SOCKADDR_IN cl_addr;
-	int addr_size = sizeof(cl_addr);
-
-	SOCKET c_sock = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-
-	const auto sz_addr = sizeof(SOCKADDR_IN) + 16;
-	auto try_accept = AcceptEx(listener, c_sock, NULL
-		, 0, sz_addr, sz_addr, NULL
-		, &acceptOverlap);
 }
 
 void CALLBACK send_callback(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DWORD flags)
@@ -332,3 +292,61 @@ void CALLBACK recv_callback(DWORD err, DWORD num_bytes, LPWSAOVERLAPPED over, DW
 	Clients[client_id]->do_recv();
 }
 
+int GetNewbieID()
+{
+	for (int i = 0; i < MAX_USER; ++i)
+	{
+		auto session = Clients[i];
+		if (!session->used)
+		{
+			return i;
+		}
+	}
+
+	return -1;
+}
+
+void Disconnect(const UINT pid)
+{
+	auto session = Clients[pid];
+	if (session->used)
+	{
+		session->used = false;
+		//delete session;
+
+		NotifyPlayerDisconnectionToAll(pid);
+	}
+}
+
+void NotifyPlayerConnectionToAll(const UINT pid)
+{
+	for (auto& player : Clients)
+	{
+		auto target_session = player.second;
+		if (target_session->used && target_session->_id != pid)
+		{
+			auto packet = new SCPacketAccept(pid);
+
+			target_session->do_send(packet);
+		}
+	}
+}
+
+void NotifyPlayerDisconnectionToAll(const UINT pid)
+{
+	for (auto& player : Clients)
+	{
+		auto target_session = player.second;
+		if (target_session->used && target_session->_id != pid)
+		{
+			auto packet = new SCPacketRemovePlayer(pid);
+
+			target_session->do_send(packet);
+		}
+	}
+}
+
+void NotifyPlayerActionToAll(const UINT pid)
+{
+
+}
