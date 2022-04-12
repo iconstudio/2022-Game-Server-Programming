@@ -50,4 +50,5 @@ int main()
 
 		cout << i << " Threads, Sum: " << sum;
 		cout << " Duration: " << duration_cast<milliseconds>(duration).count() << " milliseconds\n";
-	}}
+	}
+}
