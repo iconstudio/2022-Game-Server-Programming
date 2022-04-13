@@ -6,15 +6,17 @@
 IOCPFramework::IOCPFramework()
 	: acceptOverlap(), acceptBytes(0), acceptCBuffer()
 	, serverKey(100)
-	, socketPool(), clientsID(), Clients(), clientsPool()
-	, orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
+	//, socketPool(), clientsID(), Clients()
+	, clientsPool(), orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
 	, threadWorkers(THREADS_COUNT)
 {
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
 
-	socketPool.reserve(CLIENTS_MAX_NUMBER);
-	clientsID.reserve(CLIENTS_MAX_NUMBER);
+	std::iota(clientsIDPool.begin(), clientsIDPool.end(), CLIENTS_ORDER_BEGIN);
+
+	//socketPool.reserve(CLIENTS_MAX_NUMBER);
+	//clientsID.reserve(CLIENTS_MAX_NUMBER);
 }
 
 IOCPFramework::~IOCPFramework()

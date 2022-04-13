@@ -10,6 +10,7 @@
 #include <vector>
 #include <unordered_map>
 #include <algorithm>
+#include <numeric>
 #include <mutex>
 #include <chrono>
 #include <array>
