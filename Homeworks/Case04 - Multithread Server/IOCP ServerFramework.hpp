@@ -20,31 +20,29 @@ public:
 
 	friend void IOCPWorker(const UINT index);
 
-	void SendWorldDataTo(Session* session);
-	void BroadcastSignUp(const PID who);
-	void BroadcastSignOut(const PID who);
-	void BroadcastCreateCharacter(const PID who, CHAR cx, CHAR cy);
-	void BroadcastMoveCharacter(const PID who, CHAR nx, CHAR ny);
-
 	SessionPtr GetClient(const PID id);
 	SessionPtr GetClientByIndex(const UINT index);
 	UINT GetClientsNumber() const;
-
-	void Disconnect(const PID who);
 
 private:
 	void Accept();
 	void ProceedAccept();
 	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
+	void SendWorldDataTo(Session* session);
+	void BroadcastSignUp(const PID who);
+	void BroadcastSignOut(const PID who);
+	void BroadcastCreateCharacter(const PID who, CHAR cx, CHAR cy);
+	void BroadcastMoveCharacter(const PID who, CHAR nx, CHAR ny);
+
 	PID MakeNewClientID();
+	SOCKET&& CreateSocket() const;
 	bool CreateAndAssignClient(SOCKET nsocket);
 
-	template<typename Predicate>
-	void ForeachClient(Predicate predicate);
+	//template<typename Predicate> void ForeachClient(Predicate predicate);
 	void RemoveClient(const PID rid);
+	void Disconnect(const PID who);
 
-	SOCKET&& CreateSocket() const;
 	void AddCandidateSocketToPool(SOCKET&& sock);
 	void AddCandidateSocketToPool();
 
@@ -61,9 +59,9 @@ private:
 	const ULONG_PTR serverKey;
 
 	std::timed_mutex mutexClient;
-	std::vector<SOCKET> socketPool;
-	std::vector<PID> clientsID;
-	std::unordered_map<PID, SessionPtr> Clients;
+	//std::vector<SOCKET> socketPool;
+	//std::vector<PID> clientsID;
+	//std::unordered_map<PID, SessionPtr> Clients;
 
 	std::array<PID, CLIENTS_MAX_NUMBER> clientsIDPool;
 	std::array<SessionPtr, CLIENTS_MAX_NUMBER> clientsPool;
@@ -73,6 +71,7 @@ private:
 	std::vector<std::thread> threadWorkers;
 };
 
+/*
 template<typename Predicate>
 inline void IOCPFramework::ForeachClient(Predicate predicate)
 {
@@ -82,3 +81,4 @@ inline void IOCPFramework::ForeachClient(Predicate predicate)
 		predicate(session);
 	}
 }
+*/
