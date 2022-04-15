@@ -35,9 +35,12 @@ private:
 	void BroadcastCreateCharacter(const PID who, CHAR cx, CHAR cy);
 	void BroadcastMoveCharacter(const PID who, CHAR nx, CHAR ny);
 
-	PID MakeNewClientID();
 	SOCKET&& CreateSocket() const;
-	bool CreateAndAssignClient(SOCKET nsocket);
+
+	PID MakeNewbieID();
+	SessionPtr SeekNewbieSession();
+	bool RegisterNewbie(SessionPtr& session);
+	//bool CreateAndAssignClient(SOCKET nsocket);
 
 	//template<typename Predicate> void ForeachClient(Predicate predicate);
 	void RemoveClient(const PID rid);

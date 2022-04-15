@@ -343,6 +343,21 @@ UINT IOCPFramework::GetClientsNumber() const
 	return numberClients;
 }
 
+PID IOCPFramework::MakeNewbieID()
+{
+	return PID();
+}
+
+SessionPtr IOCPFramework::SeekNewbieSession()
+{
+	return SessionPtr();
+}
+
+bool IOCPFramework::RegisterNewbie(SessionPtr& session)
+{
+	return false;
+}
+
 bool IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
 {
 	std::unique_lock barrier(mutexClient, std::defer_lock);
