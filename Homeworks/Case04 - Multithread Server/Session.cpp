@@ -41,6 +41,19 @@ void Session::SetID(const PID id)
 	ID = id;
 }
 
+void Session::Cleanup()
+{
+	closesocket(Socket);
+	SetStatus(SESSION_STATES::NONE);
+	SetSocket(NULL);
+	SetID(-1);
+}
+
+void Session::Disconnect()
+{
+	Framework.Disconnect(ID);
+}
+
 bool Session::IsConnected() const
 {
 	return SESSION_STATES::CONNECTED == Status;
@@ -54,14 +67,6 @@ bool Session::IsDisconnected() const
 bool Session::IsAccepted() const
 {
 	return SESSION_STATES::ACCEPTED == Status;
-}
-
-void Session::Disconnect()
-{
-	closesocket(Socket);
-	SetStatus(SESSION_STATES::NONE);
-
-	Framework.Disconnect(ID);
 }
 
 void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
@@ -112,7 +117,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 			case PACKET_TYPES::CS_SIGNOUT:
 			{
-				if (pid == ID)
+				if (pid == ID && IsAccepted())
 				{
 					Disconnect();
 					return;
@@ -149,8 +154,11 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 					if (moved)
 					{
-						Framework.BroadcastMoveCharacter(ID, px, py);
+						Framework.BroadcastMoveCharacterFrom(Index, px, py);
 					}
+				}
+				else // 잘못된 메시지 받음.
+				{
 				}
 			}
 			break;
@@ -175,7 +183,16 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 	}
 
 	// 아무거나 다 받는다.
-	RecvStream(recvBytes);
+	int result = RecvStream(recvBytes);
+	if (SOCKET_ERROR == result)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay("ProceedReceived → RecvStream()");
+			Disconnect();
+			return;
+		}
+	}
 }
 
 void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
@@ -193,7 +210,8 @@ void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
 	auto& sz_send = overlap->sendSize;
 	auto& tr_send = overlap->sendSzWant;
 
-	ClearOverlap(overlap);
+	delete overlap;
+	//ClearOverlap(overlap);
 }
 
 int Session::RecvStream(DWORD size, DWORD begin_bytes)
@@ -201,17 +219,7 @@ int Session::RecvStream(DWORD size, DWORD begin_bytes)
 	recvBuffer.buf = recvCBuffer + begin_bytes;
 	recvBuffer.len = size - begin_bytes;
 
-	auto result = Recv(0);
-	if (SOCKET_ERROR == result)
-	{
-		if (WSA_IO_PENDING != WSAGetLastError())
-		{
-			ErrorDisplay("RecvStream()");
-			Disconnect();
-			return 0;
-		}
-	}
-	return result;
+	return Recv(0);
 }
 
 int Session::RecvStream(DWORD begin_bytes)
@@ -243,7 +251,7 @@ void Session::SendCreateCharacter(PID id, CHAR cx, CHAR cy)
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
-			ErrorDisplay("SendSignUp()");
+			ErrorDisplay("SendCreateCharacter()");
 			Disconnect();
 			return;
 		}
@@ -258,7 +266,7 @@ void Session::SendMoveCharacter(PID id, CHAR nx, CHAR ny)
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
-			ErrorDisplay("SendSignUp()");
+			ErrorDisplay("SendMoveCharacter()");
 			Disconnect();
 			return;
 		}
@@ -273,7 +281,7 @@ void Session::SendSignOut(PID rid)
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
-			ErrorDisplay("SendSignUp()");
+			ErrorDisplay("SendSignOut()");
 			Disconnect();
 			return;
 		}

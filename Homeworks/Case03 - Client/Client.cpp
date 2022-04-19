@@ -50,7 +50,11 @@ void CallbackRecv(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags
 {
 	if (0 != error || 0 == bytes)
 	{
-		ErrorDisplay(L"CallbackRecv()");
+		int code = WSAGetLastError();
+		if (WSA_IO_PENDING != code)
+		{
+			ErrorDisplay(L"CallbackRecv()");
+		}
 	}
 
 	Framework.ProceedRecv(bytes);
@@ -60,7 +64,11 @@ void CallbackSend(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags
 {
 	if (0 != error || 0 == bytes)
 	{
-		ErrorDisplay(L"CallbackSend()");
+		int code = WSAGetLastError();
+		if (WSA_IO_PENDING != code)
+		{
+			ErrorDisplay(L"CallbackSend()");
+		}
 	}
 
 	auto exoverlap = static_cast<EXOVERLAPPED*>(overlap);

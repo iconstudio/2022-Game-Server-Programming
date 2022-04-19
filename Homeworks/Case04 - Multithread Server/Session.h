@@ -14,10 +14,9 @@ public:
 	~Session();
 
 	void SetStatus(SESSION_STATES state);
-
 	void SetSocket(SOCKET sock);
 	void SetID(const PID id);
-	void SetStatus(SESSION_STATES state);
+	void Cleanup();
 	void Disconnect();
 
 	bool IsConnected() const;

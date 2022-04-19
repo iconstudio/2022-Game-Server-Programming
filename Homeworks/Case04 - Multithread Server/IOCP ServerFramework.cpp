@@ -202,7 +202,16 @@ void IOCPFramework::ProceedAccept()
 			session->SetSocket(acceptNewbie);
 			session->SetID(key);
 			session->SetStatus(SESSION_STATES::CONNECTED);
-			session->RecvStream();
+
+			if (SOCKET_ERROR == session->RecvStream())
+			{
+				if (WSA_IO_PENDING != WSAGetLastError())
+				{
+					ErrorDisplay("ProceedAccept → RecvStream()");
+					std::cout << "클라이언트 " << key << "에서 오류!\n";
+					session->Cleanup();
+				}
+			};
 		}
 
 		acceptNewbie = CreateSocket();
@@ -221,48 +230,59 @@ PID IOCPFramework::MakeNewbieID()
 
 SessionPtr IOCPFramework::SeekNewbieSession()
 {
+	auto it = std::find_if(clientsPool.begin(), clientsPool.end()
+		, [&](SessionPtr& session) {
+		return (session->IsDisconnected());
+	});
 
-
-	return SessionPtr();
+	return *it;
 }
 
-bool IOCPFramework::RegisterNewbie(const UINT index)
+void IOCPFramework::RegisterNewbie(const UINT index)
 {
+	std::unique_lock barrier(mutexClient);
+
 	auto& session = GetClient(index);
+	session->SetStatus(SESSION_STATES::ACCEPTED);
 
-	BroadcastSignUp(index);
+	BroadcastSignUp(session);
+	
+	BroadcastCreateCharacter(session, session->Instance->x, session->Instance->y);
 
-	BroadcastCreateCharacter(index, session->Instance->x, session->Instance->y);
-
-	SendWorldDataTo(index);
-
-	return false;
+	SendWorldDataTo(session);
+	numberClients++;
 }
 
-bool IOCPFramework::RegisterNewbie(SessionPtr& session)
+void IOCPFramework::Disconnect(const PID who)
 {
-	auto nid = orderClientIDs;
-	std::cout << "클라이언트 " << nid << " 접속 → 소켓: " << nsocket << "\n";
+	std::unique_lock barrier(mutexClient);
 
-	orderClientIDs++;
+	auto vit = std::find_if(clientsPool.begin(), clientsPool.end()
+		, [&](SessionPtr& session) {
+		return (session->ID == who);
+	});
 
-	// IO 진입
-	if (SOCKET_ERROR == session->RecvStream())
+	if (clientsPool.end() != vit)
 	{
-		std::cout << "클라이언트 " << nid << " 오류 → 0바이트 받음.\n";
-		return false;
-	};
+		auto& session = *vit;
 
-	clientsID.push_back(nid);
-	Clients.insert(std::move(std::make_pair(nid, session)));
-	numberClients++;
+		if (session->IsAccepted())
+		{
+			BroadcastSignOut(session);
 
-	return false;
+			session->Cleanup();
+			numberClients--;
+		}
+		else if (session->IsConnected())
+		{
+			session->Cleanup();
+		}
+	}
 }
 
 void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes)
 {
-	auto client = GetClientByID(PID(key));
+	auto& client = GetClientByID(PID(key));
 
 	if (!client)
 	{
@@ -301,68 +321,53 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 	}
 }
 
-void IOCPFramework::SendWorldDataTo(SessionPtr& session)
+void IOCPFramework::SendWorldDataTo(SessionPtr& who)
 {
 	ForeachClient([&](const SessionPtr& other) {
-		if (other != session)
+		if (other != who)
 		{
-			session->SendSignUp(other->ID);
+			who->SendSignUp(other->ID);
 
-			auto instance = other->Instance;
+			auto& instance = other->Instance;
 			if (instance)
 			{
-				session->SendCreateCharacter(other->ID, instance->x, instance->y);
+				who->SendCreateCharacter(other->ID, instance->x, instance->y);
 			}
 		}
 	});
 }
 
-void IOCPFramework::BroadcastSignUp(const UINT index)
+void IOCPFramework::BroadcastSignUp(SessionPtr& who)
 {
-	std::unique_lock barrier(mutexClient, std::try_to_lock);
-
 	ForeachClient([&](const SessionPtr& other) {
-		if (other->Index != index)
-		{
-			other->SendSignUp(index);
-		}
+		other->SendSignUp(who->ID);
 	});
-
-	RegisterNewbie(index);
 }
 
-void IOCPFramework::BroadcastSignOut(const UINT index)
+void IOCPFramework::BroadcastSignOut(SessionPtr& who)
 {
 	ForeachClient([&](const SessionPtr& other) {
-		if (other->Index != index)
+		if (other != who)
 		{
-			other->SendSignOut(index);
+			other->SendSignOut(who->ID);
 		}
 	});
 }
 
-void IOCPFramework::BroadcastCreateCharacter(const UINT index, CHAR cx, CHAR cy)
+void IOCPFramework::BroadcastCreateCharacter(SessionPtr& who, CHAR cx, CHAR cy)
 {
-	auto session = GetClient(index);
-
-	if (session)
-	{
-		ForeachClient([&](const SessionPtr& other) {
-			other->SendCreateCharacter(session->ID, cx, cy);
-		});
-	}
+	ForeachClient([&](const SessionPtr& other) {
+		other->SendCreateCharacter(who->ID, cx, cy);
+	});
 }
 
-void IOCPFramework::BroadcastMoveCharacter(const UINT index, CHAR nx, CHAR ny)
+void IOCPFramework::BroadcastMoveCharacterFrom(const UINT index, CHAR nx, CHAR ny)
 {
-	auto session = GetClient(index);
+	auto& session = GetClient(index);
 
-	if (session)
-	{
-		ForeachClient([&](const SessionPtr& other) {
-			other->SendMoveCharacter(session->ID, nx, ny);
-		});
-	}
+	ForeachClient([&](const SessionPtr& other) {
+		other->SendMoveCharacter(session->ID, nx, ny);
+	});
 }
 
 SessionPtr& IOCPFramework::GetClient(const UINT index)
@@ -384,45 +389,8 @@ UINT IOCPFramework::GetClientsNumber() const
 	return numberClients;
 }
 
-void IOCPFramework::RemoveClient(const PID rid)
-{
-	auto vit = std::find(clientsID.begin(), clientsID.end(), rid);
-	if (clientsID.end() != vit)
-	{
-		clientsID.erase(vit);
-	}
-
-	auto mit = Clients.find(rid);
-	if (Clients.end() != mit)
-	{
-		Clients.erase(mit);
-		numberClients--;
-	}
-}
-
-void IOCPFramework::Disconnect(const PID who)
-{
-	std::unique_lock barrier(mutexClient, std::try_to_lock);
-
-	RemoveClient(who);
-
-	BroadcastSignOut(who);
-
-	AddCandidateSocketToPool();
-}
-
 SOCKET&& IOCPFramework::CreateSocket() const
 {
 	return std::move(WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP
 		, NULL, 0, WSA_FLAG_OVERLAPPED));
-}
-
-void IOCPFramework::AddCandidateSocketToPool(SOCKET&& sock)
-{
-	socketPool.push_back(std::move(sock));
-}
-
-void IOCPFramework::AddCandidateSocketToPool()
-{
-	socketPool.push_back(std::move(CreateSocket()));
 }

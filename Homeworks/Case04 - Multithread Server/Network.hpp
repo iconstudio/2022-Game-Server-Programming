@@ -3,6 +3,7 @@
 
 void ClearOverlap(LPWSAOVERLAPPED overlap);
 
+using PID = ULONG;
 constexpr USHORT PORT = 6000;
 constexpr UINT CLIENTS_MAX_NUMBER = 10;
 constexpr PID CLIENTS_ORDER_BEGIN = 10000;
@@ -46,7 +47,6 @@ public:
 	DWORD sendSize, sendSzWant;
 };
 
-using PID = UINT;
 class Packet
 {
 public:

@@ -393,7 +393,8 @@ void ClientFramework::AddClient(const PID id)
 	session->ID = id;
 	
 	Clients.emplace_back(session);
-	ClientsDict.emplace(id, session);
+	ClientsDict.try_emplace(id, session);
+	//ClientsDict.insert(std::make_pair(id, session));
 }
 
 LocalSession* ClientFramework::GetClient(const PID id)
