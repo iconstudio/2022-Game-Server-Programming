@@ -6,17 +6,15 @@
 IOCPFramework::IOCPFramework()
 	: acceptOverlap(), acceptBytes(0), acceptCBuffer()
 	, serverKey(100)
-	//, socketPool(), clientsID(), Clients()
 	, clientsPool(), orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
 	, threadWorkers(THREADS_COUNT)
 {
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
 
-	std::iota(clientsIDPool.begin(), clientsIDPool.end(), CLIENTS_ORDER_BEGIN);
-
-	//socketPool.reserve(CLIENTS_MAX_NUMBER);
-	//clientsID.reserve(CLIENTS_MAX_NUMBER);
+	std::for_each(clientsPool.begin(), clientsPool.end(), [](SessionPtr& empty) {
+		empty = nullptr;
+	});
 }
 
 IOCPFramework::~IOCPFramework()
@@ -70,26 +68,6 @@ void IOCPFramework::Init()
 		ErrorDisplay("CreateIoCompletionPort(Listener)");
 		return;
 	}
-
-	for (UINT i = 0; i < CLIENTS_MAX_NUMBER; ++i)
-	{
-		auto sk = CreateSocket();
-		if (INVALID_SOCKET == sk)
-		{
-			ErrorDisplay("IOCPFramework → WSASocket()");
-			return;
-		}
-
-		BOOL option = TRUE;
-		if (SOCKET_ERROR == setsockopt(sk, SOL_SOCKET, SO_REUSEADDR
-			, reinterpret_cast<char*>(&option), sizeof(option)))
-		{
-			ErrorDisplay("Init → setsockopt(socketPool)");
-			return;
-		}
-
-		socketPool.push_back(sk);
-	}
 }
 
 void IOCPFramework::Start()
@@ -124,6 +102,11 @@ void IOCPFramework::Start()
 	{
 		//
 	}
+
+	std::for_each(threadWorkers.begin(), threadWorkers.end(), [](std::thread& th) {
+		th.join();
+	});
+
 	std::cout << "서버 종료\n";
 }
 
@@ -148,11 +131,6 @@ void IOCPFramework::Update()
 		}
 		else // Recv / Send
 		{
-			if (0 == bytes)
-			{
-				ErrorDisplay("GetQueuedCompletionStatus(1)");
-			}
-
 			ProceedPacket(portOverlap, key, bytes);
 		}
 	}
@@ -191,25 +169,32 @@ void IOCPFramework::Accept()
 
 void IOCPFramework::ProceedAccept()
 {
-	if (socketPool.empty())
+	if (CLIENTS_MAX_NUMBER <= GetClientsNumber())
 	{
 		std::cout << "새 접속을 받을 수 없습니다!\n";
 	}
 	else
 	{
-		if (!CreateAndAssignClient(acceptNewbie))
+		std::unique_lock barrier(mutexClient);
+
+		auto key = MakeNewbieID();
+		auto session = SeekNewbieSession(key);
+		if (!session)
 		{
 			std::cout << "클라이언트 " << acceptNewbie << "가 접속에 실패했습니다.\n";
 			closesocket(acceptNewbie);
-			//AddCandidateSocketToPool();
+			return;
 		}
+		session->SetStatus(SESSION_STATES::CONNECTED);
 
+		//barrier.unlock();
 		acceptNewbie = CreateSocket();
 	}
 
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
-	if (!socketPool.empty())
+
+	if (CLIENTS_MAX_NUMBER <= GetClientsNumber())
 	{
 		Accept();
 	}
@@ -227,6 +212,12 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 	{
 		auto exoverlap = static_cast<EXOVERLAPPED*>(overlap);
 		auto op = exoverlap->Operation;
+
+		if (0 == bytes)
+		{
+			ErrorDisplay("ProceedPacket(bytes=0)");
+			return;
+		}
 
 		switch (op)
 		{
@@ -253,6 +244,10 @@ void IOCPFramework::BroadcastSignUp(const PID who)
 {
 	std::unique_lock barrier(mutexClient, std::try_to_lock);
 
+	for (auto& other : )
+	{
+
+	}
 	ForeachClient([&](const SessionPtr& other) {
 		other->SendSignUp(who);
 	});
@@ -345,12 +340,19 @@ UINT IOCPFramework::GetClientsNumber() const
 
 PID IOCPFramework::MakeNewbieID()
 {
-	return PID();
+	return orderClientIDs++;
 }
 
-SessionPtr IOCPFramework::SeekNewbieSession()
+SessionPtr IOCPFramework::SeekNewbieSession(const PID id)
 {
+
+
 	return SessionPtr();
+}
+
+constexpr SessionPtr IOCPFramework::MakeNewbieSession(SOCKET sk, const PID id)
+{
+	return std::make_shared<Session>(id, sk, *this);
 }
 
 bool IOCPFramework::RegisterNewbie(SessionPtr& session)

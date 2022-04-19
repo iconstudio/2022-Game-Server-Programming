@@ -3,32 +3,35 @@
 
 EXOVERLAPPED::EXOVERLAPPED(OVERLAP_OPS operation)
 	: Operation(operation), Type(PACKET_TYPES::NONE)
-	, sendBuffer(), sendCBuffer(), sendSize(0), sendSzWant(0)
+	, sendBuffer(nullptr), sendCBuffer(nullptr), sendSize(0), sendSzWant(0)
 {}
 
 EXOVERLAPPED::~EXOVERLAPPED()
 {
-	if (sendBuffer) delete sendBuffer;
-	if (sendCBuffer) delete sendCBuffer;
+	if (sendBuffer) sendBuffer.release();
+	if (sendCBuffer) sendCBuffer.release();
 
 	sendSzWant = 0;
 }
 
 void EXOVERLAPPED::SetSendBuffer(const WSABUF& buffer)
 {
-	*sendBuffer = buffer;
+	sendBuffer = std::make_unique<WSABUF>(buffer);
 	sendSzWant = buffer.len;
 }
 
 void EXOVERLAPPED::SetSendBuffer(LPWSABUF buffer)
 {
-	sendBuffer = buffer;
+	sendBuffer = std::make_unique<WSABUF>(*buffer);
 	sendSzWant = buffer->len;
 }
 
 void EXOVERLAPPED::SetSendBuffer(CHAR* cbuffer, DWORD size)
 {
-	if (!sendBuffer) sendBuffer = new WSABUF;
+	if (!sendBuffer)
+	{
+		sendBuffer = std::make_unique<WSABUF>(WSABUF());
+	}
 
 	sendBuffer->buf = cbuffer;
 	sendBuffer->len = size;

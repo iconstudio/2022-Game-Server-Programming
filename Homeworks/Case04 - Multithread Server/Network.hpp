@@ -34,8 +34,8 @@ public:
 	const OVERLAP_OPS Operation;
 	PACKET_TYPES Type;
 
-	LPWSABUF sendBuffer;
-	CHAR* sendCBuffer;
+	std::unique_ptr<WSABUF> sendBuffer;
+	std::unique_ptr<CHAR> sendCBuffer;
 	DWORD sendSize, sendSzWant;
 };
 

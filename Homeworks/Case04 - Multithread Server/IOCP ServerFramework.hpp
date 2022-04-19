@@ -38,7 +38,8 @@ private:
 	SOCKET&& CreateSocket() const;
 
 	PID MakeNewbieID();
-	SessionPtr SeekNewbieSession();
+	SessionPtr SeekNewbieSession(const PID id);
+	constexpr SessionPtr MakeNewbieSession(SOCKET sk, const PID nid);
 	bool RegisterNewbie(SessionPtr& session);
 	//bool CreateAndAssignClient(SOCKET nsocket);
 
@@ -66,7 +67,6 @@ private:
 	//std::vector<PID> clientsID;
 	//std::unordered_map<PID, SessionPtr> Clients;
 
-	std::array<PID, CLIENTS_MAX_NUMBER> clientsIDPool;
 	std::array<SessionPtr, CLIENTS_MAX_NUMBER> clientsPool;
 	PID orderClientIDs;
 	UINT numberClients;
