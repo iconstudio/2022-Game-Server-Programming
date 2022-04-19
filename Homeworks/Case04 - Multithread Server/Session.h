@@ -31,8 +31,8 @@ public:
 
 	bool TryMove(WPARAM input);
 
-	const PID ID;
-	const SOCKET Socket;
+	PID ID;
+	SOCKET Socket;
 
 	SESSION_STATES Status;
 	CHAR Nickname[30];
