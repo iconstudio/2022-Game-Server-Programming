@@ -3,8 +3,8 @@
 #include "Network.hpp"
 #include "IOCP ServerFramework.hpp"
 
-Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
-	: ID(id), Nickname(), Socket(sock), Framework(framework)
+Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
+	: Index(index), ID(id), Nickname(), Socket(sock), Framework(framework)
 	, Status(SESSION_STATES::NONE)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 	, Instance(nullptr)
@@ -19,30 +19,47 @@ Session::Session(PID id, SOCKET sock, IOCPFramework& framework)
 Session::~Session()
 {
 	closesocket(Socket);
-	if (Instance) Instance.reset();
+
+	if (Instance)
+	{
+		Instance.reset();
+	}
 }
 
 void Session::SetStatus(SESSION_STATES state)
-{}
+{
+	Status = state;
+}
+
+void Session::SetSocket(SOCKET sock)
+{
+	Socket = sock;
+}
+
+void Session::SetID(const PID id)
+{
+	ID = id;
+}
 
 bool Session::IsConnected() const
 {
-	return false;
+	return SESSION_STATES::CONNECTED == Status;
 }
 
 bool Session::IsDisconnected() const
 {
-	return false;
+	return SESSION_STATES::NONE == Status;
 }
 
 bool Session::IsAccepted() const
 {
-	return false;
+	return SESSION_STATES::ACCEPTED == Status;
 }
 
 void Session::Disconnect()
 {
-	/// TODO:
+	closesocket(Socket);
+	SetStatus(SESSION_STATES::NONE);
 
 	Framework.Disconnect(ID);
 }
@@ -63,110 +80,77 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 		auto type = packet->Type;
 		auto pid = packet->playerID;
 
+		if (recvBytes < sz_want)
+		{
+			auto lack = sz_want - recvBytes;
+			std::cout << "클라이언트 " << ID << "에게 받아온 정보가 "
+				<< lack << " 만큼 모자라서 다시 수신합니다.\n";
+			break;
+		}
+
 		switch (type)
 		{
 			case PACKET_TYPES::CS_SIGNIN:
 			{
-				if (sz_want <= recvBytes)
-				{
-					auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
+				auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
 
+				if (IsAccepted()) // 잘못된 메시지 받음. 연결 종료.
+				{
+					Disconnect();
+				}
+				else // 클라이언트 수용.
+				{
 					strcpy_s(Nickname, result->Nickname);
 					std::cout << ID << "'s Nickname: " << Nickname << ".\n";
 
 					Instance = std::make_shared<PlayerCharacter>(3, 3);
 
-					Framework.BroadcastSignUp(ID);
-
-					Framework.BroadcastCreateCharacter(ID, Instance->x, Instance->y);
-
-					Framework.SendWorldDataTo(this);
-
-					recvBytes -= sz_want;
-					if (0 < recvBytes)
-					{
-						MoveStream(cbuffer, sz_want, BUFFSIZE);
-					}
-				}
-				else
-				{
-					auto lack = sz_want - recvBytes;
-					std::cout << "CS_SIGNIN: 클라이언트 " << ID << "에게 받아온 정보가 "
-						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
+					Framework.RegisterNewbie(Index);
 				}
 			}
 			break;
 
 			case PACKET_TYPES::CS_SIGNOUT:
 			{
-				if (sz_want <= recvBytes)
+				if (pid == ID)
 				{
-					if (pid == ID)
-					{
-						Disconnect();
-						return;
-					}
-					else
-					{
-						recvBytes -= sz_want;
-						if (0 < recvBytes)
-						{
-							MoveStream(cbuffer, sz_want, BUFFSIZE);
-						}
-					}
+					Disconnect();
+					return;
 				}
-				else
+				else // 잘못된 메시지 받음.
 				{
-					auto lack = sz_want - recvBytes;
-					std::cout << "CS_SIGNOUT: 클라이언트 " << ID << "에게 받아온 정보가 "
-						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
 				}
 			}
 			break;
 
 			case PACKET_TYPES::CS_KEY:
 			{
-				if (sz_want <= recvBytes)
+				auto result = reinterpret_cast<CSPacketKeyInput*>(cbuffer);
+
+				if (pid == ID && Instance)
 				{
-					auto result = reinterpret_cast<CSPacketKeyInput*>(cbuffer);
+					auto key = result->Key;
+					bool moved = TryMove(key);
+					auto px = Instance->x;
+					auto py = Instance->y;
 
-					if (pid == ID && Instance)
+					if (!moved)
 					{
-						auto key = result->Key;
-						bool moved = TryMove(key);
-						auto px = Instance->x;
-						auto py = Instance->y;
-
-						if (!moved)
-						{
-							std::cout << "플레이어 " << ID << " - 움직이지 않음.\n";
-						}
-						else
-						{
-							std::cout << "플레이어 " << ID
-								<< " - 위치: ("
-								<< px * CELL_W << ", "
-								<< py * CELL_H
-								<< ")\n";
-						}
-
-						if (moved)
-						{
-							Framework.BroadcastMoveCharacter(ID, px, py);
-						}
+						std::cout << "플레이어 " << ID << " - 움직이지 않음.\n";
+					}
+					else
+					{
+						std::cout << "플레이어 " << ID
+							<< " - 위치: ("
+							<< px * CELL_W << ", "
+							<< py * CELL_H
+							<< ")\n";
 					}
 
-					recvBytes -= sz_want;
-					if (0 < recvBytes)
+					if (moved)
 					{
-						MoveStream(cbuffer, sz_want, BUFFSIZE);
+						Framework.BroadcastMoveCharacter(ID, px, py);
 					}
-				}
-				else
-				{
-					auto lack = sz_want - recvBytes;
-					std::cout << "CS_KEY: 클라이언트 " << ID << "에게 받아온 정보가 "
-						<< lack << " 만큼 모자라서 다시 수신합니다.\n";
 				}
 			}
 			break;
@@ -176,9 +160,17 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 				ClearRecvBuffer();
 				ClearOverlap(overlap); // recvOverlap
 				ErrorDisplay("ProceedReceived: 잘못된 패킷 받음");
+
+				Disconnect();
 				return;
 			}
 			break;
+		}
+
+		recvBytes -= sz_want;
+		if (0 < recvBytes)
+		{
+			MoveStream(cbuffer, sz_want, BUFFSIZE);
 		}
 	}
 

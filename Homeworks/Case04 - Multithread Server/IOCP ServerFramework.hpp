@@ -17,33 +17,31 @@ public:
 	void Init();
 	void Start();
 	void Update();
-
 	friend void IOCPWorker(const UINT index);
 
-	SessionPtr GetClient(const PID id);
-	SessionPtr GetClientByIndex(const UINT index);
+	SessionPtr& GetClient(const UINT index);
+	SessionPtr& GetClientByID(const PID id);
+
 	UINT GetClientsNumber() const;
+	friend class Session;
 
 private:
-	void Accept();
+	void Listen();
 	void ProceedAccept();
-	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
+	PID MakeNewbieID();
+	SessionPtr SeekNewbieSession();
+	bool RegisterNewbie(const UINT index);
 
-	void SendWorldDataTo(Session* session);
-	void BroadcastSignUp(const PID who);
-	void BroadcastSignOut(const PID who);
-	void BroadcastCreateCharacter(const PID who, CHAR cx, CHAR cy);
-	void BroadcastMoveCharacter(const PID who, CHAR nx, CHAR ny);
+	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
+	void SendWorldDataTo(SessionPtr& session);
+	void BroadcastSignUp(const UINT index);
+	void BroadcastSignOut(const UINT index);
+	void BroadcastCreateCharacter(const UINT index, CHAR cx, CHAR cy);
+	void BroadcastMoveCharacter(const UINT index, CHAR nx, CHAR ny);
 
 	SOCKET&& CreateSocket() const;
 
-	PID MakeNewbieID();
-	SessionPtr SeekNewbieSession(const PID id);
-	constexpr SessionPtr MakeNewbieSession(SOCKET sk, const PID nid);
-	bool RegisterNewbie(SessionPtr& session);
-	//bool CreateAndAssignClient(SOCKET nsocket);
-
-	//template<typename Predicate> void ForeachClient(Predicate predicate);
+	template<typename Predicate> void ForeachClient(Predicate predicate);
 	void RemoveClient(const PID rid);
 	void Disconnect(const PID who);
 
@@ -74,14 +72,15 @@ private:
 	std::vector<std::thread> threadWorkers;
 };
 
-/*
 template<typename Predicate>
 inline void IOCPFramework::ForeachClient(Predicate predicate)
 {
-	for (auto& comp : Clients)
+	for (auto& comp : clientsPool)
 	{
-		auto& session = comp.second;
-		predicate(session);
+		if (comp->IsAccepted())
+		{
+			auto& session = comp.second;
+			predicate(session);
+		}
 	}
 }
-*/

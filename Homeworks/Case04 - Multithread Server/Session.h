@@ -10,14 +10,19 @@ enum class SESSION_STATES
 class Session
 {
 public:
-	Session(PID id, SOCKET sock, IOCPFramework& framework);
+	Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework);
 	~Session();
 
 	void SetStatus(SESSION_STATES state);
+
+	void SetSocket(SOCKET sock);
+	void SetID(const PID id);
+	void SetStatus(SESSION_STATES state);
+	void Disconnect();
+
 	bool IsConnected() const;
 	bool IsDisconnected() const;
 	bool IsAccepted() const;
-	void Disconnect();
 
 	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
 	int RecvStream(DWORD size, DWORD begin_bytes);
@@ -32,6 +37,7 @@ public:
 	bool TryMove(WPARAM input);
 
 	PID ID;
+	const UINT Index;
 	SOCKET Socket;
 
 	SESSION_STATES Status;

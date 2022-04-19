@@ -9,12 +9,17 @@ IOCPFramework::IOCPFramework()
 	, clientsPool(), orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
 	, threadWorkers(THREADS_COUNT)
 {
+	setlocale(LC_ALL, "KOREAN");
+	std::cout.sync_with_stdio(false);
+
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
 
-	std::for_each(clientsPool.begin(), clientsPool.end(), [](SessionPtr& empty) {
-		empty = nullptr;
-	});
+	for (int i = 0; i < CLIENTS_MAX_NUMBER; ++i)
+	{
+		auto& empty = clientsPool.at(i);
+		empty = std::make_shared<Session>(i, -1, NULL, *this);
+	}
 }
 
 IOCPFramework::~IOCPFramework()
@@ -26,8 +31,6 @@ IOCPFramework::~IOCPFramework()
 
 void IOCPFramework::Init()
 {
-	setlocale(LC_ALL, "KOREAN");
-
 	WSADATA wsadata{};
 	if (0 != WSAStartup(MAKEWORD(2, 2), &wsadata))
 	{
@@ -89,7 +92,7 @@ void IOCPFramework::Start()
 	std::cout << "서버 시작\n";
 
 	acceptNewbie = CreateSocket();
-	Accept();
+	Listen();
 
 	threadWorkers.emplace_back(::IOCPWorker, 0);
 	threadWorkers.emplace_back(::IOCPWorker, 1);
@@ -147,7 +150,7 @@ void IOCPFramework::Update()
 	}
 }
 
-void IOCPFramework::Accept()
+void IOCPFramework::Listen()
 {
 	auto result = AcceptEx(Listener, acceptNewbie, acceptCBuffer
 		, 0
@@ -178,31 +181,89 @@ void IOCPFramework::ProceedAccept()
 		std::unique_lock barrier(mutexClient);
 
 		auto key = MakeNewbieID();
-		auto session = SeekNewbieSession(key);
+		auto session = SeekNewbieSession();
 		if (!session)
 		{
 			std::cout << "클라이언트 " << acceptNewbie << "가 접속에 실패했습니다.\n";
 			closesocket(acceptNewbie);
 			return;
 		}
-		session->SetStatus(SESSION_STATES::CONNECTED);
 
-		//barrier.unlock();
+		auto index = session->Index;
+		auto io = CreateIoCompletionPort(HANDLE(acceptNewbie), completionPort, key, 0);
+		if (NULL == io)
+		{
+			ErrorDisplay("ProceedAccept → CreateIoCompletionPort()");
+			std::cout << "클라이언트 " << acceptNewbie << "가 접속에 실패했습니다.\n";
+			closesocket(acceptNewbie);
+		}
+		else
+		{
+			session->SetSocket(acceptNewbie);
+			session->SetID(key);
+			session->SetStatus(SESSION_STATES::CONNECTED);
+			session->RecvStream();
+		}
+
 		acceptNewbie = CreateSocket();
 	}
 
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
 
-	if (CLIENTS_MAX_NUMBER <= GetClientsNumber())
+	Listen();
+}
+
+PID IOCPFramework::MakeNewbieID()
+{
+	return orderClientIDs++;
+}
+
+SessionPtr IOCPFramework::SeekNewbieSession()
+{
+
+
+	return SessionPtr();
+}
+
+bool IOCPFramework::RegisterNewbie(const UINT index)
+{
+	auto& session = GetClient(index);
+
+	BroadcastSignUp(index);
+
+	BroadcastCreateCharacter(index, session->Instance->x, session->Instance->y);
+
+	SendWorldDataTo(index);
+
+	return false;
+}
+
+bool IOCPFramework::RegisterNewbie(SessionPtr& session)
+{
+	auto nid = orderClientIDs;
+	std::cout << "클라이언트 " << nid << " 접속 → 소켓: " << nsocket << "\n";
+
+	orderClientIDs++;
+
+	// IO 진입
+	if (SOCKET_ERROR == session->RecvStream())
 	{
-		Accept();
-	}
+		std::cout << "클라이언트 " << nid << " 오류 → 0바이트 받음.\n";
+		return false;
+	};
+
+	clientsID.push_back(nid);
+	Clients.insert(std::move(std::make_pair(nid, session)));
+	numberClients++;
+
+	return false;
 }
 
 void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes)
 {
-	auto client = GetClient(PID(key));
+	auto client = GetClientByID(PID(key));
+
 	if (!client)
 	{
 		std::cout << "No client - key is " << key << ".\n";
@@ -240,169 +301,87 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 	}
 }
 
-void IOCPFramework::BroadcastSignUp(const PID who)
+void IOCPFramework::SendWorldDataTo(SessionPtr& session)
 {
-	std::unique_lock barrier(mutexClient, std::try_to_lock);
-
-	for (auto& other : )
-	{
-
-	}
 	ForeachClient([&](const SessionPtr& other) {
-		other->SendSignUp(who);
-	});
-}
-
-void IOCPFramework::BroadcastSignOut(const PID who)
-{
-	std::unique_lock barrier(mutexClient, std::try_to_lock);
-
-	ForeachClient([&](const SessionPtr& other) {
-		if (other->ID != who)
+		if (other != session)
 		{
-			other->SendSignOut(who);
-		}
-	});
-}
-
-void IOCPFramework::BroadcastCreateCharacter(const PID who, CHAR cx, CHAR cy)
-{
-	std::unique_lock barrier(mutexClient, std::try_to_lock);
-
-	auto session = GetClient(who);
-
-	if (session)
-	{
-		ForeachClient([&](const SessionPtr& other) {
-			other->SendCreateCharacter(who, cx, cy);
-		});
-	}
-}
-
-void IOCPFramework::BroadcastMoveCharacter(const PID who, CHAR nx, CHAR ny)
-{
-	std::unique_lock barrier(mutexClient, std::try_to_lock);
-
-	auto session = GetClient(who);
-
-	if (session)
-	{
-		ForeachClient([&](const SessionPtr& other) {
-			other->SendMoveCharacter(who, nx, ny);
-		});
-	}
-}
-
-void IOCPFramework::SendWorldDataTo(Session* target)
-{
-	std::unique_lock barrier(mutexClient, std::try_to_lock);
-
-	ForeachClient([&](const SessionPtr& other) {
-		if (other.get() != target)
-		{
-			target->SendSignUp(other->ID);
+			session->SendSignUp(other->ID);
 
 			auto instance = other->Instance;
 			if (instance)
 			{
-				target->SendCreateCharacter(other->ID, instance->x, instance->y);
+				session->SendCreateCharacter(other->ID, instance->x, instance->y);
 			}
 		}
 	});
 }
 
-SessionPtr IOCPFramework::GetClient(const PID id)
+void IOCPFramework::BroadcastSignUp(const UINT index)
 {
 	std::unique_lock barrier(mutexClient, std::try_to_lock);
 
-	auto it = Clients.find(id);
-	if (Clients.end() != it)
+	ForeachClient([&](const SessionPtr& other) {
+		if (other->Index != index)
+		{
+			other->SendSignUp(index);
+		}
+	});
+
+	RegisterNewbie(index);
+}
+
+void IOCPFramework::BroadcastSignOut(const UINT index)
+{
+	ForeachClient([&](const SessionPtr& other) {
+		if (other->Index != index)
+		{
+			other->SendSignOut(index);
+		}
+	});
+}
+
+void IOCPFramework::BroadcastCreateCharacter(const UINT index, CHAR cx, CHAR cy)
+{
+	auto session = GetClient(index);
+
+	if (session)
 	{
-		return it->second;
-	}
-	else
-	{
-		return SessionPtr(nullptr);
+		ForeachClient([&](const SessionPtr& other) {
+			other->SendCreateCharacter(session->ID, cx, cy);
+		});
 	}
 }
 
-SessionPtr IOCPFramework::GetClientByIndex(const UINT index)
+void IOCPFramework::BroadcastMoveCharacter(const UINT index, CHAR nx, CHAR ny)
 {
-	//std::unique_lock barrier(mutexClient, std::try_to_lock);
+	auto session = GetClient(index);
 
-	return Clients[clientsID[index]];
+	if (session)
+	{
+		ForeachClient([&](const SessionPtr& other) {
+			other->SendMoveCharacter(session->ID, nx, ny);
+		});
+	}
+}
+
+SessionPtr& IOCPFramework::GetClient(const UINT index)
+{
+	return clientsPool[index];
+}
+
+SessionPtr& IOCPFramework::GetClientByID(const PID id)
+{
+	auto it = std::find_if(clientsPool.begin(), clientsPool.end(), [&](SessionPtr& session) {
+		return (id == session->ID);
+	});
+
+	return *it;
 }
 
 UINT IOCPFramework::GetClientsNumber() const
 {
 	return numberClients;
-}
-
-PID IOCPFramework::MakeNewbieID()
-{
-	return orderClientIDs++;
-}
-
-SessionPtr IOCPFramework::SeekNewbieSession(const PID id)
-{
-
-
-	return SessionPtr();
-}
-
-constexpr SessionPtr IOCPFramework::MakeNewbieSession(SOCKET sk, const PID id)
-{
-	return std::make_shared<Session>(id, sk, *this);
-}
-
-bool IOCPFramework::RegisterNewbie(SessionPtr& session)
-{
-	return false;
-}
-
-bool IOCPFramework::CreateAndAssignClient(SOCKET nsocket)
-{
-	std::unique_lock barrier(mutexClient, std::defer_lock);
-
-	auto period = std::chrono::seconds(1);
-	if (barrier.try_lock_for(period))
-	{
-		auto session = std::make_shared<Session>(orderClientIDs, nsocket, *this);
-		if (!session)
-		{
-			throw std::exception("서버 메모리 부족!");
-			return false;
-		}
-
-		auto io = CreateIoCompletionPort(HANDLE(nsocket), completionPort, orderClientIDs, 0);
-		if (NULL == io)
-		{
-			ErrorDisplay("CreateAndAssignClient → CreateIoCompletionPort()");
-			return false;
-		}
-
-		auto nid = orderClientIDs;
-		std::cout << "클라이언트 " << nid << " 접속 → 소켓: " << nsocket << "\n";
-
-		orderClientIDs++;
-
-		// IO 진입
-		if (SOCKET_ERROR == session->RecvStream())
-		{
-			std::cout << "클라이언트 " << nid << " 오류 → 0바이트 받음.\n";
-			return false;
-		};
-
-		clientsID.push_back(nid);
-		Clients.insert(std::move(std::make_pair(nid, session)));
-		numberClients++;
-
-		return true;
-	}
-	else
-	{
-		return false;
-	}
 }
 
 void IOCPFramework::RemoveClient(const PID rid)
