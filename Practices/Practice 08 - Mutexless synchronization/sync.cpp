@@ -1,8 +1,8 @@
 #include <iostream>
 #include <thread>
 
-int s_data = 0;
-bool ready = false;
+volatile int s_data = 0;
+volatile bool ready = false;
 
 void Receive();
 void Send();
@@ -33,7 +33,8 @@ void Receive()
 		std::this_thread::yield();
 	}
 
-	std::cout << "Receive: " << s_data << ".\n";
+	int my_data = s_data;
+	std::cout << "Receive: " << my_data << ".\n";
 }
 
 void Send()
