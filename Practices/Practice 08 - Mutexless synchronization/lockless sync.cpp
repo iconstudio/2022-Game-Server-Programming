@@ -1,7 +1,11 @@
 ﻿#include <iostream>
 #include <thread>
+#include <mutex>
+#include <atomic>
 
-volatile int sum = 0;
+//volatile int sum = 0;
+// 원자적 변수는 파이프라인의 Out of order 문제를 해결한다.
+std::atomic_int sum = 0;
 
 volatile int victim = 0;
 volatile bool flag[2] = { false, false };
@@ -9,6 +13,8 @@ volatile bool flag[2] = { false, false };
 volatile bool done = false;
 volatile int* bound;
 int error = 0;
+
+void AtomicWorker();
 
 void PetersonLock(int myID);
 void PetersonUnlock(int myID);
@@ -22,8 +28,6 @@ int main()
 	int test_bound[32];
 
 	memset((void*)(test_bound), 0, sizeof(test_bound));
-	//bound = test_bound;
-
 	long long addr = (long long)(&test_bound[31]);
 
 	int offset = addr % 64;
@@ -34,15 +38,28 @@ int main()
 
 	//std::thread worker1{ PetersonWorker, 0 };
 	//std::thread worker2{ PetersonWorker, 1 };
-	std::thread worker1{ WatcherWorker1 };
-	std::thread worker2{ WatcherWorker2 };
+	std::thread worker1{ AtomicWorker };
+	std::thread worker2{ AtomicWorker };
+	//std::thread worker1{ WatcherWorker1 };
+	//std::thread worker2{ WatcherWorker2 };
 
 	worker1.join();
 	worker2.join();
 
-	//std::cout << "Summary: " << sum << std::endl;
+	std::cout << "Summary: " << sum << std::endl;
 
 	return 0;
+}
+
+void AtomicWorker()
+{
+	int local_sum = 0;
+
+	for (int i = 0; i < 500000000; ++i)
+	{
+		sum += 1;
+		//local_sum += 1;
+	}
 }
 
 void PetersonWorker(int myID)
@@ -93,7 +110,7 @@ void PetersonLock(int myID)
 	// 이후의 코드의 순서를 현재 파이프라인 뒤로 미룬다.
 	//_asm mfence;
 
-	std::atomic_thread_fence(std::memory_order_seq_cst);
+	//std::atomic_thread_fence(std::memory_order_seq_cst);
 
 	while (flag[other] && victim == myID) {}
 }
