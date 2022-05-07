@@ -1,4 +1,4 @@
-﻿#include "stdafx.h"
+﻿#include "stdafx.hpp"
 #include "Client.h"
 #include "WindowsForm.h"
 #include "Framework.hpp"

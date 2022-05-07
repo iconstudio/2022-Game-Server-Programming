@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "stdafx.hpp"
 
 enum class OVERLAP_OPS : UCHAR
 {

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "stdafx.hpp"
 
 WCHAR* msgBuffer = NULL;
 WCHAR msgTitle[512]{};

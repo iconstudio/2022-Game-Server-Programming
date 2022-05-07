@@ -1,5 +1,8 @@
 #pragma once
+#include "stdafx.hpp"
 #include "Network.hpp"
+#include "NetworkBackend.hpp"
+#include "Sprite.hpp"
 #include "PlayerCharacter.hpp"
 
 enum class GAME_STATES : UCHAR
@@ -7,13 +10,6 @@ enum class GAME_STATES : UCHAR
 	Begin = 0,
 	Connect,
 	Game
-};
-
-class LocalSession
-{
-public:
-	PID ID = -1;
-	PlayerCharacter* Instance = nullptr;
 };
 
 void CALLBACK CallbackRecv(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags);
@@ -43,6 +39,8 @@ public:
 
 	friend void CALLBACK CallbackRecv(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 	friend void CALLBACK CallbackSend(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
+
+	std::vector<std::shared_ptr<Sprite>> Sprites;
 
 	GAME_STATES Status;
 	UINT ID; // 플레이어의 번호

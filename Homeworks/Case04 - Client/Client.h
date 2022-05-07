@@ -1,4 +1,4 @@
 #pragma once
 #include "resource.h"
-#include "stdafx.h"
+#include "stdafx.hpp"
 #include "Network.hpp"

@@ -146,6 +146,7 @@
     <ClCompile Include="Client.cpp" />
     <ClCompile Include="Framework.cpp" />
     <ClCompile Include="Network.cpp" />
+    <ClCompile Include="NetworkBackend.cpp" />
     <ClCompile Include="PlayerCharacter.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="stdafx.cpp" />
@@ -161,10 +162,12 @@
   <ItemGroup>
     <ClInclude Include="Client.h" />
     <ClInclude Include="Framework.hpp" />
+    <ClInclude Include="Network.hpp" />
+    <ClInclude Include="NetworkBackend.hpp" />
     <ClInclude Include="PlayerCharacter.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Sprite.hpp" />
-    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="stdafx.hpp" />
     <ClInclude Include="targetver.h" />
     <ClInclude Include="WindowsForm.h" />
   </ItemGroup>

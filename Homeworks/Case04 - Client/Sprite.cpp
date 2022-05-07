@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "stdafx.hpp"
 #include "Sprite.hpp"
 
 Sprite::Sprite(const Path& path, UINT number, int xoff, int yoff)

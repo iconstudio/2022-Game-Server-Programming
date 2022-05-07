@@ -1,6 +1,7 @@
-#include "stdafx.h"
+#include "stdafx.hpp"
 #include "Framework.hpp"
 #include "Network.hpp"
+#include "Sprite.hpp"
 #include "PlayerCharacter.hpp"
 
 ClientFramework::ClientFramework()
