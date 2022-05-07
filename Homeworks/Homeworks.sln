@@ -21,6 +21,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Case04 - Server", "Case04 -
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Case04 - Client", "Case04 - Client\Case04 - Client.vcxproj", "{E6217299-9703-4CF2-905B-2E7617A9101D}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Case05 - Expanded World Server", "Case 05 - Expanded World Server\Case 05 - Expanded World Server.vcxproj", "{FF27CAD2-14B4-4ECC-A0DA-31D7AB7581B6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -101,6 +103,14 @@ Global
 		{E6217299-9703-4CF2-905B-2E7617A9101D}.Release|x64.Build.0 = Release|x64
 		{E6217299-9703-4CF2-905B-2E7617A9101D}.Release|x86.ActiveCfg = Release|Win32
 		{E6217299-9703-4CF2-905B-2E7617A9101D}.Release|x86.Build.0 = Release|Win32
+		{FF27CAD2-14B4-4ECC-A0DA-31D7AB7581B6}.Debug|x64.ActiveCfg = Debug|x64
+		{FF27CAD2-14B4-4ECC-A0DA-31D7AB7581B6}.Debug|x64.Build.0 = Debug|x64
+		{FF27CAD2-14B4-4ECC-A0DA-31D7AB7581B6}.Debug|x86.ActiveCfg = Debug|Win32
+		{FF27CAD2-14B4-4ECC-A0DA-31D7AB7581B6}.Debug|x86.Build.0 = Debug|Win32
+		{FF27CAD2-14B4-4ECC-A0DA-31D7AB7581B6}.Release|x64.ActiveCfg = Release|x64
+		{FF27CAD2-14B4-4ECC-A0DA-31D7AB7581B6}.Release|x64.Build.0 = Release|x64
+		{FF27CAD2-14B4-4ECC-A0DA-31D7AB7581B6}.Release|x86.ActiveCfg = Release|Win32
+		{FF27CAD2-14B4-4ECC-A0DA-31D7AB7581B6}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
