@@ -178,28 +178,29 @@ void IOCPFramework::ProceedAccept()
 	}
 	else
 	{
-		std::unique_lock barrier(mutexClient);
+		//std::unique_lock barrier(mutexClient);
 
 		auto key = MakeNewbieID();
+		auto newbie = acceptNewbie.load();
 		auto session = SeekNewbieSession();
 		if (!session)
 		{
-			std::cout << "클라이언트 " << acceptNewbie << "가 접속에 실패했습니다.\n";
-			closesocket(acceptNewbie);
+			std::cout << "클라이언트 " << newbie << "가 접속에 실패했습니다.\n";
+			closesocket(newbie);
 			return;
 		}
 
 		auto index = session->Index;
-		auto io = CreateIoCompletionPort(HANDLE(acceptNewbie), completionPort, key, 0);
+		auto io = CreateIoCompletionPort(HANDLE(newbie), completionPort, key, 0);
 		if (NULL == io)
 		{
 			ErrorDisplay("ProceedAccept → CreateIoCompletionPort()");
-			std::cout << "클라이언트 " << acceptNewbie << "가 접속에 실패했습니다.\n";
-			closesocket(acceptNewbie);
+			std::cout << "클라이언트 " << newbie << "가 접속에 실패했습니다.\n";
+			closesocket(newbie);
 		}
 		else
 		{
-			session->SetSocket(acceptNewbie);
+			session->SetSocket(newbie);
 			session->SetID(key);
 			session->SetStatus(SESSION_STATES::CONNECTED);
 
