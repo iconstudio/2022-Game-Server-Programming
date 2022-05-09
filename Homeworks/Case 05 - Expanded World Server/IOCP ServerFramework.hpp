@@ -55,15 +55,15 @@ private:
 	WSAOVERLAPPED acceptOverlap;
 	DWORD acceptBytes;
 	char acceptCBuffer[BUFSIZ];
-	SOCKET acceptNewbie;
+	std::atomic<SOCKET> acceptNewbie;
 
 	const ULONG_PTR serverKey;
 
 	std::timed_mutex mutexClient;
 
 	std::array<SessionPtr, CLIENTS_MAX_NUMBER> clientsPool;
-	PID orderClientIDs;
-	UINT numberClients;
+	std::atomic<PID> orderClientIDs;
+	std::atomic<UINT> numberClients;
 
 	std::vector<std::thread> threadWorkers;
 };
