@@ -13,11 +13,11 @@ constexpr PID CLIENTS_ORDER_BEGIN = 10000;
 constexpr size_t CELL_SZ_H = 32;
 constexpr size_t CELL_SZ_V = 32;
 
-constexpr size_t WORLD_SZ_H = 400;
-constexpr size_t WORLD_SZ_V = 400;
+constexpr size_t WORLD_CELL_H = 400;
+constexpr size_t WORLD_CELL_V = 400;
 
-constexpr size_t WORLD_PX_SZ_H = CELL_SZ_H * WORLD_SZ_H;
-constexpr size_t WORLD_PX_SZ_V = CELL_SZ_V * WORLD_SZ_V;
+constexpr size_t WORLD_PX_SZ_H = CELL_SZ_H * WORLD_CELL_H;
+constexpr size_t WORLD_PX_SZ_V = CELL_SZ_V * WORLD_CELL_V;
 
 enum class OVERLAP_OPS : UCHAR
 {
