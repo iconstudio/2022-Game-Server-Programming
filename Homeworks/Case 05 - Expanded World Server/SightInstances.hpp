@@ -1,8 +1,7 @@
 #pragma once
 #include "stdafx.hpp"
 
-
-class SightSector
+class SightInstances
 {
 public:
 

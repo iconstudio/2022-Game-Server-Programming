@@ -27,6 +27,12 @@
     <ClInclude Include="stdafx.hpp">
       <Filter>소스 파일</Filter>
     </ClInclude>
+    <ClInclude Include="SightSector.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="SightInstances.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="IOCP Server.cpp">
@@ -43,6 +49,12 @@
     </ClCompile>
     <ClCompile Include="stdafx.cpp">
       <Filter>헤더 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SightSector.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="SightInstances.cpp">
+      <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

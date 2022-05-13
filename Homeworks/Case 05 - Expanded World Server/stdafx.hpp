@@ -17,7 +17,6 @@
 #include <concurrent_vector.h>
 
 class IOCPFramework;
-class Timer;
 
 class Asynchron;
 class Packet;
@@ -28,6 +27,7 @@ class LocalSession;
 class SightSector;
 class SightInstances;
 
+class GameTimer;
 class GameTransform;
 class GameObject;
 class GameStaticObject;
