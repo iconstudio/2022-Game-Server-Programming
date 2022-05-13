@@ -24,7 +24,7 @@
     <ClInclude Include="Session.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
-    <ClInclude Include="stdafx.h">
+    <ClInclude Include="stdafx.hpp">
       <Filter>소스 파일</Filter>
     </ClInclude>
   </ItemGroup>

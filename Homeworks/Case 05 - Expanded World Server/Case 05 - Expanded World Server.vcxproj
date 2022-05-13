@@ -146,7 +146,7 @@
     <ClInclude Include="IOCP ServerFramework.hpp" />
     <ClInclude Include="Network.hpp" />
     <ClInclude Include="Session.h" />
-    <ClInclude Include="stdafx.h" />
+    <ClInclude Include="stdafx.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="IOCP Server.cpp" />
