@@ -26,8 +26,8 @@ enum class SESSION_STATES;
 class LocalSession;
 class SightSector;
 class SightInstances;
+class Timer;
 
-class GameTimer;
 class GameTransform;
 class GameEntity;
 class GameObject;

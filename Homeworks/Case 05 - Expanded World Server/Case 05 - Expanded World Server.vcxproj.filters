@@ -13,52 +13,49 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="헤더 파일\Contents">
+      <UniqueIdentifier>{db7ab7ca-46f3-4637-b440-c26f4bcb3b43}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\System">
+      <UniqueIdentifier>{97f7bdc4-ed03-4865-8d33-f2e62fd09f81}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Components">
+      <UniqueIdentifier>{2e5d9f73-31cb-428b-b097-49d4e15cf535}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="IOCP ServerFramework.hpp">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Network.hpp">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Session.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.hpp">
       <Filter>소스 파일</Filter>
     </ClInclude>
-    <ClInclude Include="SightSector.hpp">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="SightInstances.hpp">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="GameObject.hpp">
-      <Filter>헤더 파일</Filter>
+    <ClInclude Include="IOCP ServerFramework.hpp">
+      <Filter>헤더 파일\System</Filter>
     </ClInclude>
     <ClInclude Include="PlayerCharacter.hpp">
-      <Filter>헤더 파일</Filter>
+      <Filter>헤더 파일\Contents</Filter>
+    </ClInclude>
+    <ClInclude Include="Network.hpp">
+      <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="SightInstances.hpp">
+      <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="SightSector.hpp">
+      <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="GameObject.hpp">
+      <Filter>헤더 파일\Components</Filter>
     </ClInclude>
     <ClInclude Include="GameEntity.hpp">
-      <Filter>헤더 파일</Filter>
+      <Filter>헤더 파일\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="Timer.hpp">
+      <Filter>헤더 파일\System</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="IOCP Server.cpp">
-      <Filter>헤더 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="IOCP ServerFramework.cpp">
-      <Filter>헤더 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Network.cpp">
-      <Filter>헤더 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="Session.cpp">
-      <Filter>헤더 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="stdafx.cpp">
-      <Filter>헤더 파일</Filter>
-    </ClCompile>
     <ClCompile Include="SightSector.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -72,6 +69,24 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="GameEntity.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="IOCP ServerFramework.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Network.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp">
+      <Filter>헤더 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Timer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
