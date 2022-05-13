@@ -10,4 +10,6 @@ public:
 class LocalSession
 {
 public:
+	PID ID = -1;
+	PlayerCharacter* Instance = nullptr;
 };

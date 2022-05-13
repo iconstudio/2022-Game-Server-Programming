@@ -3,7 +3,7 @@
 WCHAR* msgBuffer = NULL;
 WCHAR msgTitle[512]{};
 
-static const XFORM Draw::transform_identity = { 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f };
+XFORM Draw::transform_identity = { 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f };
 
 void ErrorAbort(const wchar_t* title, const int errorcode)
 {
