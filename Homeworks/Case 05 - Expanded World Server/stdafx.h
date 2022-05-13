@@ -14,6 +14,7 @@
 #include <mutex>
 #include <chrono>
 #include <array>
+#include <concurrent_vector.h>
 
 class IOCPFramework;
 class Session;
