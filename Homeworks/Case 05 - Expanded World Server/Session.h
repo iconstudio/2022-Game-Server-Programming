@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "stdafx.hpp"
 #include "Network.hpp"
 
 enum class SESSION_STATES
@@ -23,11 +23,11 @@ public:
 	bool IsDisconnected() const;
 	bool IsAccepted() const;
 
-	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
+	void ProceedReceived(Asynchron* overlap, DWORD byte);
 	int RecvStream(DWORD size, DWORD begin_bytes);
 	int RecvStream(DWORD begin_bytes = 0);
 
-	void ProceedSent(EXOVERLAPPED* overlap, DWORD byte);
+	void ProceedSent(Asynchron* overlap, DWORD byte);
 	void SendSignUp(PID nid);
 	void SendSignOut(PID rid);
 	void SendCreateCharacter(PID id, CHAR cx, CHAR cy);
@@ -35,7 +35,7 @@ public:
 
 	bool TryMove(WPARAM input);
 
-	PID ID;
+	std::atomic<PID> ID;
 	const UINT Index;
 	SOCKET Socket;
 
@@ -58,15 +58,15 @@ private:
 
 	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
 
-	EXOVERLAPPED recvOverlap;
+	Asynchron recvOverlap;
 	WSABUF recvBuffer;
 	char recvCBuffer[BUFFSIZE];
 	DWORD recvBytes;
 
-	EXOVERLAPPED* overlapSendSignUp;
-	EXOVERLAPPED* overlapSendCreateChar;
-	EXOVERLAPPED* overlapSendMoveChar;
-	EXOVERLAPPED* overlapSendSignOut;
+	Asynchron* overlapSendSignUp;
+	Asynchron* overlapSendCreateChar;
+	Asynchron* overlapSendMoveChar;
+	Asynchron* overlapSendSignOut;
 
 	IOCPFramework& Framework;
 };

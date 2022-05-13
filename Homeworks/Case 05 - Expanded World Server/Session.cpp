@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "stdafx.hpp"
 #include "Session.h"
 #include "Network.hpp"
 #include "IOCP ServerFramework.hpp"
@@ -69,7 +69,7 @@ bool Session::IsAccepted() const
 	return SESSION_STATES::ACCEPTED == Status;
 }
 
-void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
+void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 {
 	std::cout << "ProceedReceived (" << ID << ")" << "\n";
 	auto& wbuffer = recvBuffer;
@@ -110,7 +110,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 					Instance = std::make_shared<PlayerCharacter>(3, 3);
 
-					Framework.RegisterNewbie(Index);
+					Framework.Accept(Index);
 				}
 			}
 			break;
@@ -195,7 +195,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 	}
 }
 
-void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
+void Session::ProceedSent(Asynchron* overlap, DWORD byte)
 {
 	if (0 == byte)
 	{
@@ -334,7 +334,7 @@ int Session::SendPacket(Ty&&... args)
 	wbuffer->buf = reinterpret_cast<char*>(packet);
 	wbuffer->len = packet->Size;
 
-	auto overlap = new EXOVERLAPPED{ OVERLAP_OPS::SEND };
+	auto overlap = new Asynchron{ OVERLAP_OPS::SEND };
 	overlap->Type = packet->Type;
 	overlap->SetSendBuffer(wbuffer);
 

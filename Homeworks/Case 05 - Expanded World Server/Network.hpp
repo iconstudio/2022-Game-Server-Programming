@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "stdafx.hpp"
 
 void ClearOverlap(LPWSAOVERLAPPED overlap);
 
@@ -10,8 +10,8 @@ constexpr UINT BUFFSIZE = 512;
 constexpr UINT CLIENTS_MAX_NUMBER = 5000;
 constexpr PID CLIENTS_ORDER_BEGIN = 10000;
 
-constexpr size_t CELL_SZ_H = 32;
-constexpr size_t CELL_SZ_V = 32;
+constexpr size_t CELL_SZ_H = 16;
+constexpr size_t CELL_SZ_V = 16;
 
 constexpr size_t WORLD_CELL_H = 400;
 constexpr size_t WORLD_CELL_V = 400;
@@ -39,11 +39,11 @@ enum class PACKET_TYPES : UCHAR
 };
 
 #pragma pack(push, 1)
-class EXOVERLAPPED : public WSAOVERLAPPED
+class Asynchron : public WSAOVERLAPPED
 {
 public:
-	EXOVERLAPPED(OVERLAP_OPS operation);
-	~EXOVERLAPPED();
+	Asynchron(OVERLAP_OPS operation);
+	~Asynchron();
 
 	void SetSendBuffer(const WSABUF& buffer);
 	void SetSendBuffer(LPWSABUF buffer);

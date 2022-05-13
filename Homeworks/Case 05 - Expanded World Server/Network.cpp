@@ -1,12 +1,12 @@
 #include "stdafx.h"
 #include "Network.hpp"
 
-EXOVERLAPPED::EXOVERLAPPED(OVERLAP_OPS operation)
+Asynchron::Asynchron(OVERLAP_OPS operation)
 	: Operation(operation), Type(PACKET_TYPES::NONE)
 	, sendBuffer(nullptr), sendCBuffer(nullptr), sendSize(0), sendSzWant(0)
 {}
 
-EXOVERLAPPED::~EXOVERLAPPED()
+Asynchron::~Asynchron()
 {
 	if (sendBuffer) sendBuffer.release();
 	if (sendCBuffer) sendCBuffer.release();
@@ -14,19 +14,19 @@ EXOVERLAPPED::~EXOVERLAPPED()
 	sendSzWant = 0;
 }
 
-void EXOVERLAPPED::SetSendBuffer(const WSABUF& buffer)
+void Asynchron::SetSendBuffer(const WSABUF& buffer)
 {
 	sendBuffer = std::make_unique<WSABUF>(buffer);
 	sendSzWant = buffer.len;
 }
 
-void EXOVERLAPPED::SetSendBuffer(LPWSABUF buffer)
+void Asynchron::SetSendBuffer(LPWSABUF buffer)
 {
 	sendBuffer = std::make_unique<WSABUF>(*buffer);
 	sendSzWant = buffer->len;
 }
 
-void EXOVERLAPPED::SetSendBuffer(CHAR* cbuffer, DWORD size)
+void Asynchron::SetSendBuffer(CHAR* cbuffer, DWORD size)
 {
 	if (!sendBuffer)
 	{
