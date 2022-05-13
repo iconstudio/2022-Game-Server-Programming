@@ -43,7 +43,10 @@ private:
 	void BroadcastCreateCharacter(SessionPtr& who, CHAR cx, CHAR cy);
 	void BroadcastMoveCharacterFrom(const UINT index, CHAR nx, CHAR ny);
 
-	SOCKET&& CreateSocket() const;
+	inline SOCKET CreateSocket() const
+	{
+		return WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+	}
 
 	template<typename Predicate> void ForeachClient(Predicate predicate);
 
