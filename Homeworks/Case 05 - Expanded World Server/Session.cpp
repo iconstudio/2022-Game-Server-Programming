@@ -147,8 +147,8 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 					{
 						std::cout << "플레이어 " << ID
 							<< " - 위치: ("
-							<< px * CELL_W << ", "
-							<< py * CELL_H
+							<< px * CELL_SZ_H << ", "
+							<< py * CELL_SZ_V
 							<< ")\n";
 					}
 
