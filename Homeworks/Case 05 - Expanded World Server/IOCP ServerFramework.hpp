@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "stdafx.hpp"
 #include "Network.hpp"
 #include "Session.h"
 
@@ -32,9 +32,9 @@ private:
 
 	PID MakeNewbieID();
 	SessionPtr SeekNewbieSession();
-	void RegisterNewbie(const UINT index);
 
-	void Disconnect(const PID who);
+	void Accept(const UINT index);
+	void Disconnect(const UINT index);
 
 	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 	void SendWorldDataTo(SessionPtr& who);

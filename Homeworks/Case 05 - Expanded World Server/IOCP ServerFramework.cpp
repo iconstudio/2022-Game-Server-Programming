@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "stdafx.hpp"
 #include "IOCP ServerFramework.hpp"
 #include "Network.hpp"
 #include "Session.h"
@@ -239,45 +239,33 @@ SessionPtr IOCPFramework::SeekNewbieSession()
 	return *it;
 }
 
-void IOCPFramework::RegisterNewbie(const UINT index)
+void IOCPFramework::Accept(const UINT index)
 {
-	std::unique_lock barrier(mutexClient);
-
 	auto& session = GetClient(index);
 	session->SetStatus(SESSION_STATES::ACCEPTED);
 
 	BroadcastSignUp(session);
-	
+
 	BroadcastCreateCharacter(session, session->Instance->x, session->Instance->y);
 
 	SendWorldDataTo(session);
 	numberClients++;
 }
 
-void IOCPFramework::Disconnect(const PID who)
+void IOCPFramework::Disconnect(const UINT index)
 {
-	std::unique_lock barrier(mutexClient);
+	auto& session = GetClient(index);
+	session->Cleanup();
 
-	auto vit = std::find_if(clientsPool.begin(), clientsPool.end()
-		, [&](SessionPtr& session) {
-		return (session->ID == who);
-	});
-
-	if (clientsPool.end() != vit)
+	if (session->IsAccepted())
 	{
-		auto& session = *vit;
+		std::unique_lock barrier(mutexClient);
+		BroadcastSignOut(session);
 
-		if (session->IsAccepted())
-		{
-			BroadcastSignOut(session);
-
-			session->Cleanup();
-			numberClients--;
-		}
-		else if (session->IsConnected())
-		{
-			session->Cleanup();
-		}
+		numberClients--;
+	}
+	else if (session->IsConnected())
+	{
 	}
 }
 
@@ -292,7 +280,7 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 	}
 	else
 	{
-		auto exoverlap = static_cast<EXOVERLAPPED*>(overlap);
+		auto exoverlap = static_cast<Asynchron*>(overlap);
 		auto op = exoverlap->Operation;
 
 		if (0 == bytes)
