@@ -200,9 +200,9 @@ void IOCPFramework::ProceedAccept()
 		}
 		else
 		{
+			session->SetStatus(SESSION_STATES::CONNECTED);
 			session->SetSocket(newbie);
 			session->SetID(key);
-			session->SetStatus(SESSION_STATES::CONNECTED);
 
 			if (SOCKET_ERROR == session->RecvStream())
 			{
@@ -212,7 +212,7 @@ void IOCPFramework::ProceedAccept()
 					std::cout << "클라이언트 " << key << "에서 오류!\n";
 					session->Cleanup();
 				}
-			};
+			}
 		}
 
 		acceptNewbie = CreateSocket();
@@ -388,10 +388,4 @@ SessionPtr& IOCPFramework::GetClientByID(const PID id)
 UINT IOCPFramework::GetClientsNumber() const
 {
 	return numberClients;
-}
-
-SOCKET&& IOCPFramework::CreateSocket() const
-{
-	return std::move(WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP
-		, NULL, 0, WSA_FLAG_OVERLAPPED));
 }
