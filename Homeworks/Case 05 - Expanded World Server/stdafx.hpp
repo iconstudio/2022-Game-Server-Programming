@@ -29,26 +29,11 @@ class SightInstances;
 
 class GameTimer;
 class GameTransform;
+class GameEntity;
 class GameObject;
 class GameStaticObject;
 
 class PlayerCharacter;
 class NonPlayerable;
-
-/// <summary>
-/// 플레이어 캐릭터
-/// </summary>
-class PlayerCharacter
-{
-public:
-	PlayerCharacter(CHAR ox, CHAR oy);
-
-	bool TryMoveLT();
-	bool TryMoveRT();
-	bool TryMoveUP();
-	bool TryMoveDW();
-
-	CHAR x, y;
-};
 
 void ErrorDisplay(const char* title);

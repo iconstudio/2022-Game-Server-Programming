@@ -1,7 +1,5 @@
 #include "stdafx.hpp"
 #include "IOCP ServerFramework.hpp"
-#include "Network.hpp"
-#include "Session.h"
 
 IOCPFramework::IOCPFramework()
 	: acceptOverlap(), acceptBytes(0), acceptCBuffer()

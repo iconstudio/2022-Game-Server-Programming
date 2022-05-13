@@ -156,17 +156,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="GameEntity.hpp" />
+    <ClInclude Include="GameObject.hpp" />
     <ClInclude Include="IOCP ServerFramework.hpp" />
     <ClInclude Include="Network.hpp" />
+    <ClInclude Include="PlayerCharacter.hpp" />
     <ClInclude Include="Session.h" />
     <ClInclude Include="SightInstances.hpp" />
     <ClInclude Include="SightSector.hpp" />
     <ClInclude Include="stdafx.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="GameEntity.cpp" />
+    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="IOCP Server.cpp" />
     <ClCompile Include="IOCP ServerFramework.cpp" />
     <ClCompile Include="Network.cpp" />
+    <ClCompile Include="PlayerCharacter.cpp" />
     <ClCompile Include="Session.cpp" />
     <ClCompile Include="SightInstances.cpp" />
     <ClCompile Include="SightSector.cpp" />
