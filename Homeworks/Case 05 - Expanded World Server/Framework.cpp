@@ -6,6 +6,7 @@ IOCPFramework::IOCPFramework()
 	: acceptOverlap(), acceptBytes(0), acceptCBuffer()
 	, serverKey(100)
 	, clientsPool(), orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
+	, myWorldView(WORLD_PX_SZ_H, WORLD_PX_SZ_V, SIGHT_PX_SZ_H, SIGHT_PX_SZ_V)
 	, threadWorkers(THREADS_COUNT)
 {
 	setlocale(LC_ALL, "KOREAN");

@@ -3,6 +3,7 @@
 #include "Network.hpp"
 #include "Session.h"
 #include "Asynchron.hpp"
+#include "SightController.hpp"
 
 const UINT THREADS_COUNT = 6;
 using SessionPtr = std::shared_ptr<Session>;
