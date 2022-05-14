@@ -1,11 +1,8 @@
 #pragma once
 #include "stdafx.hpp"
 #include "Network.hpp"
-
-enum class SESSION_STATES
-{
-	NONE, CONNECTED, ACCEPTED, 
-};
+#include "Asynchron.hpp"
+#include "PlayerCharacter.hpp"
 
 class Session
 {
@@ -35,13 +32,13 @@ public:
 
 	bool TryMove(WPARAM input);
 
-	std::atomic<PID> ID;
+	atomic<PID> ID;
 	const UINT Index;
 	SOCKET Socket;
 
 	SESSION_STATES Status;
 	CHAR Nickname[30];
-	std::shared_ptr<PlayerCharacter> Instance;
+	shared_ptr<PlayerCharacter> Instance;
 
 private:
 	void SetRecvBuffer(const WSABUF& buffer);
@@ -69,4 +66,9 @@ private:
 	Asynchron* overlapSendSignOut;
 
 	IOCPFramework& Framework;
+};
+
+enum class SESSION_STATES
+{
+	NONE, CONNECTED, ACCEPTED,
 };
