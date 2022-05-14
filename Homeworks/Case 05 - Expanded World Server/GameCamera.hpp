@@ -1,7 +1,8 @@
 #pragma once
 #include "stdafx.hpp"
+#include "GameEntity.hpp"
 
-class GameCamera
+class GameCamera : GameEntity
 {
 public:
 
