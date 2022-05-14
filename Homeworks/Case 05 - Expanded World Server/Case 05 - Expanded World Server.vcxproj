@@ -160,6 +160,7 @@
     <ClInclude Include="GameCamera.hpp" />
     <ClInclude Include="GameEntity.hpp" />
     <ClInclude Include="GameObject.hpp" />
+    <ClInclude Include="SightController.hpp" />
     <ClInclude Include="Timer.hpp" />
     <ClInclude Include="Framework.hpp" />
     <ClInclude Include="Network.hpp" />
@@ -174,6 +175,7 @@
     <ClCompile Include="GameCamera.cpp" />
     <ClCompile Include="GameEntity.cpp" />
     <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="SightController.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="Framework.cpp" />
