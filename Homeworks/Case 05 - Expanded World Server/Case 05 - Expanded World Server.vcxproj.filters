@@ -45,9 +45,6 @@
     <ClInclude Include="PlayerCharacter.hpp">
       <Filter>헤더 파일\Contents</Filter>
     </ClInclude>
-    <ClInclude Include="Session.h">
-      <Filter>헤더 파일\System</Filter>
-    </ClInclude>
     <ClInclude Include="SightInstances.hpp">
       <Filter>헤더 파일\System</Filter>
     </ClInclude>
@@ -78,6 +75,12 @@
     <ClInclude Include="SightController.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>헤더 파일\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="GameTransform.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -104,9 +107,6 @@
     <ClCompile Include="SightSector.cpp">
       <Filter>소스 파일\System</Filter>
     </ClCompile>
-    <ClCompile Include="Session.cpp">
-      <Filter>소스 파일\System</Filter>
-    </ClCompile>
     <ClCompile Include="Timer.cpp">
       <Filter>소스 파일\System</Filter>
     </ClCompile>
@@ -119,7 +119,13 @@
     <ClCompile Include="GameObject.cpp">
       <Filter>소스 파일\Components</Filter>
     </ClCompile>
+    <ClCompile Include="Session.cpp">
+      <Filter>소스 파일\Network</Filter>
+    </ClCompile>
     <ClCompile Include="SightController.cpp">
+      <Filter>소스 파일\System</Filter>
+    </ClCompile>
+    <ClCompile Include="GameTransform.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
