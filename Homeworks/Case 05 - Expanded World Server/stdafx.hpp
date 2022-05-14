@@ -14,12 +14,23 @@
 #include <mutex>
 #include <chrono>
 #include <array>
+#include <atomic>
 #include <concurrent_vector.h>
 
-class IOCPFramework;
+using std::array;
+using std::shared_ptr;
+using std::unique_ptr;
+using std::weak_ptr;
+using std::atomic;
+using std::atomic_bool;
+using std::atomic_int;
+using std::atomic_uint;
 
+class IOCPFramework;
 class Asynchron;
 class Packet;
+enum class ASYNC_OPERATIONS;
+enum class PACKET_TYPES;
 
 class Session;
 enum class SESSION_STATES;
@@ -30,6 +41,7 @@ class Timer;
 
 class GameTransform;
 class GameEntity;
+class GameCamera;
 class GameObject;
 class GameStaticObject;
 
