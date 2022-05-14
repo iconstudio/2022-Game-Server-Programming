@@ -1,6 +1,27 @@
 #include "stdafx.hpp"
+#include "Asynchron.hpp"
 
 TCHAR* msgBuffer = NULL;
+
+void ClearOverlap(WSAOVERLAPPED* overlap)
+{
+	ZeroMemory(overlap, sizeof(WSAOVERLAPPED));
+}
+
+void ClearOverlap(Asynchron* overlap)
+{
+	if (overlap->sendBuffer)
+	{
+		overlap->sendBuffer.reset();
+	}
+
+	if (overlap->sendCBuffer)
+	{
+		overlap->sendCBuffer.reset();
+	}
+
+	ZeroMemory(overlap, sizeof(Asynchron));
+}
 
 void ErrorDisplay(const char* title)
 {

@@ -29,15 +29,15 @@ using std::atomic_uint;
 class IOCPFramework;
 class Asynchron;
 class Packet;
-enum class ASYNC_OPERATIONS;
-enum class PACKET_TYPES;
+enum class ASYNC_OPERATIONS : UCHAR;
+enum class PACKET_TYPES : UCHAR;
 
 class Session;
-enum class SESSION_STATES;
 class LocalSession;
 class SightSector;
 class SightInstances;
 class Timer;
+enum class SESSION_STATES;
 
 class GameTransform;
 class GameEntity;
@@ -48,4 +48,6 @@ class GameStaticObject;
 class PlayerCharacter;
 class NonPlayerable;
 
+void ClearOverlap(WSAOVERLAPPED* overlap);
+void ClearOverlap(Asynchron* overlap);
 void ErrorDisplay(const char* title);
