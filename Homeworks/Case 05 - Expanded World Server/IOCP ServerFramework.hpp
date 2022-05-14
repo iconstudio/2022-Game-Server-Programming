@@ -2,6 +2,7 @@
 #include "stdafx.hpp"
 #include "Network.hpp"
 #include "Session.h"
+#include "Asynchron.hpp"
 
 const UINT THREADS_COUNT = 6;
 using SessionPtr = std::shared_ptr<Session>;

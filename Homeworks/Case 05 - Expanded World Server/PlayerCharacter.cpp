@@ -1,5 +1,6 @@
 #include "stdafx.hpp"
 #include "PlayerCharacter.hpp"
+#include "Network.hpp"
 
 PlayerCharacter::PlayerCharacter(CHAR ox, CHAR oy) : x(ox), y(oy)
 {}
