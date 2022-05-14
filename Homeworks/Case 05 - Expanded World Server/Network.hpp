@@ -8,14 +8,18 @@ constexpr UINT BUFFSIZE = 512;
 constexpr UINT CLIENTS_MAX_NUMBER = 5000;
 constexpr PID CLIENTS_ORDER_BEGIN = 10000;
 
-constexpr size_t CELL_SZ_H = 16;
-constexpr size_t CELL_SZ_V = 16;
+constexpr float CELL_H = 16.0f;
+constexpr float CELL_V = 16.0f;
 
-constexpr size_t WORLD_CELL_H = 400;
-constexpr size_t WORLD_CELL_V = 400;
+constexpr size_t SIGHT_CELLS_CNT_H = 11;
+constexpr size_t SIGHT_CELLS_CNT_V = 11;
+constexpr float SIGHT_PX_SZ_H = CELL_H * SIGHT_CELLS_CNT_H;
+constexpr float SIGHT_PX_SZ_V = CELL_V * SIGHT_CELLS_CNT_V;
 
-constexpr size_t WORLD_PX_SZ_H = CELL_SZ_H * WORLD_CELL_H;
-constexpr size_t WORLD_PX_SZ_V = CELL_SZ_V * WORLD_CELL_V;
+constexpr size_t WORLD_CELLS_CNT_H = 400;
+constexpr size_t WORLD_CELLS_CNT_V = 400;
+constexpr float WORLD_PX_SZ_H = CELL_H * WORLD_CELLS_CNT_H;
+constexpr float WORLD_PX_SZ_V = CELL_V * WORLD_CELLS_CNT_V;
 
 enum class PACKET_TYPES : UCHAR
 {
