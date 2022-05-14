@@ -1,7 +1,7 @@
 #include "stdafx.hpp"
 #include "Session.h"
 #include "Network.hpp"
-#include "IOCP ServerFramework.hpp"
+#include "Framework.hpp"
 
 Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
 	: Index(index), ID(id), Nickname(), Socket(sock), Framework(framework)
@@ -147,8 +147,8 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 					{
 						std::cout << "플레이어 " << ID
 							<< " - 위치: ("
-							<< px * CELL_SZ_H << ", "
-							<< py * CELL_SZ_V
+							<< px * CELL_H << ", "
+							<< py * CELL_V
 							<< ")\n";
 					}
 

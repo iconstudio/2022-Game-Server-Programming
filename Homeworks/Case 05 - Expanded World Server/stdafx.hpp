@@ -5,17 +5,19 @@
 #include <WS2tcpip.h>
 #include <MSWSock.h>
 
+#include <string>
 #include <iostream>
+#include <mutex>
+#include <thread>
+#include <atomic>
+#include <chrono>
 #include <memory>
+#include <numeric>
+#include <concurrent_vector.h>
 #include <vector>
+#include <array>
 #include <unordered_map>
 #include <algorithm>
-#include <numeric>
-#include <mutex>
-#include <chrono>
-#include <array>
-#include <atomic>
-#include <concurrent_vector.h>
 
 using std::array;
 using std::shared_ptr;
@@ -26,11 +28,18 @@ using std::atomic_bool;
 using std::atomic_int;
 using std::atomic_uint;
 
+using int_pair = std::pair<int, int>;
+using float_pair = std::pair<float, float>;
+
+template<typename Type>
+using shared_concurrent_vector = Concurrency::concurrent_vector<shared_ptr<Type>>;
+template<typename Type>
+using concurrent_vector = Concurrency::concurrent_vector<Type>;
+
 class IOCPFramework;
-class SightSector;
-class SightInstances;
-class SightController;
 class Timer;
+class SightController;
+class SightSector;
 
 class Asynchron;
 class Packet;
