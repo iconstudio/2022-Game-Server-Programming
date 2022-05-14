@@ -161,7 +161,7 @@
     <ClInclude Include="GameEntity.hpp" />
     <ClInclude Include="GameObject.hpp" />
     <ClInclude Include="Timer.hpp" />
-    <ClInclude Include="IOCP ServerFramework.hpp" />
+    <ClInclude Include="Framework.hpp" />
     <ClInclude Include="Network.hpp" />
     <ClInclude Include="PlayerCharacter.hpp" />
     <ClInclude Include="Session.h" />
@@ -176,7 +176,7 @@
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Timer.cpp" />
     <ClCompile Include="Main.cpp" />
-    <ClCompile Include="IOCP ServerFramework.cpp" />
+    <ClCompile Include="Framework.cpp" />
     <ClCompile Include="Network.cpp" />
     <ClCompile Include="PlayerCharacter.cpp" />
     <ClCompile Include="Session.cpp" />
