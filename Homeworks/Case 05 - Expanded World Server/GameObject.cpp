@@ -7,3 +7,9 @@ GameObject::GameObject()
 
 GameObject::~GameObject()
 {}
+
+void GameObject::Enter(SightSector& sector)
+{}
+
+void GameObject::Leave(SightSector& sector)
+{}

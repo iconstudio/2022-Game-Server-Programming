@@ -1,6 +1,6 @@
 #pragma once
 #include "stdafx.hpp"
-#include "GameEntity.hpp"
+#include "GameTransform.hpp"
 
 class GameObject
 {
@@ -8,15 +8,14 @@ public:
 	GameObject();
 	virtual ~GameObject();
 
-
-	void Enter(SightSector* sector);
-	void Leave(SightSector* sector);
+	void Enter(SightSector& sector);
+	void Leave(SightSector& sector);
 
 	GameTransform myTransform;
 
 private:
 	SightSector* mySector;
 
-	const std::vector<shared_ptr<GameEntity>> mySiblings;
-	shared_ptr<GameEntity> myChild;
+	const std::vector<shared_ptr<GameObject>> mySiblings;
+	shared_ptr<GameObject> myChild;
 };
