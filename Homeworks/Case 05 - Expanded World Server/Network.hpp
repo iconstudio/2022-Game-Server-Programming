@@ -19,13 +19,6 @@ constexpr size_t WORLD_CELL_V = 400;
 constexpr size_t WORLD_PX_SZ_H = CELL_SZ_H * WORLD_CELL_H;
 constexpr size_t WORLD_PX_SZ_V = CELL_SZ_V * WORLD_CELL_V;
 
-enum class OVERLAP_OPS : UCHAR
-{
-	NONE = 0,
-	RECV,
-	SEND,
-};
-
 enum class PACKET_TYPES : UCHAR
 {
 	NONE = 0,
@@ -39,24 +32,6 @@ enum class PACKET_TYPES : UCHAR
 };
 
 #pragma pack(push, 1)
-class Asynchron : public WSAOVERLAPPED
-{
-public:
-	Asynchron(OVERLAP_OPS operation);
-	~Asynchron();
-
-	void SetSendBuffer(const WSABUF& buffer);
-	void SetSendBuffer(LPWSABUF buffer);
-	void SetSendBuffer(CHAR* cbuffer, DWORD size);
-
-	const OVERLAP_OPS Operation;
-	PACKET_TYPES Type;
-
-	std::unique_ptr<WSABUF> sendBuffer;
-	std::unique_ptr<CHAR> sendCBuffer;
-	DWORD sendSize, sendSzWant;
-};
-
 class Packet
 {
 public:

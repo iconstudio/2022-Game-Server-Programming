@@ -22,19 +22,16 @@
     <Filter Include="헤더 파일\Components">
       <UniqueIdentifier>{2e5d9f73-31cb-428b-b097-49d4e15cf535}</UniqueIdentifier>
     </Filter>
+    <Filter Include="헤더 파일\Network">
+      <UniqueIdentifier>{e549515b-3773-410d-b9db-b7c658e01387}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="stdafx.hpp">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
     <ClInclude Include="IOCP ServerFramework.hpp">
       <Filter>헤더 파일\System</Filter>
     </ClInclude>
     <ClInclude Include="PlayerCharacter.hpp">
       <Filter>헤더 파일\Contents</Filter>
-    </ClInclude>
-    <ClInclude Include="Network.hpp">
-      <Filter>헤더 파일\System</Filter>
     </ClInclude>
     <ClInclude Include="Session.h">
       <Filter>헤더 파일\System</Filter>
@@ -53,6 +50,18 @@
     </ClInclude>
     <ClInclude Include="Timer.hpp">
       <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="GameCamera.hpp">
+      <Filter>헤더 파일\Components</Filter>
+    </ClInclude>
+    <ClInclude Include="stdafx.hpp">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="Asynchron.hpp">
+      <Filter>헤더 파일\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Network.hpp">
+      <Filter>헤더 파일\Network</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -87,6 +96,12 @@
       <Filter>헤더 파일</Filter>
     </ClCompile>
     <ClCompile Include="Timer.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="GameCamera.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="Asynchron.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

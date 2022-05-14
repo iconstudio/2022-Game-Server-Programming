@@ -156,6 +156,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Asynchron.hpp" />
+    <ClInclude Include="GameCamera.hpp" />
     <ClInclude Include="GameEntity.hpp" />
     <ClInclude Include="GameObject.hpp" />
     <ClInclude Include="Timer.hpp" />
@@ -168,6 +170,8 @@
     <ClInclude Include="stdafx.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Asynchron.cpp" />
+    <ClCompile Include="GameCamera.cpp" />
     <ClCompile Include="GameEntity.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Timer.cpp" />

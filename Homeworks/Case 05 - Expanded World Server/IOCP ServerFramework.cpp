@@ -289,17 +289,17 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 
 		switch (op)
 		{
-			case OVERLAP_OPS::NONE:
+			case ASYNC_OPERATIONS::NONE:
 			{}
 			break;
 
-			case OVERLAP_OPS::RECV:
+			case ASYNC_OPERATIONS::RECV:
 			{
 				client->ProceedReceived(exoverlap, bytes);
 			}
 			break;
 
-			case OVERLAP_OPS::SEND:
+			case ASYNC_OPERATIONS::SEND:
 			{
 				client->ProceedSent(exoverlap, bytes);
 			}

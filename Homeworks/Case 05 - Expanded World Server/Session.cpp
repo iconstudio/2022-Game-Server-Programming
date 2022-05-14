@@ -6,7 +6,7 @@
 Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
 	: Index(index), ID(id), Nickname(), Socket(sock), Framework(framework)
 	, Status(SESSION_STATES::NONE)
-	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
+	, recvOverlap(ASYNC_OPERATIONS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 	, Instance(nullptr)
 {
 	ClearOverlap(&recvOverlap);
@@ -334,7 +334,7 @@ int Session::SendPacket(Ty&&... args)
 	wbuffer->buf = reinterpret_cast<char*>(packet);
 	wbuffer->len = packet->Size;
 
-	auto overlap = new Asynchron{ OVERLAP_OPS::SEND };
+	auto overlap = new Asynchron{ ASYNC_OPERATIONS::SEND };
 	overlap->Type = packet->Type;
 	overlap->SetSendBuffer(wbuffer);
 
