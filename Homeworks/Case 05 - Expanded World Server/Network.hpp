@@ -1,8 +1,6 @@
 #pragma once
 #include "stdafx.hpp"
 
-void ClearOverlap(LPWSAOVERLAPPED overlap);
-
 using PID = ULONG;
 constexpr USHORT PORT = 6000;
 constexpr UINT BUFFSIZE = 512;

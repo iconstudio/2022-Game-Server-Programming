@@ -45,8 +45,3 @@ SCPacketSignOut::SCPacketSignOut(PID pid, UINT users)
 	: Packet(PACKET_TYPES::SC_SIGNOUT, pid)
 	, usersCurrent(users)
 {}
-
-void ClearOverlap(LPWSAOVERLAPPED overlap)
-{
-	ZeroMemory(overlap, sizeof(WSAOVERLAPPED));
-}
