@@ -4,6 +4,9 @@
 class GameEntity
 {
 public:
+	GameEntity();
+	virtual ~GameEntity();
+
 	GameTransform myTransform;
 
 	const std::vector<shared_ptr<GameEntity>> mySiblings;
