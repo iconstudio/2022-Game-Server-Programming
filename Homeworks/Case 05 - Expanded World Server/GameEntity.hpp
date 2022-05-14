@@ -1,14 +1,12 @@
 #pragma once
 #include "stdafx.hpp"
+#include "GameTransform.hpp"
+#include "GameObject.hpp"
 
-class GameEntity
+class GameEntity : public GameObject
 {
 public:
 	GameEntity();
 	virtual ~GameEntity();
-
-	GameTransform myTransform;
-
-	const std::vector<shared_ptr<GameEntity>> mySiblings;
-	shared_ptr<GameEntity> myChild;
+	
 };

@@ -17,7 +17,7 @@ bool PlayerCharacter::TryMoveLT()
 
 bool PlayerCharacter::TryMoveRT()
 {
-	if (x < WORLD_CELL_H - 1)
+	if (x < WORLD_CELLS_CNT_H - 1)
 	{
 		x++;
 		return true;
@@ -37,7 +37,7 @@ bool PlayerCharacter::TryMoveUP()
 
 bool PlayerCharacter::TryMoveDW()
 {
-	if (y < WORLD_CELL_V - 1)
+	if (y < WORLD_CELLS_CNT_V - 1)
 	{
 		y++;
 		return true;
