@@ -4,7 +4,18 @@
 class SightController
 {
 public:
-	SightController(int width, int height);
+	SightController(float width, float height, int cell_w, int cell_h);
+	~SightController();
 
-	unique_ptr<SightSector**> mySectors;
+	void Update();
+
+	SightSector& Get(int x, int y);
+	SightSector& GetByPosition(float x, float y);
+
+	const size_t countHrzSectors;
+	const size_t countVrtSectors;
+	const float worldHrzSize;
+	const float worldVrtSize;
+
+	const unique_ptr<SightSector**> mySectors;
 };

@@ -1,9 +1,13 @@
 #pragma once
 #include "stdafx.hpp"
-#include "SightInstances.hpp"
+#include "GameTransform.hpp"
 
 class SightSector
 {
 public:
-	SightInstances myInstances;
+	SightSector(int x, int y);
+	~SightSector();
+
+	const GameTransform myTransform;
+	Concurrency::concurrent_vector<shared_ptr<GameObject>> seeingInstances;
 };

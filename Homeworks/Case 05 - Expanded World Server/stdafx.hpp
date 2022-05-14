@@ -27,6 +27,11 @@ using std::atomic_int;
 using std::atomic_uint;
 
 class IOCPFramework;
+class SightSector;
+class SightInstances;
+class SightController;
+class Timer;
+
 class Asynchron;
 class Packet;
 enum class ASYNC_OPERATIONS : UCHAR;
@@ -34,9 +39,6 @@ enum class PACKET_TYPES : UCHAR;
 
 class Session;
 class LocalSession;
-class SightSector;
-class SightInstances;
-class Timer;
 enum class SESSION_STATES;
 
 class GameTransform;

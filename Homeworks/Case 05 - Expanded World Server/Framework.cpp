@@ -1,5 +1,6 @@
 #include "stdafx.hpp"
 #include "Framework.hpp"
+#include "SightController.hpp"
 
 IOCPFramework::IOCPFramework()
 	: acceptOverlap(), acceptBytes(0), acceptCBuffer()

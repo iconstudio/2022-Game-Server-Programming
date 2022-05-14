@@ -69,6 +69,8 @@ private:
 	std::atomic<PID> orderClientIDs;
 	std::atomic<UINT> numberClients;
 
+	SightController myWorldView;
+
 	std::vector<std::thread> threadWorkers;
 };
 
