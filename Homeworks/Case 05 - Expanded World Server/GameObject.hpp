@@ -6,16 +6,23 @@ class GameObject
 {
 public:
 	GameObject();
+	GameObject(float positions[3]);
+	GameObject(float x, float y, float z);
 	virtual ~GameObject();
 
-	void Enter(SightSector& sector);
-	void Leave(SightSector& sector);
+	void EnterSector(const shared_atomic<SightSector>& sector);
+	void EnterSector(shared_atomic<SightSector>&& sector);
+	void EnterSector(shared_ptr<SightSector>&& sector);
+	void LeaveSector();
+
+	XMFLOAT3& GetPositon();
+	const XMFLOAT3& GetPosition() const;
 
 	GameTransform myTransform;
 
-private:
-	SightSector* mySector;
+	shared_atomic<SightSector> mySector;
 
-	const std::vector<shared_ptr<GameObject>> mySiblings;
-	shared_ptr<GameObject> myChild;
+private:
+	//const std::vector<shared_ptr<GameObject>> mySiblings;
+	//shared_ptr<GameObject> myChild;
 };
