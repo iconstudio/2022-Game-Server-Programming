@@ -7,5 +7,5 @@ public:
 	GameTransform();
 	GameTransform(float x, float y, float z);
 
-	float x, y, z;
+	XMFLOAT3 myPosition;
 };

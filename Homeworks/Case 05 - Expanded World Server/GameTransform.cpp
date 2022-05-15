@@ -6,5 +6,5 @@ GameTransform::GameTransform()
 {}
 
 GameTransform::GameTransform(float x, float y, float z)
-	: x(x), y(y), z(z)
+	: myPosition(x, y, z)
 {}
