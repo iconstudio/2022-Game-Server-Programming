@@ -12,9 +12,11 @@ SightController::SightController(float w, float h, float sector_w, float sector_
 }
 
 SightController::~SightController()
-{}
+{
 
-void SightController::Update()
+}
+
+void SightController::Update(shared_ptr<GameEntity>& obj)
 {
 	auto first = PickPositionFirst({ 0, 0 });
 	const auto& [aaaa, bbbb] = PickPositionFirst({ 0, 0 });

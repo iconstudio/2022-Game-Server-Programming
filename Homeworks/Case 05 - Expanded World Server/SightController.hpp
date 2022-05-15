@@ -11,7 +11,7 @@ public:
 	SightController(float w, float hw, float sector_w, float sector_h);
 	~SightController();
 
-	void Update();
+	void Update(shared_ptr<GameEntity>& obj);
 
 	inline SightSector& At(int x, int y) const;
 	inline SightSector& At(const int_pair& coord_index) const;
