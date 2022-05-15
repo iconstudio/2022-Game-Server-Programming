@@ -11,13 +11,16 @@ public:
 	SightController(float w, float hw, float sector_w, float sector_h);
 	~SightController();
 
+	void Add(const shared_ptr<GameObject>& obj);
+	void Add(GameObject& obj);
 	void Update(const shared_ptr<GameObject>& obj);
 	void Update(GameObject& obj);
 
-	inline SightSector& At(int x, int y) const;
-	inline SightSector& At(const int_pair& coord_index) const;
-	inline SightSector& At(int_pair&& coord_index) const;
-	inline SightSector& AtByPosition(float x, float y) const;
+	const shared_ptr<SightSector>& At(int x, int y) const;
+	const shared_ptr<SightSector>& At(const int_pair& coord_index) const;
+	const shared_ptr<SightSector>& At(int_pair&& coord_index) const;
+	const shared_ptr<SightSector>& AtByPosition(float x, float y) const;
+	const shared_ptr<SightSector>& AtByPosition(const XMFLOAT3& position) const;
 
 	const float sizeWorldH;
 	const float sizeWorldV;

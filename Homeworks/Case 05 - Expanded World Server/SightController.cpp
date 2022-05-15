@@ -1,5 +1,6 @@
 #include "stdafx.hpp"
 #include "SightController.hpp"
+#include "GameObject.hpp"
 
 SightController::SightController(float w, float h, float sector_w, float sector_h)
 	: sizeWorldH(w), sizeWorldV(h)
@@ -16,6 +17,28 @@ SightController::~SightController()
 
 }
 
+void SightController::Add(const shared_ptr<GameObject>& obj)
+{
+	Add(*obj);
+}
+
+void SightController::Add(GameObject& obj)
+{
+	const auto& position = obj.GetPosition();
+	auto& sector = AtByPosition(position);
+	const auto& sector_before = obj.mySector.load();
+
+	if (sector != sector_before)
+	{
+		if (sector_before)
+		{
+			obj.EnterSector(nullptr);
+		}
+
+		obj.EnterSector(sector);
+	}
+}
+
 void SightController::Update(const shared_ptr<GameObject>& obj)
 {
 	Update(*obj);
@@ -26,25 +49,30 @@ void SightController::Update(GameObject& obj)
 
 }
 
-inline SightSector& SightController::At(int x, int y) const
+const shared_ptr<SightSector>& SightController::At(int x, int y) const
 {
-	return *(mySectors.at(y).at(x));
+	return (mySectors.at(y).at(x));
 }
 
-inline SightSector& SightController::At(const int_pair& coord_index) const
+const shared_ptr<SightSector>& SightController::At(const int_pair& coord_index) const
 {
 	return At(std::move(int_pair(coord_index)));
 }
 
-inline SightSector& SightController::At(int_pair&& coord_index) const
+const shared_ptr<SightSector>& SightController::At(int_pair&& coord_index) const
 {
 	const auto&& coords = std::forward<int_pair>(coord_index);
 	return At(coords.first, coords.second);
 }
 
-inline SightSector& SightController::AtByPosition(float x, float y) const
+const shared_ptr<SightSector>& SightController::AtByPosition(float x, float y) const
 {
 	return At(PickCoords(x, y));
+}
+
+const shared_ptr<SightSector>& SightController::AtByPosition(const XMFLOAT3& position) const
+{
+	return At(PickCoords(position.x, position.y));
 }
 
 SightController::mySights SightController::BuildSectors(size_t count_h, size_t count_v)
