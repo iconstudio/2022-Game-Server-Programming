@@ -20,9 +20,10 @@ Session::~Session()
 {
 	closesocket(Socket);
 
-	if (Instance)
+	auto instance = Instance.load();
+	if (instance)
 	{
-		Instance.reset();
+		Instance.compare_exchange_weak(instance, nullptr);
 	}
 }
 
