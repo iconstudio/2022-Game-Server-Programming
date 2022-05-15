@@ -41,5 +41,5 @@ constexpr int CELLS_CNT_V = 400;
 constexpr int CELLS_LENGTH = CELLS_CNT_H * CELLS_CNT_V;
 constexpr int BOARD_W = CELL_W * CELLS_CNT_H;
 constexpr int BOARD_H = CELL_H * CELLS_CNT_V;
-constexpr int BOARD_X = (WND_SZ_W - BOARD_W) * 0.5;
-constexpr int BOARD_Y = (WND_SZ_H - BOARD_H - 20) * 0.5;
+constexpr int BOARD_X = (WND_SZ_W - BOARD_W) / 2;
+constexpr int BOARD_Y = (WND_SZ_H - BOARD_H - 20) / 2;

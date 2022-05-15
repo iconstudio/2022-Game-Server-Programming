@@ -25,6 +25,8 @@ enum class PACKET_TYPES : UCHAR
 	SC_SIGNUP,
 	SC_CREATE_CHARACTER,
 	SC_MOVE_CHARACTER,
+	SC_APPEAR_CHARACTER,
+	SC_DISAPPEAR_CHARACTER,
 	SC_SIGNOUT
 };
 
@@ -101,9 +103,9 @@ struct SCPacketSignUp : public Packet
 /// </summary>
 struct SCPacketCreateCharacter : public Packet
 {
-	SCPacketCreateCharacter(PID pid, CHAR cx, CHAR cy);
+	SCPacketCreateCharacter(PID pid, INT cx, INT cy);
 
-	CHAR x, y;
+	INT x, y;
 };
 
 /// <summary>
@@ -111,9 +113,9 @@ struct SCPacketCreateCharacter : public Packet
 /// </summary>
 struct SCPacketMoveCharacter : public Packet
 {
-	SCPacketMoveCharacter(PID pid, CHAR nx, CHAR ny);
+	SCPacketMoveCharacter(PID pid, INT nx, INT ny);
 
-	CHAR x, y;
+	INT x, y;
 };
 
 /// <summary>

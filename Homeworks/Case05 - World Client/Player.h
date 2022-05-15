@@ -8,5 +8,5 @@ public:
 	void Render(HDC canvas);
 
 	PID ID;
-	UCHAR x, y;
+	INT x, y;
 };

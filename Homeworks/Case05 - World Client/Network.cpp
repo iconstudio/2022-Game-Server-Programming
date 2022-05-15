@@ -64,12 +64,12 @@ SCPacketSignUp::SCPacketSignUp(PID nid, UINT users, UINT usersmax)
 	, usersCurrent(users), usersMax(usersmax)
 {}
 
-SCPacketCreateCharacter::SCPacketCreateCharacter(PID pid, CHAR cx, CHAR cy)
+SCPacketCreateCharacter::SCPacketCreateCharacter(PID pid, INT cx, INT cy)
 	: Packet(PACKET_TYPES::SC_CREATE_CHARACTER, sizeof(SCPacketCreateCharacter), pid)
 	, x(cx), y(cy)
 {}
 
-SCPacketMoveCharacter::SCPacketMoveCharacter(PID pid, CHAR nx, CHAR ny)
+SCPacketMoveCharacter::SCPacketMoveCharacter(PID pid, INT nx, INT ny)
 	: Packet(PACKET_TYPES::SC_MOVE_CHARACTER, sizeof(SCPacketMoveCharacter), pid)
 	, x(nx), y(ny)
 {}

@@ -78,6 +78,9 @@ private:
 	HBITMAP boardBitmap;
 	RECT boardArea;
 
+	RECT myView;
+	std::vector<PlayerCharacter*> mySightInstances;
+
 	std::vector<LocalSession*> Clients;
 	std::unordered_map<PID, LocalSession*> ClientsDict;
 	UINT clientNumber, clientMaxNumber;

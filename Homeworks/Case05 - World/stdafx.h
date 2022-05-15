@@ -25,14 +25,14 @@ enum class SESSION_STATES;
 class PlayerCharacter
 {
 public:
-	PlayerCharacter(CHAR ox, CHAR oy);
+	PlayerCharacter(INT ox, INT oy);
 
 	bool TryMoveLT();
 	bool TryMoveRT();
 	bool TryMoveUP();
 	bool TryMoveDW();
 
-	CHAR x, y;
+	INT x, y;
 };
 
 void ErrorDisplay(const char* title);

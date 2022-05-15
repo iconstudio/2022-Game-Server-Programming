@@ -2,7 +2,7 @@
 
 TCHAR* msgBuffer = NULL;
 
-PlayerCharacter::PlayerCharacter(CHAR ox, CHAR oy) : x(ox), y(oy)
+PlayerCharacter::PlayerCharacter(INT ox, INT oy) : x(ox), y(oy)
 {}
 
 bool PlayerCharacter::TryMoveLT()
