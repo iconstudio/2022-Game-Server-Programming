@@ -93,9 +93,9 @@ struct SCPacketSignUp : public Packet
 /// </summary>
 struct SCPacketCreateCharacter : public Packet
 {
-	SCPacketCreateCharacter(PID pid, CHAR cx, CHAR cy);
+	SCPacketCreateCharacter(PID pid, INT cx, INT cy);
 
-	CHAR x, y;
+	INT x, y;
 };
 
 /// <summary>
@@ -103,15 +103,33 @@ struct SCPacketCreateCharacter : public Packet
 /// </summary>
 struct SCPacketMoveCharacter : public Packet
 {
-	SCPacketMoveCharacter(PID pid, CHAR nx, CHAR ny);
+	SCPacketMoveCharacter(PID pid, INT nx, INT ny);
 
-	CHAR x, y;
+	INT x, y;
 };
+
+/// <summary>
+/// 특정 플레이어의 캐릭터 나타내기
+/// </summary>
+struct SCPacketAppearCharacter : public Packet
+{
+	SCPacketAppearCharacter(PID tid, INT nx, INT ny);
+
+	INT x, y;
+};
+
+/// <summary>
+/// 특정 플레이어의 캐릭터 사라지기
+/// </summary>
+struct SCPacketDisppearCharacter : public Packet
+{
+	SCPacketDisppearCharacter(PID tid);
+};
+
 
 /// <summary>
 /// 특정 플레이어의 캐릭터 삭제 (나간 플레이어 이외에 다른 플레이어에 전송)
 /// </summary>
-
 struct SCPacketSignOut : public Packet
 {
 	SCPacketSignOut(PID pid, UINT users);

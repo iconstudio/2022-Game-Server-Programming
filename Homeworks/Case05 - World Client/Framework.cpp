@@ -250,13 +250,13 @@ void ClientFramework::Render(HWND window)
 
 			BitBlt(doubleDCSurface, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, boardSurface, 0, 0, SRCCOPY);
 
-			for_each(Clients.begin(), Clients.end(), [&](LocalSession* session) {
-				auto character = session->Instance;
-				if (character)
+			for (const auto& instance : mySightInstances)
+			{
+				if (instance)
 				{
-					character->Render(doubleDCSurface);
+					instance->Render(doubleDCSurface);
 				}
-			});
+			}
 		}
 		break;
 
@@ -369,6 +369,32 @@ void ClientFramework::ProceedRecv(DWORD bytes)
 					}
 				}
 				break;
+
+				case PACKET_TYPES::SC_APPEAR_CHARACTER:
+				{
+					auto rp = reinterpret_cast<SCPacketAppearCharacter*>(recvCBuffer);
+
+					auto session = GetClient(pid);
+					if (session)
+					{
+						auto character = session->Instance;
+						character->x = rp->x;
+						character->y = rp->y;
+
+						InvalidateRect(Window, NULL, FALSE);
+					}
+					else
+					{
+						ErrorAbort(L"SC_APPEAR_CHARACTER: 클라이언트 찾을 수 없음!");
+					}
+				}
+				break;
+
+				case PACKET_TYPES::SC_DISAPPEAR_CHARACTER:
+				{
+
+				}
+				break;
 			}
 
 			MoveMemory(recvCBuffer, recvCBuffer + recvBytes, BUFFSIZE - recvBytes);
@@ -391,7 +417,7 @@ void ClientFramework::AddClient(const PID id)
 {
 	auto session = new LocalSession;
 	session->ID = id;
-	
+
 	Clients.emplace_back(session);
 	ClientsDict.try_emplace(id, session);
 	//ClientsDict.insert(std::make_pair(id, session));

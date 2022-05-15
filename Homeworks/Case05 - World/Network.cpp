@@ -78,6 +78,15 @@ SCPacketMoveCharacter::SCPacketMoveCharacter(PID pid, INT nx, INT ny)
 	, x(nx), y(ny)
 {}
 
+SCPacketAppearCharacter::SCPacketAppearCharacter(PID tid, INT nx, INT ny)
+	: Packet(PACKET_TYPES::SC_APPEAR_CHARACTER, sizeof(SCPacketAppearCharacter), tid)
+	, x(nx), y(ny)
+{}
+
+SCPacketDisppearCharacter::SCPacketDisppearCharacter(PID tid)
+	: Packet(PACKET_TYPES::SC_DISAPPEAR_CHARACTER, tid)
+{}
+
 SCPacketSignOut::SCPacketSignOut(PID pid, UINT users)
 	: Packet(PACKET_TYPES::SC_SIGNOUT, pid)
 	, usersCurrent(users)
