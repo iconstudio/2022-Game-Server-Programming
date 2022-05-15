@@ -5,7 +5,7 @@
 class PlayerCharacter
 {
 public:
-	void Render(HDC canvas);
+	void Render(HDC canvas, INT ax, INT ay);
 
 	PID ID;
 	INT x, y;

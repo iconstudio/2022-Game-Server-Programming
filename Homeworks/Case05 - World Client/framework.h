@@ -33,6 +33,7 @@ public:
 	void InputIpChar(WPARAM key);
 	void InputKey(WPARAM key);
 	void Render(HWND window);
+	void RenderBackground(HDC surface);
 
 	void ProceedRecv(DWORD bytes);
 	void ProceedSend(EXOVERLAPPED* overlap, DWORD bytes);
@@ -45,7 +46,8 @@ public:
 	friend void CALLBACK CallbackSend(DWORD, DWORD, LPWSAOVERLAPPED, DWORD);
 
 	GAME_STATES Status;
-	UINT ID; // 플레이어의 번호
+	// 플레이어의 식별자
+	PID ID;
 	std::string Nickname;
 	PlayerCharacter* myCharacter;
 
@@ -74,11 +76,14 @@ private:
 	HDC doubleDCSurface;
 	HBITMAP doubleDCBitmap;
 
-	HDC boardSurface;
-	HBITMAP boardBitmap;
-	RECT boardArea;
+	RECT worldArea;
 
-	RECT myView;
+	HDC viewSurface;
+	HBITMAP viewBitmap;
+	PlayerCharacter* viewFollower;
+	INT viewLastX, viewLastY;
+
+	const RECT viewRect;
 	std::vector<PlayerCharacter*> mySightInstances;
 
 	std::vector<LocalSession*> Clients;

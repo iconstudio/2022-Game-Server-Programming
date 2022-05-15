@@ -2,13 +2,13 @@
 #include "Player.h"
 #include "Network.hpp"
 
-void PlayerCharacter::Render(HDC canvas)
+void PlayerCharacter::Render(HDC canvas, INT ax, INT ay)
 {
 	auto filler = CreateSolidBrush(C_GOLD);
 	auto old_filler = Draw::Attach(canvas, filler);
 
-	auto dx = BOARD_X + x * CELL_W + CELL_W * 0.5;
-	auto dy = BOARD_Y + y * CELL_H + CELL_W * 0.5;
+	auto dx = BOARD_X + x * CELL_W + CELL_W / 2 + ax;
+	auto dy = BOARD_Y + y * CELL_H + CELL_W / 2 + ay;
 
 	Draw::Ellipse(canvas, dx - 16, dy - 16, dx + 16, dy + 16);
 	Draw::Detach(canvas, old_filler, filler);

@@ -2,6 +2,7 @@
 #include "stdafx.h"
 #include "Network.hpp"
 #include "Session.h"
+#include "SightSector.hpp"
 
 const UINT THREADS_COUNT = 6;
 using SessionPtr = std::shared_ptr<Session>;
@@ -42,6 +43,8 @@ private:
 	void BroadcastSignOut(SessionPtr& who);
 	void BroadcastCreateCharacter(SessionPtr& who, CHAR cx, CHAR cy);
 	void BroadcastMoveCharacterFrom(const UINT index, CHAR nx, CHAR ny);
+	void BroadcastAppearFrom(const UINT index, CHAR cx, CHAR cy);
+	void BroadcastDisappearFrom(const UINT index, CHAR nx, CHAR ny);
 
 	SOCKET&& CreateSocket() const;
 
@@ -51,21 +54,22 @@ private:
 	SOCKADDR_IN Address;
 	INT szAddress;
 	HANDLE completionPort;
+	const ULONG_PTR serverKey;
+	std::vector<std::thread> threadWorkers;
 
 	WSAOVERLAPPED acceptOverlap;
 	DWORD acceptBytes;
 	char acceptCBuffer[BUFSIZ];
 	SOCKET acceptNewbie;
 
-	const ULONG_PTR serverKey;
 
 	std::timed_mutex mutexClient;
 
-	std::array<SessionPtr, CLIENTS_MAX_NUMBER> clientsPool;
+	array<SessionPtr, CLIENTS_MAX_NUMBER> clientsPool;
 	PID orderClientIDs;
 	UINT numberClients;
 
-	std::vector<std::thread> threadWorkers;
+	SightSector mySectors[][];
 };
 
 template<typename Predicate>

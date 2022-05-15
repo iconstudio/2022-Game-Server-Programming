@@ -7,8 +7,9 @@ ClientFramework::ClientFramework()
 	: Status(GAME_STATES::Begin), ID(-1), Nickname(""), myCharacter(nullptr)
 	, Socket(), serverAddress(), serverAddressSize(0), serverIP("127.0.0.1")
 	, recvOverlap(), recvBuffer(), recvCBuffer(), recvBytes(0)
-	, boardSurface(), boardBitmap()
-	, boardArea{ BOARD_X, BOARD_Y, BOARD_X + BOARD_W, BOARD_Y + BOARD_H }
+	, worldArea{ BOARD_X, BOARD_Y, BOARD_X + BOARD_W, BOARD_Y + BOARD_H }
+	, viewSurface(), viewBitmap(), viewFollower(nullptr)
+	, viewLastX(0), viewLastY(0), viewRect{ -SIGHT_CELLS_CNT_H / 2, -SIGHT_CELLS_CNT_V / 2, SIGHT_CELLS_CNT_H / 2, SIGHT_CELLS_CNT_V / 2 }
 	, Clients(), ClientsDict(), clientNumber(0), clientMaxNumber(0), Lastkey(-1)
 {
 	ZeroMemory(recvCBuffer, sizeof(recvCBuffer));
@@ -19,10 +20,10 @@ ClientFramework::ClientFramework()
 
 ClientFramework::~ClientFramework()
 {
-	DeleteObject(boardSurface);
+	DeleteObject(viewSurface);
 	DeleteDC(doubleDCSurface);
 	DeleteObject(doubleDCBitmap);
-	DeleteDC(boardSurface);
+	DeleteDC(viewSurface);
 }
 
 void ClientFramework::Init(HWND window)
@@ -50,44 +51,13 @@ void ClientFramework::Init(HWND window)
 	doubleDCBitmap = CreateCompatibleBitmap(hdc, WND_SZ_W, WND_SZ_H);
 	Draw::Attach(doubleDCSurface, doubleDCBitmap);
 
-	boardSurface = CreateCompatibleDC(hdc);
-	boardBitmap = CreateCompatibleBitmap(hdc, BOARD_W, BOARD_H);
-	Draw::Attach(boardSurface, boardBitmap);
+	viewSurface = CreateCompatibleDC(hdc);
+	viewBitmap = CreateCompatibleBitmap(hdc, SIGHT_W, SIGHT_H);
+	Draw::Attach(viewSurface, viewBitmap);
 
-	bool fill_flag = false;
-	auto outliner = CreatePen(PS_NULL, 1, C_BLACK);
-	auto filler = CreateSolidBrush(C_WHITE);
-	auto old_outliner = Draw::Attach(boardSurface, outliner);
-	auto old_filler = Draw::Attach(boardSurface, filler);
-	Draw::Clear(boardSurface, BOARD_W, BOARD_H, 0);
-	Draw::Detach(boardSurface, old_outliner, outliner);
-	Draw::Detach(boardSurface, old_filler, filler);
+	Draw::Clear(viewSurface, SIGHT_W, SIGHT_H, background_color);
 
 	ReleaseDC(Window, hdc);
-
-	for (int i = 0; i < CELLS_LENGTH; ++i)
-	{
-		int sort_ratio = static_cast<int>(i / CELLS_CNT_H);
-		int x = (i - sort_ratio * CELLS_CNT_H) * CELL_W;
-		int y = sort_ratio * CELL_H;
-
-		if (fill_flag)
-		{
-			auto blk_filler = CreateSolidBrush(C_BLACK);
-			auto white_filler = Draw::Attach(boardSurface, blk_filler);
-			Draw::SizedRect(boardSurface, x, y, CELL_W, CELL_H);
-			Draw::Detach(boardSurface, white_filler, blk_filler);
-		}
-		else
-		{
-			Draw::SizedRect(boardSurface, x, y, CELL_W, CELL_H);
-		}
-
-		if ((CELLS_CNT_H - 1) * CELL_W != x)
-		{
-			fill_flag = !fill_flag;
-		}
-	}
 }
 
 void ClientFramework::Connect()
@@ -180,6 +150,46 @@ void ClientFramework::InputKey(WPARAM key)
 	SendSignKeyMsg();
 }
 
+void ClientFramework::RenderBackground(HDC surface)
+{
+	bool fill_flag = false;
+	auto outliner = CreatePen(PS_NULL, 1, C_BLACK);
+	auto filler = CreateSolidBrush(C_WHITE);
+	auto old_outliner = Draw::Attach(surface, outliner);
+	auto old_filler = Draw::Attach(surface, filler);
+
+	int begin_ind_x = viewLastX / WORLD_W + viewRect.left;
+	int begin_ind_y = viewLastY / WORLD_H + viewRect.top;
+	//int begin_index = begin_ind_x*;
+
+	for (int i = 0; i < CELLS_LENGTH; ++i)
+	{
+		int sort_ratio = static_cast<int>(i / CELLS_CNT_H);
+		int x = (i - sort_ratio * CELLS_CNT_H) * CELL_W;
+		int y = sort_ratio * CELL_H;
+
+		if (fill_flag)
+		{
+			auto blk_filler = CreateSolidBrush(C_BLACK);
+			auto white_filler = Draw::Attach(surface, blk_filler);
+			Draw::SizedRect(surface, x, y, CELL_W, CELL_H);
+			Draw::Detach(surface, white_filler, blk_filler);
+		}
+		else
+		{
+			Draw::SizedRect(surface, x, y, CELL_W, CELL_H);
+		}
+
+		if ((CELLS_CNT_H - 1) * CELL_W != x)
+		{
+			fill_flag = !fill_flag;
+		}
+	}
+
+	Draw::Detach(surface, old_outliner, outliner);
+	Draw::Detach(surface, old_filler, filler);
+}
+
 void ClientFramework::Render(HWND window)
 {
 	PAINTSTRUCT ps;
@@ -234,6 +244,8 @@ void ClientFramework::Render(HWND window)
 
 		case GAME_STATES::Game:
 		{
+			RenderBackground(doubleDCSurface);
+
 			auto filler = CreateSolidBrush(C_BLACK);
 			auto old_filler = Draw::Attach(doubleDCSurface, filler);
 			auto old_align = SetTextAlign(doubleDCSurface, TA_LEFT);
@@ -248,13 +260,13 @@ void ClientFramework::Render(HWND window)
 			SetTextAlign(doubleDCSurface, old_align);
 			Draw::Detach(doubleDCSurface, old_filler, filler);
 
-			BitBlt(doubleDCSurface, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, boardSurface, 0, 0, SRCCOPY);
+			BitBlt(doubleDCSurface, BOARD_X, BOARD_Y, BOARD_W, BOARD_H, viewSurface, 0, 0, SRCCOPY);
 
 			for (const auto& instance : mySightInstances)
 			{
 				if (instance)
 				{
-					instance->Render(doubleDCSurface);
+					instance->Render(doubleDCSurface, -viewLastX, -viewLastY);
 				}
 			}
 		}
@@ -320,6 +332,7 @@ void ClientFramework::ProceedRecv(DWORD bytes)
 						{
 							Status = GAME_STATES::Begin;
 							background_color = C_WHITE;
+							closesocket(Socket);
 						}
 
 						InvalidateRect(Window, NULL, FALSE);
@@ -338,6 +351,13 @@ void ClientFramework::ProceedRecv(DWORD bytes)
 						character->x = rp->x;
 						character->y = rp->y;
 						character->ID = pid;
+
+						if (pid == ID)
+						{
+							viewFollower = character;
+							viewLastX = character->x;
+							viewLastY = character->y;
+						}
 
 						session->Instance = character;
 
@@ -361,6 +381,12 @@ void ClientFramework::ProceedRecv(DWORD bytes)
 						character->x = rp->x;
 						character->y = rp->y;
 
+						if (character == viewFollower)
+						{
+							viewLastX = character->x;
+							viewLastY = character->y;
+						}
+
 						InvalidateRect(Window, NULL, FALSE);
 					}
 					else
@@ -380,6 +406,12 @@ void ClientFramework::ProceedRecv(DWORD bytes)
 						auto character = session->Instance;
 						character->x = rp->x;
 						character->y = rp->y;
+
+						if (character == viewFollower)
+						{
+							viewLastX = character->x;
+							viewLastY = character->y;
+						}
 
 						InvalidateRect(Window, NULL, FALSE);
 					}
