@@ -22,11 +22,11 @@ using DirectX::XMLoadFloat3, DirectX::XMLoadFloat4, DirectX::XMLoadFloat4x4;
 #include <thread>
 #include <atomic>
 #include <chrono>
+#include <optional>
 #include <memory>
 #include <numeric>
 #include <concurrent_vector.h>
 #include <vector>
-#include <queue>
 #include <array>
 #include <unordered_map>
 #include <algorithm>
@@ -64,3 +64,21 @@ template<typename Type>
 using shared_atomic_concurrent_vector = concurrent_vector<shared_atomic<Type>>;
 template<typename Type>
 using weak_atomic_concurrent_vector = concurrent_vector<weak_atomic<Type>>;
+
+constexpr double PI = 3.141592653589793;
+constexpr COLORREF C_BLACK = RGB(0, 0, 0);
+constexpr COLORREF C_WHITE = RGB(255, 255, 255);
+constexpr COLORREF C_GREEN = RGB(0, 128, 0);
+constexpr COLORREF C_GOLD = RGB(223, 130, 20);
+
+template<typename T>
+constexpr T dcos(T value)
+{
+	return std::cos(value * PI / 180);
+}
+
+template<typename T>
+constexpr T dsin(T value)
+{
+	return std::sin(value * PI / 180);
+}

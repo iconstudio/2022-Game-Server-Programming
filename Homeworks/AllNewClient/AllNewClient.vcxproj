@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClInclude Include="Asynchron.hpp" />
     <ClInclude Include="Commons.hpp" />
+    <ClInclude Include="Draw.hpp" />
     <ClInclude Include="Framework.hpp" />
     <ClInclude Include="GameCamera.hpp" />
     <ClInclude Include="Main.hpp" />
@@ -172,6 +173,7 @@
   <ItemGroup>
     <ClCompile Include="Asynchron.cpp" />
     <ClCompile Include="Commons.cpp" />
+    <ClCompile Include="Draw.cpp" />
     <ClCompile Include="Framework.cpp" />
     <ClCompile Include="GameCamera.cpp" />
     <ClCompile Include="Main.cpp" />

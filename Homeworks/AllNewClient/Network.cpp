@@ -53,6 +53,16 @@ void Network::Update()
 
 }
 
+std::optional<Packet>& Network::OnReceive(DWORD bytes)
+{
+	// // O: 여기에 return 문을 삽입합니다.
+}
+
+void Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
+{
+	// // O: 여기에 return 문을 삽입합니다.
+}
+
 inline SOCKET Network::CreateSocket() const
 {
 	return WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);

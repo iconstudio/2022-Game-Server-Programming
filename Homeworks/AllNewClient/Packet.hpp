@@ -1,4 +1,21 @@
 #pragma once
-class Packet
-{};
 
+class Packet
+{
+public:
+
+};
+
+enum class PACKET_TYPES : UCHAR
+{
+	NONE = 0,
+	CS_SIGNIN,
+	CS_SIGNOUT,
+	CS_KEY,
+	SC_SIGNUP,
+	SC_CREATE_CHARACTER,
+	SC_APPEAR_CHAR,,
+	SC_DISAPPEAR_CHAR,
+	SC_MOVE_CHARACTER,
+	SC_SIGNOUT
+};

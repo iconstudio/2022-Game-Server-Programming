@@ -62,7 +62,10 @@ void CallbackRecv(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags
 		}
 	}
 
-	myNetwork.OnReceive(bytes);
+	if (const auto& result = myNetwork.OnReceive(bytes); result)
+	{
+		myFramework.OnNetwork(*result);
+	}
 }
 
 void CallbackSend(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags)

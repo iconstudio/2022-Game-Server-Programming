@@ -24,3 +24,5 @@ void ErrorAbort(const wchar_t* title, const int errorcode);
 void ErrorDisplay(const wchar_t* title, const int errorcode);
 void ErrorAbort(const wchar_t* title);
 void ErrorDisplay(const wchar_t* title);
+
+constexpr size_t BUFFSZ = 512;

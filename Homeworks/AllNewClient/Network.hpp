@@ -10,7 +10,7 @@ public:
 	void Start();
 	void Update();
 
-	void OnReceive(DWORD bytes);
+	std::optional<Packet>& OnReceive(DWORD bytes);
 	void OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes);
 
 private:
@@ -25,9 +25,8 @@ private:
 	SOCKADDR_IN serverAddress;
 	int serverAddressSize;
 
-	static const size_t RECV_MAX = 512;
 	Asynchron recvOverlap;
 	WSABUF recvBuffer;
-	CHAR recvCBuffer[RECV_MAX];
+	CHAR recvCBuffer[BUFFSZ];
 	DWORD recvBytes;
 };
