@@ -171,7 +171,6 @@
     <ClInclude Include="Network.hpp" />
     <ClInclude Include="PlayerCharacter.hpp" />
     <ClInclude Include="Session.h" />
-    <ClInclude Include="SightInstances.hpp" />
     <ClInclude Include="SightSector.hpp" />
     <ClInclude Include="stdafx.hpp" />
   </ItemGroup>
@@ -188,7 +187,6 @@
     <ClCompile Include="Network.cpp" />
     <ClCompile Include="PlayerCharacter.cpp" />
     <ClCompile Include="Session.cpp" />
-    <ClCompile Include="SightInstances.cpp" />
     <ClCompile Include="SightSector.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
