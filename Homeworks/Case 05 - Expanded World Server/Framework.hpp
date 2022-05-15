@@ -5,8 +5,7 @@
 #include "Asynchron.hpp"
 #include "SightController.hpp"
 
-const UINT THREADS_COUNT = 6;
-using SessionPtr = std::shared_ptr<Session>;
+const int THREADS_COUNT = 6;
 
 void IOCPWorker(const UINT index);
 
@@ -21,9 +20,8 @@ public:
 	void Update();
 	friend void IOCPWorker(const UINT index);
 
-	SessionPtr& GetClient(const UINT index);
-	SessionPtr& GetClientByID(const PID id);
-
+	Session& GetClient(const UINT index) const;
+	Session& GetClientByID(const PID id) const;
 	UINT GetClientsNumber() const;
 
 	friend class Session;
@@ -33,22 +31,18 @@ private:
 	void ProceedAccept();
 
 	PID MakeNewbieID();
-	SessionPtr SeekNewbieSession();
+	const shared_ptr<Session>& SeekNewbieSession() const;
+	inline SOCKET CreateSocket() const;
 
 	void Accept(const UINT index);
 	void Disconnect(const UINT index);
 
 	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
-	void SendWorldDataTo(SessionPtr& who);
-	void BroadcastSignUp(SessionPtr& who);
-	void BroadcastSignOut(SessionPtr& who);
-	void BroadcastCreateCharacter(SessionPtr& who, CHAR cx, CHAR cy);
+	void SendWorldDataTo(Session& who);
+	void BroadcastSignUp(Session& who);
+	void BroadcastSignOut(Session& who);
+	void BroadcastCreateCharacter(Session& who, CHAR cx, CHAR cy);
 	void BroadcastMoveCharacterFrom(const UINT index, CHAR nx, CHAR ny);
-
-	inline SOCKET CreateSocket() const
-	{
-		return WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
-	}
 
 	template<typename Predicate> void ForeachClient(Predicate predicate);
 
@@ -57,7 +51,7 @@ private:
 	INT szAddress;
 	HANDLE completionPort;
 	const ULONG_PTR serverKey;
-	std::vector<std::thread> threadWorkers;
+	std::vector<std::jthread> threadWorkers;
 
 	WSAOVERLAPPED acceptOverlap;
 	DWORD acceptBytes;
@@ -66,9 +60,12 @@ private:
 
 	std::timed_mutex mutexClient;
 
-	std::array<SessionPtr, CLIENTS_MAX_NUMBER> clientsPool;
+	std::array<shared_ptr<Session>, CLIENTS_MAX_NUMBER> clientsPool;
 	std::atomic<PID> orderClientIDs;
 	std::atomic<UINT> numberClients;
+
+	shared_atomic_concurrent_vector<GameObject> myInstances;
+	shared_atomic_concurrent_vector<GameObject> myPlayerCharacters;
 
 	SightController myWorldView;
 };
@@ -80,7 +77,7 @@ inline void IOCPFramework::ForeachClient(Predicate predicate)
 	{
 		if (session->IsAccepted())
 		{
-			predicate(session);
+			predicate(*session);
 		}
 	}
 }

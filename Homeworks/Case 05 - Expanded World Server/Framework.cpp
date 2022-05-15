@@ -7,6 +7,7 @@ IOCPFramework::IOCPFramework()
 	, serverKey(100), threadWorkers(THREADS_COUNT)
 	, acceptOverlap(), acceptBytes(0), acceptCBuffer(), acceptNewbie(NULL)
 	, clientsPool(), orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
+	, myInstances(1000), myPlayerCharacters(CLIENTS_MAX_NUMBER)
 	, myWorldView(WORLD_PX_SZ_H, WORLD_PX_SZ_V, SIGHT_PX_SZ_H, SIGHT_PX_SZ_V)
 
 {
@@ -16,11 +17,10 @@ IOCPFramework::IOCPFramework()
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
 
-	for (int i = 0; i < CLIENTS_MAX_NUMBER; ++i)
-	{
-		auto& empty = clientsPool.at(i);
-		empty = std::make_shared<Session>(i, -1, NULL, *this);
-	}
+	int index = 0;
+	std::generate(clientsPool.begin(), clientsPool.end(), [&]() {
+		return std::make_shared<Session>(index++, -1, NULL, *this);
+	});
 }
 
 IOCPFramework::~IOCPFramework()
@@ -107,10 +107,6 @@ void IOCPFramework::Start()
 		//
 	}
 
-	std::for_each(threadWorkers.begin(), threadWorkers.end(), [](std::thread& th) {
-		th.join();
-	});
-
 	std::cout << "서버 종료\n";
 }
 
@@ -183,7 +179,7 @@ void IOCPFramework::ProceedAccept()
 
 		auto key = MakeNewbieID();
 		auto newbie = acceptNewbie.load();
-		auto session = SeekNewbieSession();
+		auto& session = SeekNewbieSession();
 		if (!session)
 		{
 			std::cout << "클라이언트 " << newbie << "가 접속에 실패했습니다.\n";
@@ -230,24 +226,31 @@ PID IOCPFramework::MakeNewbieID()
 	return orderClientIDs++;
 }
 
-SessionPtr IOCPFramework::SeekNewbieSession()
+const shared_ptr<Session>& IOCPFramework::SeekNewbieSession() const
 {
 	auto it = std::find_if(clientsPool.begin(), clientsPool.end()
-		, [&](SessionPtr& session) {
+		, [&](const shared_ptr<Session>& session) {
 		return (session->IsDisconnected());
 	});
 
 	return *it;
 }
 
+inline SOCKET IOCPFramework::CreateSocket() const
+{
+	return std::move(WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP
+		, NULL, 0, WSA_FLAG_OVERLAPPED));
+}
+
 void IOCPFramework::Accept(const UINT index)
 {
 	auto& session = GetClient(index);
-	session->SetStatus(SESSION_STATES::ACCEPTED);
+	auto& character = session.Instance;
+	auto& transform = character->myTransform.myPosition;
+	session.SetStatus(SESSION_STATES::ACCEPTED);
 
 	BroadcastSignUp(session);
-
-	BroadcastCreateCharacter(session, session->Instance->x, session->Instance->y);
+	BroadcastCreateCharacter(session, transform.x, transform.y);
 
 	SendWorldDataTo(session);
 	numberClients++;
@@ -256,16 +259,16 @@ void IOCPFramework::Accept(const UINT index)
 void IOCPFramework::Disconnect(const UINT index)
 {
 	auto& session = GetClient(index);
-	session->Cleanup();
+	session.Cleanup();
 
-	if (session->IsAccepted())
+	if (session.IsAccepted())
 	{
 		std::unique_lock barrier(mutexClient);
 		BroadcastSignOut(session);
 
 		numberClients--;
 	}
-	else if (session->IsConnected())
+	else if (session.IsConnected())
 	{
 	}
 }
@@ -274,7 +277,7 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 {
 	auto& client = GetClientByID(PID(key));
 
-	if (!client)
+	if (nullptr == &client)
 	{
 		std::cout << "No client - key is " << key << ".\n";
 		delete overlap;
@@ -298,56 +301,56 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 
 			case ASYNC_OPERATIONS::RECV:
 			{
-				client->ProceedReceived(exoverlap, bytes);
+				client.ProceedReceived(exoverlap, bytes);
 			}
 			break;
 
 			case ASYNC_OPERATIONS::SEND:
 			{
-				client->ProceedSent(exoverlap, bytes);
+				client.ProceedSent(exoverlap, bytes);
 			}
 			break;
 		}
 	}
 }
 
-void IOCPFramework::SendWorldDataTo(SessionPtr& who)
+void IOCPFramework::SendWorldDataTo(Session& who)
 {
-	ForeachClient([&](const SessionPtr& other) {
+	ForeachClient([&](const Session& other) {
 		if (other != who)
 		{
-			who->SendSignUp(other->ID);
+			who.SendSignUp(other.ID);
 
-			auto& instance = other->Instance;
+			auto& instance = other.Instance;
 			if (instance)
 			{
-				who->SendCreateCharacter(other->ID, instance->x, instance->y);
+				who.SendCreateCharacter(other.ID, instance->x, instance->y);
 			}
 		}
 	});
 }
 
-void IOCPFramework::BroadcastSignUp(SessionPtr& who)
+void IOCPFramework::BroadcastSignUp(Session& who)
 {
-	ForeachClient([&](const SessionPtr& other) {
-		other->SendSignUp(who->ID);
+	ForeachClient([&](Session& other) {
+		other.SendSignUp(who.ID);
 	});
 }
 
-void IOCPFramework::BroadcastSignOut(SessionPtr& who)
+void IOCPFramework::BroadcastSignOut(Session& who)
 {
-	ForeachClient([&](const SessionPtr& other) {
+	ForeachClient([&](Session& other) {
 		if (other != who)
 		{
-			other->SendSignOut(who->ID);
+			other.SendSignOut(who.ID);
 		}
 	});
 }
 
-void IOCPFramework::BroadcastCreateCharacter(SessionPtr& who, CHAR cx, CHAR cy)
+void IOCPFramework::BroadcastCreateCharacter(Session& who, CHAR cx, CHAR cy)
 {
-	ForeachClient([&](const SessionPtr& other) {
-		other->SendCreateCharacter(who->ID, cx, cy);
+	ForeachClient([&](Session& other) {
+		other.SendCreateCharacter(who.ID, cx, cy);
 	});
 }
 
@@ -355,23 +358,23 @@ void IOCPFramework::BroadcastMoveCharacterFrom(const UINT index, CHAR nx, CHAR n
 {
 	auto& session = GetClient(index);
 
-	ForeachClient([&](const SessionPtr& other) {
-		other->SendMoveCharacter(session->ID, nx, ny);
+	ForeachClient([&](Session& other) {
+		other.SendMoveCharacter(session.ID, nx, ny);
 	});
 }
 
-SessionPtr& IOCPFramework::GetClient(const UINT index)
+Session& IOCPFramework::GetClient(const UINT index) const
 {
-	return clientsPool[index];
+	return *clientsPool[index];
 }
 
-SessionPtr& IOCPFramework::GetClientByID(const PID id)
+Session& IOCPFramework::GetClientByID(const PID id) const
 {
-	auto it = std::find_if(clientsPool.begin(), clientsPool.end(), [&](SessionPtr& session) {
+	auto it = std::find_if(clientsPool.begin(), clientsPool.end(), [&](const shared_ptr<Session>& session) {
 		return (id == session->ID);
 	});
 
-	return *it;
+	return *(*it);
 }
 
 UINT IOCPFramework::GetClientsNumber() const
