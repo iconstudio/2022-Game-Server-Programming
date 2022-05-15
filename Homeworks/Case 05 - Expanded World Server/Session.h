@@ -29,16 +29,17 @@ public:
 	void SendSignOut(PID rid);
 	void SendCreateCharacter(PID id, CHAR cx, CHAR cy);
 	void SendMoveCharacter(PID id, CHAR nx, CHAR ny);
-
 	bool TryMove(WPARAM input);
 
-	atomic<PID> ID;
+	bool operator==(const Session& other) const noexcept;
+
 	const UINT Index;
+	atomic<PID> ID;
 	SOCKET Socket;
 
-	SESSION_STATES Status;
+	atomic<SESSION_STATES> Status;
 	CHAR Nickname[30];
-	shared_ptr<PlayerCharacter> Instance;
+	shared_atomic<PlayerCharacter> Instance;
 
 private:
 	void SetRecvBuffer(const WSABUF& buffer);

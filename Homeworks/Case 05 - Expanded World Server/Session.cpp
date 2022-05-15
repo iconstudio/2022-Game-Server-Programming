@@ -382,3 +382,8 @@ bool Session::TryMove(WPARAM input)
 
 	return moved;
 }
+
+bool Session::operator==(const Session& other) const noexcept
+{
+	return (Index == other.Index);
+}
