@@ -52,17 +52,17 @@ private:
 
 	template<typename Predicate> void ForeachClient(Predicate predicate);
 
-	SOCKET Listener;
-	SOCKADDR_IN Address;
+	SOCKET serverListener;
+	SOCKADDR_IN serverAddress;
 	INT szAddress;
 	HANDLE completionPort;
+	const ULONG_PTR serverKey;
+	std::vector<std::thread> threadWorkers;
 
 	WSAOVERLAPPED acceptOverlap;
 	DWORD acceptBytes;
 	char acceptCBuffer[BUFSIZ];
 	std::atomic<SOCKET> acceptNewbie;
-
-	const ULONG_PTR serverKey;
 
 	std::timed_mutex mutexClient;
 
@@ -71,8 +71,6 @@ private:
 	std::atomic<UINT> numberClients;
 
 	SightController myWorldView;
-
-	std::vector<std::thread> threadWorkers;
 };
 
 template<typename Predicate>

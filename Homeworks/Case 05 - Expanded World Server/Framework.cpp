@@ -3,11 +3,12 @@
 #include "SightController.hpp"
 
 IOCPFramework::IOCPFramework()
-	: acceptOverlap(), acceptBytes(0), acceptCBuffer()
-	, serverKey(100)
+	: serverListener(NULL), serverAddress(), szAddress(0), completionPort(NULL)
+	, serverKey(100), threadWorkers(THREADS_COUNT)
+	, acceptOverlap(), acceptBytes(0), acceptCBuffer(), acceptNewbie(NULL)
 	, clientsPool(), orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
 	, myWorldView(WORLD_PX_SZ_H, WORLD_PX_SZ_V, SIGHT_PX_SZ_H, SIGHT_PX_SZ_V)
-	, threadWorkers(THREADS_COUNT)
+
 {
 	setlocale(LC_ALL, "KOREAN");
 	std::cout.sync_with_stdio(false);
@@ -25,7 +26,7 @@ IOCPFramework::IOCPFramework()
 IOCPFramework::~IOCPFramework()
 {
 	CloseHandle(completionPort);
-	closesocket(Listener);
+	closesocket(serverListener);
 	WSACleanup();
 }
 
@@ -38,20 +39,20 @@ void IOCPFramework::Init()
 		return;
 	}
 
-	Listener = CreateSocket();
-	if (INVALID_SOCKET == Listener)
+	serverListener = CreateSocket();
+	if (INVALID_SOCKET == serverListener)
 	{
 		ErrorDisplay("Init ¡æ WSASocket()");
 		return;
 	}
 
-	szAddress = sizeof(Address);
-	ZeroMemory(&Address, szAddress);
-	Address.sin_family = AF_INET;
-	Address.sin_addr.s_addr = htonl(INADDR_ANY);
-	Address.sin_port = htons(PORT);
+	szAddress = sizeof(serverAddress);
+	ZeroMemory(&serverAddress, szAddress);
+	serverAddress.sin_family = AF_INET;
+	serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
+	serverAddress.sin_port = htons(PORT);
 
-	if (SOCKET_ERROR == bind(Listener, (SOCKADDR*)(&Address), szAddress))
+	if (SOCKET_ERROR == bind(serverListener, (SOCKADDR*)(&serverAddress), szAddress))
 	{
 		ErrorDisplay("bind()");
 		return;
@@ -64,11 +65,11 @@ void IOCPFramework::Init()
 		return;
 	}
 
-	auto apply = CreateIoCompletionPort((HANDLE)(Listener)
+	auto apply = CreateIoCompletionPort((HANDLE)(serverListener)
 		, completionPort, serverKey, 0);
 	if (NULL == apply)
 	{
-		ErrorDisplay("CreateIoCompletionPort(Listener)");
+		ErrorDisplay("CreateIoCompletionPort(serverListener)");
 		return;
 	}
 }
@@ -76,14 +77,14 @@ void IOCPFramework::Init()
 void IOCPFramework::Start()
 {
 	BOOL option = TRUE;
-	if (SOCKET_ERROR == setsockopt(Listener, SOL_SOCKET, SO_REUSEADDR
+	if (SOCKET_ERROR == setsockopt(serverListener, SOL_SOCKET, SO_REUSEADDR
 		, reinterpret_cast<char*>(&option), sizeof(option)))
 	{
-		ErrorDisplay("Start ¡æ setsockopt(Listener)");
+		ErrorDisplay("Start ¡æ setsockopt(serverListener)");
 		return;
 	}
 
-	if (SOCKET_ERROR == listen(Listener, CLIENTS_MAX_NUMBER))
+	if (SOCKET_ERROR == listen(serverListener, CLIENTS_MAX_NUMBER))
 	{
 		ErrorDisplay("listen()");
 		return;
@@ -152,7 +153,7 @@ void IOCPFramework::Update()
 
 void IOCPFramework::Listen()
 {
-	auto result = AcceptEx(Listener, acceptNewbie, acceptCBuffer
+	auto result = AcceptEx(serverListener, acceptNewbie, acceptCBuffer
 		, 0
 		, sizeof(SOCKADDR_IN) + 16
 		, szAddress + 16

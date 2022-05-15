@@ -16,11 +16,14 @@ SightController::~SightController()
 
 }
 
-void SightController::Update(shared_ptr<GameEntity>& obj)
+void SightController::Update(const shared_ptr<GameObject>& obj)
 {
-	auto first = PickPositionFirst({ 0, 0 });
-	const auto& [aaaa, bbbb] = PickPositionFirst({ 0, 0 });
-	//
+	Update(*obj);
+}
+
+void SightController::Update(GameObject& obj)
+{
+
 }
 
 inline SightSector& SightController::At(int x, int y) const
