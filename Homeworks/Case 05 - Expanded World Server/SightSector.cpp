@@ -10,3 +10,8 @@ SightSector::SightSector(int x, int y, float wx, float wy)
 
 SightSector::~SightSector()
 {}
+
+bool SightSector::operator==(const SightSector & other) const noexcept
+{
+	return other.index_x == index_x && other.index_y == index_y;
+}
