@@ -34,12 +34,12 @@ public:
 	bool operator==(const Session& other) const noexcept;
 
 	const UINT Index;
-	atomic<PID> ID;
-	SOCKET Socket;
 
-	atomic<SESSION_STATES> Status;
-	CHAR Nickname[30];
-	shared_atomic<PlayerCharacter> Instance;
+	atomic<SESSION_STATES> myStatus;
+	atomic<PID> myID;
+	SOCKET mySocket;
+	CHAR myNickname[30];
+	shared_atomic<PlayerCharacter> myCharacter;
 
 private:
 	void SetRecvBuffer(const WSABUF& buffer);

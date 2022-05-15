@@ -4,10 +4,10 @@
 #include "Framework.hpp"
 
 Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
-	: Index(index), ID(id), Nickname(), Socket(sock), Framework(framework)
-	, Status(SESSION_STATES::NONE)
+	: Index(index), myID(id), myNickname(), mySocket(sock), Framework(framework)
+	, myStatus(SESSION_STATES::NONE)
 	, recvOverlap(ASYNC_OPERATIONS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
-	, Instance(nullptr)
+	, myCharacter(nullptr)
 {
 	ClearOverlap(&recvOverlap);
 
@@ -18,33 +18,33 @@ Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
 
 Session::~Session()
 {
-	closesocket(Socket);
+	closesocket(mySocket);
 
-	auto instance = Instance.load();
+	auto instance = myCharacter.load();
 	if (instance)
 	{
-		Instance.compare_exchange_weak(instance, nullptr);
+		myCharacter.compare_exchange_weak(instance, nullptr);
 	}
 }
 
 void Session::SetStatus(SESSION_STATES state)
 {
-	Status = state;
+	myStatus = state;
 }
 
 void Session::SetSocket(SOCKET sock)
 {
-	Socket = sock;
+	mySocket = sock;
 }
 
 void Session::SetID(const PID id)
 {
-	ID = id;
+	myID = id;
 }
 
 void Session::Cleanup()
 {
-	closesocket(Socket);
+	closesocket(mySocket);
 	SetStatus(SESSION_STATES::NONE);
 	SetSocket(NULL);
 	SetID(-1);
@@ -52,27 +52,27 @@ void Session::Cleanup()
 
 void Session::Disconnect()
 {
-	Framework.Disconnect(ID);
+	Framework.Disconnect(myID);
 }
 
 bool Session::IsConnected() const
 {
-	return SESSION_STATES::CONNECTED == Status;
+	return SESSION_STATES::CONNECTED == myStatus;
 }
 
 bool Session::IsDisconnected() const
 {
-	return SESSION_STATES::NONE == Status;
+	return SESSION_STATES::NONE == myStatus;
 }
 
 bool Session::IsAccepted() const
 {
-	return SESSION_STATES::ACCEPTED == Status;
+	return SESSION_STATES::ACCEPTED == myStatus;
 }
 
 void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 {
-	std::cout << "ProceedReceived (" << ID << ")" << "\n";
+	std::cout << "ProceedReceived (" << myID << ")" << "\n";
 	auto& wbuffer = recvBuffer;
 	auto& cbuffer = wbuffer.buf;
 
@@ -89,7 +89,7 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 		if (recvBytes < sz_want)
 		{
 			auto lack = sz_want - recvBytes;
-			std::cout << "클라이언트 " << ID << "에게 받아온 정보가 "
+			std::cout << "클라이언트 " << myID << "에게 받아온 정보가 "
 				<< lack << " 만큼 모자라서 다시 수신합니다.\n";
 			break;
 		}
@@ -106,10 +106,10 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 				}
 				else // 클라이언트 수용.
 				{
-					strcpy_s(Nickname, result->Nickname);
-					std::cout << ID << "'s Nickname: " << Nickname << ".\n";
+					strcpy_s(myNickname, result->Nickname);
+					std::cout << myID << "'s Nickname: " << myNickname << ".\n";
 
-					Instance = std::make_shared<PlayerCharacter>(3, 3);
+					myCharacter = std::make_shared<PlayerCharacter>(3, 3);
 
 					Framework.Accept(Index);
 				}
@@ -118,7 +118,7 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 
 			case PACKET_TYPES::CS_SIGNOUT:
 			{
-				if (pid == ID && IsAccepted())
+				if (pid == myID && IsAccepted())
 				{
 					Disconnect();
 					return;
@@ -132,21 +132,22 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 			case PACKET_TYPES::CS_KEY:
 			{
 				auto result = reinterpret_cast<CSPacketKeyInput*>(cbuffer);
+				auto character = myCharacter.load();
 
-				if (pid == ID && Instance)
+				if (pid == myID && character)
 				{
 					auto key = result->Key;
 					bool moved = TryMove(key);
-					auto px = Instance->x;
-					auto py = Instance->y;
+					auto px = character->x;
+					auto py = character->y;
 
 					if (!moved)
 					{
-						std::cout << "플레이어 " << ID << " - 움직이지 않음.\n";
+						std::cout << "플레이어 " << myID << " - 움직이지 않음.\n";
 					}
 					else
 					{
-						std::cout << "플레이어 " << ID
+						std::cout << "플레이어 " << myID
 							<< " - 위치: ("
 							<< px * CELL_H << ", "
 							<< py * CELL_V
@@ -207,7 +208,7 @@ void Session::ProceedSent(Asynchron* overlap, DWORD byte)
 		}
 	}
 
-	std::cout << "ProceedSent (" << ID << ")" << "\n";
+	std::cout << "ProceedSent (" << myID << ")" << "\n";
 	auto& sz_send = overlap->sendSize;
 	auto& tr_send = overlap->sendSzWant;
 
@@ -315,14 +316,14 @@ int Session::Recv(DWORD flags)
 {
 	if (!recvBuffer.buf) return 0;
 
-	return WSARecv(Socket, &recvBuffer, 1, 0, &flags, &recvOverlap, NULL);
+	return WSARecv(mySocket, &recvBuffer, 1, 0, &flags, &recvOverlap, NULL);
 }
 
 int Session::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap)
 {
 	if (!datas || !overlap) return 0;
 
-	return WSASend(Socket, datas, count, NULL, 0, overlap, NULL);
+	return WSASend(mySocket, datas, count, NULL, 0, overlap, NULL);
 }
 
 template<typename PACKET, typename ...Ty>
@@ -350,30 +351,32 @@ void Session::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
 
 bool Session::TryMove(WPARAM input)
 {
+	auto character = myCharacter.load();
 	bool moved = false;
+
 	switch (input)
 	{
 		case VK_LEFT:
 		{
-			moved = Instance->TryMoveLT();
+			moved = character->TryMoveLT();
 		}
 		break;
 
 		case VK_RIGHT:
 		{
-			moved = Instance->TryMoveRT();
+			moved = character->TryMoveRT();
 		}
 		break;
 
 		case VK_UP:
 		{
-			moved = Instance->TryMoveUP();
+			moved = character->TryMoveUP();
 		}
 		break;
 
 		case VK_DOWN:
 		{
-			moved = Instance->TryMoveDW();
+			moved = character->TryMoveDW();
 		}
 		break;
 

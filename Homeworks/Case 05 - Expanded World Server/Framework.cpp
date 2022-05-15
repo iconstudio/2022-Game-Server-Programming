@@ -245,7 +245,8 @@ inline SOCKET IOCPFramework::CreateSocket() const
 void IOCPFramework::Accept(const UINT index)
 {
 	auto& session = GetClient(index);
-	auto& character = session.Instance;
+
+	auto character = session.myCharacter.load();
 	auto& transform = character->myTransform.myPosition;
 	session.SetStatus(SESSION_STATES::ACCEPTED);
 
@@ -319,12 +320,12 @@ void IOCPFramework::SendWorldDataTo(Session& who)
 	ForeachClient([&](const Session& other) {
 		if (other != who)
 		{
-			who.SendSignUp(other.ID);
+			who.SendSignUp(other.myID);
 
-			auto& instance = other.Instance;
+			auto instance = other.myCharacter.load();
 			if (instance)
 			{
-				who.SendCreateCharacter(other.ID, instance->x, instance->y);
+				who.SendCreateCharacter(other.myID, instance->x, instance->y);
 			}
 		}
 	});
@@ -333,7 +334,7 @@ void IOCPFramework::SendWorldDataTo(Session& who)
 void IOCPFramework::BroadcastSignUp(Session& who)
 {
 	ForeachClient([&](Session& other) {
-		other.SendSignUp(who.ID);
+		other.SendSignUp(who.myID);
 	});
 }
 
@@ -342,7 +343,7 @@ void IOCPFramework::BroadcastSignOut(Session& who)
 	ForeachClient([&](Session& other) {
 		if (other != who)
 		{
-			other.SendSignOut(who.ID);
+			other.SendSignOut(who.myID);
 		}
 	});
 }
@@ -350,7 +351,7 @@ void IOCPFramework::BroadcastSignOut(Session& who)
 void IOCPFramework::BroadcastCreateCharacter(Session& who, CHAR cx, CHAR cy)
 {
 	ForeachClient([&](Session& other) {
-		other.SendCreateCharacter(who.ID, cx, cy);
+		other.SendCreateCharacter(who.myID, cx, cy);
 	});
 }
 
@@ -359,7 +360,7 @@ void IOCPFramework::BroadcastMoveCharacterFrom(const UINT index, CHAR nx, CHAR n
 	auto& session = GetClient(index);
 
 	ForeachClient([&](Session& other) {
-		other.SendMoveCharacter(session.ID, nx, ny);
+		other.SendMoveCharacter(session.myID, nx, ny);
 	});
 }
 
@@ -371,7 +372,7 @@ Session& IOCPFramework::GetClient(const UINT index) const
 Session& IOCPFramework::GetClientByID(const PID id) const
 {
 	auto it = std::find_if(clientsPool.begin(), clientsPool.end(), [&](const shared_ptr<Session>& session) {
-		return (id == session->ID);
+		return (id == session->myID);
 	});
 
 	return *(*it);
