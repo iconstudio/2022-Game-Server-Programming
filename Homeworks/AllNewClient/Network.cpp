@@ -65,6 +65,16 @@ void Network::Update()
 	}
 }
 
+bool Network::IsPlayer(PID id) const
+{
+	return id < ;
+}
+
+bool Network::IsNonPlayer(PID id) const
+{
+	return false;
+}
+
 std::optional<Packet> Network::OnReceive(DWORD bytes)
 {
 	std::optional<Packet> result{};

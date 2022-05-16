@@ -38,6 +38,13 @@ public:
 	void Complete() override;
 
 	void OnNetwork(const Packet& packet) override;
+
+private:
+	const int draw_x = CLIENT_W / 2;
+	const int draw_y = CLIENT_H / 2 - 70;
+	const RECT streamRect;
+
+	float myLife;
 };
 
 class SceneGame : public Scene
@@ -45,12 +52,18 @@ class SceneGame : public Scene
 public:
 	SceneGame(Framework& framework);
 
-	virtual void Awake() override;
-	virtual void Start() override;
-	virtual void Update(float time_elapsed) override;
-	virtual void Render(HDC surface) override;
-	virtual void Reset() override;
-	virtual void Complete() override;
+	void Awake() override;
+	void Start() override;
+	void Update(float time_elapsed) override;
+	void Render(HDC surface) override;
+	void Reset() override;
+	void Complete() override;
+
+	void OnNetwork(const Packet& packet) override;
+	void OnKeyDown(WPARAM key, LPARAM states) override;
+
+private:
+
 };
 
 #pragma pack(push, 1)

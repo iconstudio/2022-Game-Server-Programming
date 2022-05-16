@@ -17,8 +17,54 @@ Scene::~Scene()
 	}
 }
 
+void Scene::Awake()
+{
+	if (0 < myInstances.size())
+	{
+		for (auto& instance : myInstances)
+		{
+			instance->Awake();
+		}
+	}
+}
+
+void Scene::Start()
+{
+	if (0 < myInstances.size())
+	{
+		for (auto& instance : myInstances)
+		{
+			instance->Start();
+		}
+	}
+}
+
+void Scene::Update(float time_elapsed)
+{
+	if (0 < myInstances.size() && 0.0f < time_elapsed)
+	{
+		for (auto& instance : myInstances)
+		{
+			instance->Update(time_elapsed);
+		}
+	}
+}
+
+void Scene::Render(HDC surface)
+{
+	if (0 < myInstances.size())
+	{
+		for (auto& instance : myInstances)
+		{
+			instance->Render(surface);
+		}
+	}
+}
+
 void Scene::Reset()
-{}
+{
+	isCompleted = false;
+}
 
 void Scene::Complete()
 {

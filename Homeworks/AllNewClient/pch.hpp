@@ -101,8 +101,13 @@ class GameTransform;
 class GameCamera;
 class GameObject;
 
+// 고유한 식별자가 있는 게임 객체
+class GameEntity;
+
+using PID = long long;
 class PlayerCharacter;
 class NonPlayerable;
+enum class ENTITY_TYPES;
 
 void ErrorAbort(const wchar_t* title, const int errorcode);
 void ErrorDisplay(const wchar_t* title, const int errorcode);
@@ -110,6 +115,5 @@ void ErrorAbort(const wchar_t* title);
 void ErrorDisplay(const wchar_t* title);
 
 constexpr size_t BUFFSZ = 512;
+constexpr PID PLAYERS_ID_BEGIN = 10000;
 constexpr ULONG CLIENTS_MAX_NUMBER = 5000;
-
-using PID = long long;
