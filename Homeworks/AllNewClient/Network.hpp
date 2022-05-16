@@ -15,11 +15,11 @@ public:
 	~Network();
 
 	void Awake();
-	void Start();
+	void Start(const char* ip);
 	void Update();
 
 	std::optional<Packet> OnReceive(DWORD bytes);
-	void OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes);
+	std::optional<Packet> OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes);
 
 private:
 	int Receive(DWORD begin_bytes = 0);

@@ -3,7 +3,7 @@
 class Scene
 {
 public:
-	Scene(Framework& framework, size_t instance_count);
+	Scene(Framework& framework, const char* name, size_t instance_count = 0);
 	virtual ~Scene();
 
 	virtual void Awake() = 0;
@@ -12,8 +12,10 @@ public:
 	virtual void Render(HDC surface) = 0;
 
 	virtual void OnNetwork(const Packet& packet);
-	virtual void OnMouse(WPARAM button, LPARAM cursor);
-	virtual void OnKeyboard(WPARAM key, LPARAM states);
+	virtual void OnMouse(UINT type, WPARAM button, LPARAM cursor);
+	virtual void OnKeyboard(UINT type, WPARAM key, LPARAM states);
+	virtual void OnKeyDown(WPARAM key, LPARAM states);
+	virtual void OnKeyUp(WPARAM key, LPARAM states);
 	virtual void OnWindow(WPARAM aevent, LPARAM params);
 
 	bool IsCompleted() const;
@@ -23,11 +25,14 @@ public:
 	virtual void Pause();
 	virtual void Resume();
 
-private:
+	const string myName;
+
+protected:
 	virtual void Reset() = 0;
 	virtual void Complete() = 0;
 
 	Framework& myFramework;
+
 	std::vector<shared_ptr<GameObject>> myInstances;
 
 	bool isConsistent;

@@ -6,7 +6,11 @@
 #include <thread>
 #include <vector>
 #include <mutex>
+#include <atomic>
 #include <unordered_set>
+#include <unordered_map>
+#include <queue>
+
 #include "protocol.h"
 
 #pragma comment(lib, "WS2_32.lib")
@@ -14,9 +18,13 @@
 using namespace std;
 
 constexpr int SIGHT = 20;
+constexpr int PLAYERS_ID_BEGIN = 10000;
+constexpr int NPC_NUMBER = 10000;
 
 enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND };
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME };
+enum ENTITY_TYPE { NONE, PLAYER, NPC };
+enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK };
 
 class OVER_EXP
 {
@@ -42,27 +50,47 @@ public:
 	}
 };
 
-class SESSION
+class TIMER
 {
-	OVER_EXP _recv_over;
-
 public:
-	mutex	_sl;
-	SESSION_STATE _s_state;
-	atomic_int _id;
-	SOCKET _socket;
-	unordered_set<int> view_list;
+	int entitiy_id; // 누가 발생시키는가
+	EVENT_TYPE type;
+	chrono::system_clock::time_point adapt_time;
+};
 
+priority_queue<TIMER> myEvents;
+
+void add_timer(int entity_id, int ms, EVENT_TYPE type, int target_id)
+{
+	TIMER timer;
+
+	timer.entitiy_id = entity_id;
+	timer.adapt_time = chrono::system_clock::now() + chrono::milliseconds(ms);
+	timer.type = type;
+}
+
+class NPC
+{
+public:
 	short	x, y;
 	char	_name[NAME_SIZE];
 	int		_prev_remain;
 
+};
+
+class SESSION : public NPC
+{
 public:
 	SESSION()
 	{
 		_id = -1;
 		_socket = 0;
-		x = y = 0;
+
+		// 처음에 좌표를 과하게 몰아놓으면 과부하가 걸린다.
+		x = int(rand() / RAND_MAX * W_WIDTH);
+		y = int(rand() / RAND_MAX * W_HEIGHT);
+
+
 		_name[0] = 0;
 		_s_state = ST_FREE;
 		_prev_remain = 0;
@@ -97,11 +125,16 @@ public:
 		do_send(&p);
 	}
 	void send_move_packet(int c_id);
-};
 
-array<SESSION, MAX_USER> clients;
-HANDLE g_h_iocp;
-SOCKET g_s_socket;
+	mutex	_sl;
+	SESSION_STATE _s_state;
+	atomic_int _id;
+	SOCKET _socket;
+	unordered_set<int> view_list;
+
+private:
+	OVER_EXP _recv_over;
+};
 
 void SESSION::send_move_packet(int c_id)
 {
@@ -114,7 +147,13 @@ void SESSION::send_move_packet(int c_id)
 	do_send(&p);
 }
 
+mutex client_lock;
+array<SESSION, MAX_USER> clients;
+HANDLE g_h_iocp;
+SOCKET g_s_socket;
+vector<SESSION> global_view_list;
 void disconnect(int c_id);
+int self_id = 0;
 
 int get_new_client_id()
 {
@@ -135,6 +174,67 @@ int get_new_client_id()
 int distance(int x1, int y1, int x2, int y2)
 {
 	return abs(x1 - x2) + abs(y1 - y2);
+}
+
+// 일정 시간마다 NPC 인공지능 작동 (heartbeat)
+void do_ai_version_1() {}
+
+void move_npc(int npc_id)
+{
+	global_view_list.clear();
+
+	auto& npc = clients[npc_id];
+	short& nx = npc.x;
+	short& ny = npc.y;
+
+	unordered_set<int> pos_set{};
+	for (int i = 0; i < MAX_USER; ++i)
+	{
+		if (npc._s_state != ST_INGAME)
+		{
+			continue;
+		}
+
+		if (distance(npc_id, i) <= PLAYERS_ID_BEGIN)
+		{
+			global_view_list.push_back(npc);
+		}
+
+		// 플레이어를 추가하는 패킷을 클라이언트에 전송
+		// SC_ADD_PLAYER;
+		for (int p_id = 0; p_id < MAX_USER; ++p_id)
+		{
+			auto& target_session = clients[p_id];
+			auto& p_x = target_session.x;
+			auto& p_y = target_session.y;
+
+			if (distance(nx, ny, p_x, p_y) < SIGHT)
+			{
+				SendAddPlayer(target_session, npc_id);
+			}
+		}
+	}
+}
+
+// 'AddPlayer' 말고 'AddEntity', 'AddViewInstance' 같은 이름을 써라
+// 일부러 함수 이름 안 바꿈
+void SendAddPlayer(SESSION& session, int id)
+{
+	client_lock.lock();
+
+	SC_ADD_PLAYER_PACKET packet{};
+	packet.id = id;
+	session.do_send(&packet);
+
+	client_lock.unlock();
+}
+
+void SendViewList(SESSION& session)
+{
+	// 시야 목록의 수정, 송신은 반드시 락을 걸고 하라.
+	client_lock.lock();
+
+	client_lock.unlock();
 }
 
 void process_packet(int c_id, char* packet)

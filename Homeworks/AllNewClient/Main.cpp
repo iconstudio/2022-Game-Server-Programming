@@ -12,8 +12,8 @@ wchar_t myTitle[MAX_LOADSTRING];
 wchar_t myWindowClass[MAX_LOADSTRING];
 
 Panel myWindow{ CLIENT_W, CLIENT_H };
-Framework myFramework{};
 Network myNetwork{ CLIENTS_MAX_NUMBER };
+Framework myFramework{ myNetwork };
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -27,9 +27,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	auto load_scene = new SceneLoading(myFramework);
 	auto game_scene = new SceneGame(myFramework);
 
-	myFramework.Push(main_scene);
-	myFramework.Push(load_scene);
-	myFramework.Push(game_scene);
+	myFramework.AddRoom(main_scene);
+	myFramework.AddRoom(load_scene);
+	myFramework.AddRoom(game_scene);
 
 	if (!myWindow.Initialize(hInstance, myProcedure, myTitle, myWindowClass, nCmdShow))
 	{
@@ -88,16 +88,20 @@ void CallbackSend(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags
 		}
 	}
 
-	myNetwork.OnSend(overlap, bytes);
+	if (const auto& result = myNetwork.OnSend(overlap, bytes); result)
+	{
+		myFramework.OnNetwork(*result);
+	}
 }
 
-LRESULT myProcedure(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
+LRESULT myProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 {
-	switch (message)
+	switch (msg)
 	{
 		case WM_CREATE:
 		{
 			myFramework.Awake();
+			myNetwork.Awake();
 			myFramework.Start();
 		}
 		break;
@@ -108,14 +112,14 @@ LRESULT myProcedure(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 		case WM_RBUTTONDOWN:
 		case WM_RBUTTONUP:
 		{
-			myFramework.OnMouse(wparam, lparam);
+			myFramework.OnMouse(msg, wparam, lparam);
 		}
 		break;
 
 		case WM_KEYDOWN:
 		case WM_KEYUP:
 		{
-			myFramework.OnKeyboard(wparam, lparam);
+			myFramework.OnKeyboard(msg, wparam, lparam);
 		}
 		break;
 
@@ -133,7 +137,7 @@ LRESULT myProcedure(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 
 		default:
 		{
-			return DefWindowProc(hwnd, message, wparam, lparam);
+			return DefWindowProc(hwnd, msg, wparam, lparam);
 		}
 	}
 

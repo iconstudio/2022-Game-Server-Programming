@@ -3,8 +3,9 @@
 #include "Framework.hpp"
 #include "Packet.hpp"
 
-Scene::Scene(Framework& framework, size_t instance_count)
-	: myFramework(framework), myInstances(instance_count)
+Scene::Scene(Framework& framework, const char* name, size_t instance_count)
+	: myFramework(framework), myName(name)
+	, myInstances(instance_count)
 	, isCompleted(false), isPaused(false), isConsistent(false)
 {}
 
@@ -48,10 +49,31 @@ void Scene::Resume()
 void Scene::OnNetwork(const Packet& packet)
 {}
 
-void Scene::OnMouse(WPARAM button, LPARAM cursor)
+void Scene::OnMouse(UINT type, WPARAM button, LPARAM cursor)
 {}
 
-void Scene::OnKeyboard(WPARAM key, LPARAM states)
+void Scene::OnKeyboard(UINT type, WPARAM key, LPARAM states)
+{
+	switch (type)
+	{
+		case WM_KEYDOWN:
+		{
+			OnKeyDown(key, states);
+		}
+		break;
+
+		case WM_KEYUP:
+		{
+			OnKeyUp(key, states);
+		}
+		break;
+	}
+}
+
+void Scene::OnKeyDown(WPARAM key, LPARAM states)
+{}
+
+void Scene::OnKeyUp(WPARAM key, LPARAM states)
 {}
 
 void Scene::OnWindow(WPARAM aevent, LPARAM params)

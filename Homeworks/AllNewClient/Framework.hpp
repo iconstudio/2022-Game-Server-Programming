@@ -1,12 +1,17 @@
 #pragma once
+#include "Network.hpp"
 
 class Framework
 {
 public:
-	Framework();
+	Framework(Network& network);
 	~Framework();
 
-	void Push(Scene* scene);
+	void AddRoom(Scene* scene);
+	bool JumpToNextScene();
+	bool JumpToPrevScene();
+	bool JumpTo(const char* scene_name);
+	void Connect(const char* ip);
 
 	void Awake();
 	void Start();
@@ -20,17 +25,23 @@ public:
 	void Resume();
 
 	void OnNetwork(const Packet& packet);
-	void OnMouse(WPARAM button, LPARAM cursor);
-	void OnKeyboard(WPARAM key, LPARAM states);
+	void OnMouse(UINT type, WPARAM button, LPARAM cursor);
+	void OnKeyboard(UINT type, WPARAM key, LPARAM states);
 	void OnWindow(WPARAM aevent, LPARAM params);
 
 private:
-	void Push(const shared_ptr<Scene>& scene);
-	void Push(shared_ptr<Scene>&& scene);
-	bool TryPop();
-	shared_ptr<Scene> Pop();
+	void Register(const shared_ptr<Scene>& scene);
+	void Register(shared_ptr<Scene>&& scene);
 
-	std::vector<shared_ptr<Scene>> myScenes;
+	shared_ptr<Scene> Push(Scene* scene);
+	shared_ptr<Scene> Pop();
+	shared_ptr<Scene> GetScene(const char* name) const;
+
+	Network& myNetwork;
+
+	std::unordered_map<string, shared_ptr<Scene>> myScenes;
+	std::vector<shared_ptr<Scene>> myPipeline;
+	std::vector<shared_ptr<Scene>>::reverse_iterator myPipelineIterator;
 	shared_ptr<Scene> myState;
 
 	bool isPaused;

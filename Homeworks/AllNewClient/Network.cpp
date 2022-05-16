@@ -9,8 +9,7 @@ Network::Network(const ULONG max_clients)
 	, serverIP(), serverPort(PORT)
 	, mySocket(NULL), serverAddress(), serverAddressSize(0)
 	, recvOverlap(ASYNC_OPERATIONS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
-{
-}
+{}
 
 Network::~Network()
 {}
@@ -32,13 +31,15 @@ void Network::Awake()
 	}
 }
 
-void Network::Start()
+void Network::Start(const char* ip)
 {
+	serverIP = ip;
+
 	serverAddressSize = sizeof(serverAddress);
 	ZeroMemory(&serverAddress, serverAddressSize);
 	serverAddress.sin_family = AF_INET;
 	serverAddress.sin_port = htons(serverPort);
-	inet_pton(AF_INET, serverIP.c_str(), &serverAddress.sin_addr);
+	inet_pton(AF_INET, ip, &serverAddress.sin_addr);
 
 	int result = WSAConnect(mySocket, reinterpret_cast<SOCKADDR*>(&serverAddress), serverAddressSize, NULL, NULL, NULL, NULL);
 
@@ -50,9 +51,11 @@ void Network::Start()
 			return;
 		}
 	}
-	
-	result = Receive();
-	if (SOCKET_ERROR == result)
+}
+
+void Network::Update()
+{
+	if (SOCKET_ERROR == Receive())
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
@@ -60,11 +63,6 @@ void Network::Start()
 			return;
 		}
 	}
-}
-
-void Network::Update()
-{
-
 }
 
 std::optional<Packet> Network::OnReceive(DWORD bytes)
@@ -89,28 +87,28 @@ std::optional<Packet> Network::OnReceive(DWORD bytes)
 				case PACKET_TYPES::SC_SIGNUP:
 				{
 					auto rp = reinterpret_cast<SCPacketSignUp*>(recvCBuffer);
-					result = *rp;
+					result = SCPacketSignUp(*rp);
 				}
 				break;
 
 				case PACKET_TYPES::SC_SIGNOUT:
 				{
 					auto rp = reinterpret_cast<SCPacketSignOut*>(recvCBuffer);
-					result = *rp;
+					result = SCPacketSignOut(*rp);
 				}
 				break;
 
 				case PACKET_TYPES::SC_CREATE_CHARACTER:
 				{
 					auto rp = reinterpret_cast<SCPacketCreateCharacter*>(recvCBuffer);
-					result = *rp;
+					result = SCPacketCreateCharacter(*rp);
 				}
 				break;
 
 				case PACKET_TYPES::SC_MOVE_CHARACTER:
 				{
 					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
-					result = *rp;
+					result = SCPacketMoveCharacter(*rp);
 				}
 				break;
 			}
@@ -120,14 +118,30 @@ std::optional<Packet> Network::OnReceive(DWORD bytes)
 		}
 	}
 
-	Receive(recvBytes);
+	if (SOCKET_ERROR == Receive(recvBytes))
+	{
+	}
 
 	return result;
 }
 
-void Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
+std::optional<Packet> Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
 {
-	// // O: 여기에 return 문을 삽입합니다.
+	std::optional<Packet> result{};
+	const auto my_async = reinterpret_cast<Asynchron*>(asynchron);
+	
+	if (0 < bytes)
+	{
+		const auto my_send_sz = my_async->sendSize;
+
+		const auto packet = reinterpret_cast<Packet*>(my_async->sendCBuffer);
+		if (packet && sizeof(Packet) <= my_async->sendSize)
+		{
+			result = *packet;
+		}
+	}
+
+	return result;
 }
 
 int Network::Receive(DWORD begin_bytes)

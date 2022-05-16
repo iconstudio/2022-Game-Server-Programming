@@ -1,22 +1,64 @@
 #include "pch.hpp"
 #include "Framework.hpp"
+#include "Network.hpp"
 #include "Scene.hpp"
 #include "Packet.hpp"
 
-Framework::Framework()
-	: myScenes(), myState(nullptr)
+Framework::Framework(Network& network)
+	: myScenes(), myPipeline(), myState(nullptr)
+	, myNetwork(network)
 	, isPaused(false)
 	, appSurface(NULL), appPainter()
 {
 	myScenes.reserve(10);
+	myPipeline.reserve(10);
 }
 
 Framework::~Framework()
 {}
 
-void Framework::Push(Scene* scene)
+void Framework::AddRoom(Scene* scene)
 {
-	Push(shared_ptr<Scene>(scene));
+	Register(Push(scene));
+}
+
+bool Framework::JumpToNextScene()
+{
+	if (0 < myPipeline.size() && myPipeline.rend() != myPipelineIterator)
+	{
+		myState = Pop();
+		myState->Start();
+		InvalidateRect(NULL, NULL, FALSE);
+
+		return true;
+	}
+
+	return false;
+}
+
+bool Framework::JumpToPrevScene()
+{
+	if (0 < myPipeline.size() && myPipeline.rbegin() != myPipelineIterator)
+	{
+		myState = *(--myPipelineIterator);
+		myState->Start();
+		InvalidateRect(NULL, NULL, FALSE);
+
+		return true;
+	}
+
+	return false;
+}
+
+bool Framework::JumpTo(const char* scene_name)
+{
+	return false;
+}
+
+void Framework::Connect(const char* ip)
+{
+	myNetwork.Start(ip);
+	myNetwork.Update();
 }
 
 void Framework::Awake()
@@ -25,16 +67,18 @@ void Framework::Awake()
 	{
 		for (auto& scene : myScenes)
 		{
-			scene->Awake();
+			scene.second->Awake();
 		}
 	}
 }
 
 void Framework::Start()
 {
-	if (0 < myScenes.size())
+	if (0 < myPipeline.size())
 	{
-		std::reverse(myScenes.begin(), myScenes.end());
+		std::reverse(myPipeline.begin(), myPipeline.end());
+		myPipelineIterator = myPipeline.rbegin();
+
 		myState = Pop();
 
 		myState->Start();
@@ -49,7 +93,7 @@ void Framework::Update(float elapsed_time)
 
 		if (myState->IsCompleted())
 		{
-			TryPop();
+			JumpToNextScene();
 		}
 	}
 }
@@ -80,19 +124,19 @@ void Framework::OnNetwork(const Packet& packet)
 	}
 }
 
-void Framework::OnMouse(WPARAM button, LPARAM cursor)
+void Framework::OnMouse(UINT type, WPARAM button, LPARAM cursor)
 {
 	if (myState)
 	{
-		myState->OnMouse(button, cursor);
+		myState->OnMouse(type, button, cursor);
 	}
 }
 
-void Framework::OnKeyboard(WPARAM key, LPARAM states)
+void Framework::OnKeyboard(UINT type, WPARAM key, LPARAM states)
 {
 	if (myState)
 	{
-		myState->OnKeyboard(key, states);
+		myState->OnKeyboard(type, key, states);
 	}
 }
 
@@ -131,34 +175,33 @@ void Framework::Resume()
 	isPaused = false;
 }
 
-void Framework::Push(const shared_ptr<Scene>& scene)
+void Framework::Register(const shared_ptr<Scene>& scene)
 {
-	myScenes.push_back(scene);
+	myScenes.try_emplace(scene->myName, scene);
 }
 
-void Framework::Push(shared_ptr<Scene>&& scene)
+void Framework::Register(shared_ptr<Scene>&& scene)
 {
-	myScenes.push_back(std::forward<shared_ptr<Scene>>(scene));
+	const auto&& my_scene = std::forward<shared_ptr<Scene>>(scene);
+	myScenes.try_emplace(my_scene->myName, my_scene);
 }
 
-bool Framework::TryPop()
+shared_ptr<Scene> Framework::Push(Scene* scene)
 {
-	if (0 < myScenes.size())
-	{
-		myState = Pop();
+	auto ptr = shared_ptr<Scene>(scene);
 
-		myState->Start();
+	Register(ptr);
+	myPipeline.push_back(ptr);
 
-		return true;
-	}
-
-	return false;
+	return ptr;
 }
 
 shared_ptr<Scene> Framework::Pop()
 {
-	shared_ptr<Scene> result = myScenes.back();
-	myScenes.pop_back();
+	return *(myPipelineIterator++);
+}
 
-	return result;
+shared_ptr<Scene> Framework::GetScene(const char* name) const
+{
+	return myScenes.at(name);
 }
