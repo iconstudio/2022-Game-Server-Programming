@@ -1,23 +1,45 @@
 #pragma once
-#include "Packet.hpp"
 #include "Scene.hpp"
+#include "Packet.hpp"
 
 class SceneMain : public Scene
 {
 public:
+	SceneMain(Framework& framework);
 
+	virtual void Awake() override;
+	virtual void Start() override;
+	virtual void Update(float time_elapsed) override;
+	virtual void Render(HDC surface) override;
+	virtual void Reset() override;
+	virtual void Complete() override;
 };
 
 class SceneLoading : public Scene
 {
 public:
+	SceneLoading(Framework& framework);
+
+	virtual void Awake() override;
+	virtual void Start() override;
+	virtual void Update(float time_elapsed) override;
+	virtual void Render(HDC surface) override;
+	virtual void Reset() override;
+	virtual void Complete() override;
 
 };
 
 class SceneGame : public Scene
 {
 public:
+	SceneGame(Framework& framework);
 
+	virtual void Awake() override;
+	virtual void Start() override;
+	virtual void Update(float time_elapsed) override;
+	virtual void Render(HDC surface) override;
+	virtual void Reset() override;
+	virtual void Complete() override;
 };
 
 #pragma pack(push, 1)

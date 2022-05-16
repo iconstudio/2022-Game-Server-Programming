@@ -1,14 +1,20 @@
 #include "pch.hpp"
 #include "Scene.hpp"
+#include "Framework.hpp"
 #include "Packet.hpp"
 
-Scene::Scene(size_t instance_count)
-	: myInstances(instance_count)
+Scene::Scene(Framework& framework, size_t instance_count)
+	: myFramework(framework), myInstances(instance_count)
 	, isCompleted(false), isPaused(false), isConsistent(false)
 {}
 
 Scene::~Scene()
-{}
+{
+	if (!isConsistent)
+	{
+		Reset();
+	}
+}
 
 void Scene::Reset()
 {}
@@ -27,6 +33,16 @@ bool Scene::TryPause()
 		return true;
 	}
 	return false;
+}
+
+void Scene::Pause()
+{
+	isPaused = true;
+}
+
+void Scene::Resume()
+{
+	isPaused = false;
 }
 
 void Scene::OnNetwork(const Packet& packet)

@@ -11,7 +11,7 @@ LRESULT CALLBACK myProcedure(HWND, UINT, WPARAM, LPARAM);
 wchar_t myTitle[MAX_LOADSTRING];
 wchar_t myWindowClass[MAX_LOADSTRING];
 
-Panel myWindow{ 800, 600 };
+Panel myWindow{ CLIENT_W, CLIENT_H };
 Framework myFramework{};
 Network myNetwork{ CLIENTS_MAX_NUMBER };
 
@@ -23,9 +23,9 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	LoadStringW(hInstance, IDS_APP_TITLE, myTitle, MAX_LOADSTRING);
 	LoadStringW(hInstance, IDS_APP_ID, myWindowClass, MAX_LOADSTRING);
 
-	auto main_scene = new SceneMain();
-	auto load_scene = new SceneLoading();
-	auto game_scene = new SceneGame();
+	auto main_scene = new SceneMain(myFramework);
+	auto load_scene = new SceneLoading(myFramework);
+	auto game_scene = new SceneGame(myFramework);
 
 	myFramework.Push(main_scene);
 	myFramework.Push(load_scene);

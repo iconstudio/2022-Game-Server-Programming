@@ -28,7 +28,7 @@ private:
 	void Push(const shared_ptr<Scene>& scene);
 	void Push(shared_ptr<Scene>&& scene);
 	bool TryPop();
-	shared_ptr<Scene>& Pop();
+	shared_ptr<Scene> Pop();
 
 	std::vector<shared_ptr<Scene>> myScenes;
 	shared_ptr<Scene> myState;

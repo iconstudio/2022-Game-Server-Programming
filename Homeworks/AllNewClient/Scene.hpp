@@ -3,13 +3,8 @@
 class Scene
 {
 public:
-	Scene(size_t instance_count);
+	Scene(Framework& framework, size_t instance_count);
 	virtual ~Scene();
-
-	Scene(const Scene&) = delete;
-	Scene& operator=(const Scene&) = delete;
-	Scene(Scene&&) = delete;
-	Scene& operator=(Scene&&) = delete;
 
 	virtual void Awake() = 0;
 	virtual void Start() = 0;
@@ -25,13 +20,14 @@ public:
 	bool IsPaused() const;
 
 	bool TryPause();
-	virtual void Pause() = 0;
-	virtual void Resume() = 0;
+	virtual void Pause();
+	virtual void Resume();
 
 private:
 	virtual void Reset() = 0;
 	virtual void Complete() = 0;
 
+	Framework& myFramework;
 	std::vector<shared_ptr<GameObject>> myInstances;
 
 	bool isConsistent;

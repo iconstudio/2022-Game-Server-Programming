@@ -155,9 +155,9 @@ bool Framework::TryPop()
 	return false;
 }
 
-shared_ptr<Scene>& Framework::Pop()
+shared_ptr<Scene> Framework::Pop()
 {
-	auto& result = myScenes.back();
+	shared_ptr<Scene> result = myScenes.back();
 	myScenes.pop_back();
 
 	return result;

@@ -13,11 +13,6 @@ Asynchron::~Asynchron()
 		delete sendBuffer;
 	}
 
-	if (sendCBuffer)
-	{
-		delete[] sendCBuffer;
-	}
-
 	sendSzWant = 0;
 }
 
