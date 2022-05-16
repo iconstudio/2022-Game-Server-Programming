@@ -5,8 +5,12 @@
 #include "Commons.hpp"
 
 Network::Network(const ULONG max_clients)
-	: clientsMax(max_clients)
-{}
+	: clientsMax(max_clients), myClients()
+	, serverIP(), serverPort(PORT)
+	, mySocket(NULL), serverAddress(), serverAddressSize(0)
+	, recvOverlap(ASYNC_OPERATIONS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
+{
+}
 
 Network::~Network()
 {}
@@ -46,6 +50,16 @@ void Network::Start()
 			return;
 		}
 	}
+	
+	result = Receive();
+	if (SOCKET_ERROR == result)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorAbort(L"Receive(0)");
+			return;
+		}
+	}
 }
 
 void Network::Update()
@@ -53,14 +67,83 @@ void Network::Update()
 
 }
 
-std::optional<Packet>& Network::OnReceive(DWORD bytes)
+std::optional<Packet> Network::OnReceive(DWORD bytes)
 {
-	// // O: 여기에 return 문을 삽입합니다.
+	std::optional<Packet> result{};
+
+	recvBytes += bytes;
+
+	constexpr auto sz_min = sizeof(Packet);
+	while (sz_min <= recvBytes) // while
+	{
+		auto packet = reinterpret_cast<Packet*>(recvCBuffer);
+		auto sz_want = packet->Size;
+
+		if (sz_want <= recvBytes)
+		{
+			auto type = packet->Type;
+			auto pid = packet->playerID;
+
+			switch (type)
+			{
+				case PACKET_TYPES::SC_SIGNUP:
+				{
+					auto rp = reinterpret_cast<SCPacketSignUp*>(recvCBuffer);
+					result = *rp;
+				}
+				break;
+
+				case PACKET_TYPES::SC_SIGNOUT:
+				{
+					auto rp = reinterpret_cast<SCPacketSignOut*>(recvCBuffer);
+					result = *rp;
+				}
+				break;
+
+				case PACKET_TYPES::SC_CREATE_CHARACTER:
+				{
+					auto rp = reinterpret_cast<SCPacketCreateCharacter*>(recvCBuffer);
+					result = *rp;
+				}
+				break;
+
+				case PACKET_TYPES::SC_MOVE_CHARACTER:
+				{
+					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
+					result = *rp;
+				}
+				break;
+			}
+
+			MoveMemory(recvCBuffer, recvCBuffer + recvBytes, BUFFSZ - recvBytes);
+			recvBytes -= sz_want;
+		}
+	}
+
+	Receive(recvBytes);
+
+	return result;
 }
 
 void Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
 {
 	// // O: 여기에 return 문을 삽입합니다.
+}
+
+int Network::Receive(DWORD begin_bytes)
+{
+	recvBuffer.buf = recvCBuffer + begin_bytes;
+	recvBuffer.len = BUFFSZ - begin_bytes;
+
+	DWORD flags = 0;
+	return WSARecv(mySocket, &recvBuffer, 1, 0, &flags, &recvOverlap, CallbackRecv);
+}
+
+int Network::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED asynchron)
+{
+	if (!datas || !asynchron) return 0;
+
+	return WSASend(mySocket, datas, count, NULL, 0, asynchron, CallbackSend);
 }
 
 inline SOCKET Network::CreateSocket() const

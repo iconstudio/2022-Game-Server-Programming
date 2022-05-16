@@ -6,6 +6,8 @@ public:
 	Framework();
 	~Framework();
 
+	void Push(Scene* scene);
+
 	void Awake();
 	void Start();
 	void Update(float elapsed_time);
@@ -23,8 +25,9 @@ public:
 	void OnWindow(WPARAM aevent, LPARAM params);
 
 private:
+	void Push(const shared_ptr<Scene>& scene);
+	void Push(shared_ptr<Scene>&& scene);
 	bool TryPop();
-	void Push(shared_ptr<Scene>& scene);
 	shared_ptr<Scene>& Pop();
 
 	std::vector<shared_ptr<Scene>> myScenes;

@@ -3,6 +3,7 @@
 #include "Panel.hpp"
 #include "Framework.hpp"
 #include "Network.hpp"
+#include "Commons.hpp"
 
 LRESULT CALLBACK myProcedure(HWND, UINT, WPARAM, LPARAM);
 
@@ -12,7 +13,7 @@ wchar_t myWindowClass[MAX_LOADSTRING];
 
 Panel myWindow{ 800, 600 };
 Framework myFramework{};
-Network myNetwork{5000};
+Network myNetwork{ CLIENTS_MAX_NUMBER };
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 	_In_opt_ HINSTANCE hPrevInstance,
@@ -21,6 +22,14 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 {
 	LoadStringW(hInstance, IDS_APP_TITLE, myTitle, MAX_LOADSTRING);
 	LoadStringW(hInstance, IDS_APP_ID, myWindowClass, MAX_LOADSTRING);
+
+	auto main_scene = new SceneMain();
+	auto load_scene = new SceneLoading();
+	auto game_scene = new SceneGame();
+
+	myFramework.Push(main_scene);
+	myFramework.Push(load_scene);
+	myFramework.Push(game_scene);
 
 	if (!myWindow.Initialize(hInstance, myProcedure, myTitle, myWindowClass, nCmdShow))
 	{
@@ -89,6 +98,7 @@ LRESULT myProcedure(HWND hwnd, UINT message, WPARAM wparam, LPARAM lparam)
 		case WM_CREATE:
 		{
 			myFramework.Awake();
+			myFramework.Start();
 		}
 		break;
 

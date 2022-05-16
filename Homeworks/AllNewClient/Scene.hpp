@@ -29,10 +29,12 @@ public:
 	virtual void Resume() = 0;
 
 private:
+	virtual void Reset() = 0;
 	virtual void Complete() = 0;
 
 	std::vector<shared_ptr<GameObject>> myInstances;
 
+	bool isConsistent;
 	bool isCompleted;
 	bool isPaused;
 };

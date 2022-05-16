@@ -8,8 +8,16 @@ Asynchron::Asynchron(ASYNC_OPERATIONS operation)
 
 Asynchron::~Asynchron()
 {
+	if (sendBuffer)
+	{
+		delete sendBuffer;
+	}
 
-	ClearOverlap(this);
+	if (sendCBuffer)
+	{
+		delete[] sendCBuffer;
+	}
+
 	sendSzWant = 0;
 }
 

@@ -4,10 +4,13 @@
 
 Scene::Scene(size_t instance_count)
 	: myInstances(instance_count)
-	, isCompleted(false), isPaused(false)
+	, isCompleted(false), isPaused(false), isConsistent(false)
 {}
 
 Scene::~Scene()
+{}
+
+void Scene::Reset()
 {}
 
 void Scene::Complete()

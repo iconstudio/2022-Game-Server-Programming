@@ -4,13 +4,20 @@
 #include "Packet.hpp"
 
 Framework::Framework()
-	: myScenes(10), myState(nullptr)
+	: myScenes(), myState(nullptr)
 	, isPaused(false)
 	, appSurface(NULL), appPainter()
-{}
+{
+	myScenes.reserve(10);
+}
 
 Framework::~Framework()
 {}
+
+void Framework::Push(Scene* scene)
+{
+	Push(shared_ptr<Scene>(scene));
+}
 
 void Framework::Awake()
 {
@@ -124,6 +131,16 @@ void Framework::Resume()
 	isPaused = false;
 }
 
+void Framework::Push(const shared_ptr<Scene>& scene)
+{
+	myScenes.push_back(scene);
+}
+
+void Framework::Push(shared_ptr<Scene>&& scene)
+{
+	myScenes.push_back(std::forward<shared_ptr<Scene>>(scene));
+}
+
 bool Framework::TryPop()
 {
 	if (0 < myScenes.size())
@@ -136,11 +153,6 @@ bool Framework::TryPop()
 	}
 
 	return false;
-}
-
-void Framework::Push(shared_ptr<Scene>& scene)
-{
-	myScenes.push_back(scene);
 }
 
 shared_ptr<Scene>& Framework::Pop()

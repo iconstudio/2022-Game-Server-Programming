@@ -12,6 +12,6 @@ namespace Draw
 	void Transform(HDC, XFORM&);
 	void ResetTransform(HDC);
 
-	static const XFORM transform_identity;
+	static const XFORM transform_identity= { 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f };
 }
 
