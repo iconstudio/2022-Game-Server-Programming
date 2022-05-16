@@ -19,6 +19,10 @@ public:
 	void Start(const char* ip);
 	void Update();
 
+	int SendSignInMsg();
+	int SendSignOutMsg();
+	int SendKeyMsg(WPARAM key);
+
 	/// <summary>
 	/// 플레이어, NPC, 상호작용 객체 등록
 	/// </summary>
@@ -34,6 +38,7 @@ public:
 private:
 	int Receive(DWORD begin_bytes = 0);
 	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED asynchron);
+	int SendPacket(Packet* packet);
 
 	inline SOCKET CreateSocket() const;
 
@@ -50,8 +55,12 @@ private:
 	SOCKADDR_IN serverAddress;
 	int serverAddressSize;
 
+	// 최대 접속자 수
 	const ULONG clientsMax;
-	std::array<shared_ptr<Session>, CLIENTS_MAX_NUMBER> myClients;
+	// 접속한 모든 플레이어 목록
+	std::unordered_map<PID, shared_ptr<Session>> myLocalClients;
+	// 시야에 보이는 객체 목록 (시야)
+	std::vector<shared_ptr<GameEntity>> myLocalInstances;
 
 	Asynchron recvOverlap;
 	WSABUF recvBuffer;

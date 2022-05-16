@@ -22,9 +22,16 @@ void Asynchron::SetSendBuffer(const WSABUF& buffer)
 	sendSzWant = buffer.len;
 }
 
+void Asynchron::SetSendBuffer(WSABUF&& buffer)
+{
+	const auto&& my_buffer = std::forward<WSABUF>(buffer);
+	sendBuffer = new WSABUF(my_buffer);
+	sendSzWant = my_buffer.len;
+}
+
 void Asynchron::SetSendBuffer(LPWSABUF buffer)
 {
-	sendBuffer = new WSABUF(*buffer);
+	sendBuffer = buffer;
 	sendSzWant = buffer->len;
 }
 

@@ -5,7 +5,8 @@
 #include "Commons.hpp"
 
 Network::Network(const ULONG max_clients)
-	: clientsMax(max_clients), myClients()
+	: clientsMax(max_clients), myLocalClients(), myLocalInstances()
+	, myStatus(NETWORK_STATES::CLOSED), myProfile()
 	, serverIP(), serverPort(PORT)
 	, mySocket(NULL), serverAddress(), serverAddressSize(0)
 	, recvOverlap(ASYNC_OPERATIONS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
@@ -51,6 +52,16 @@ void Network::Start(const char* ip)
 			return;
 		}
 	}
+
+	result = SendSignInMsg();
+	if (SOCKET_ERROR == result)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorAbort(L"SendPacket()");
+			return;
+		}
+	}
 }
 
 void Network::Update()
@@ -65,14 +76,29 @@ void Network::Update()
 	}
 }
 
+int Network::SendSignInMsg()
+{
+	return SendPacket(new CSPacketSignIn(myProfile.myNickname));
+}
+
+int Network::SendSignOutMsg()
+{
+	return SendPacket(new CSPacketSignOut(myProfile.myID));
+}
+
+int Network::SendKeyMsg(WPARAM key)
+{
+	return SendPacket(new CSPacketKeyInput(myProfile.myID, key));
+}
+
 bool Network::IsPlayer(PID id) const
 {
-	return id < ;
+	return PLAYERS_ID_BEGIN <= id;
 }
 
 bool Network::IsNonPlayer(PID id) const
 {
-	return false;
+	return id < PLAYERS_ID_BEGIN;
 }
 
 std::optional<Packet> Network::OnReceive(DWORD bytes)
@@ -138,17 +164,19 @@ std::optional<Packet> Network::OnReceive(DWORD bytes)
 std::optional<Packet> Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
 {
 	std::optional<Packet> result{};
-	const auto my_async = reinterpret_cast<Asynchron*>(asynchron);
-	
+	const auto my_async = static_cast<Asynchron*>(asynchron);
+
 	if (0 < bytes)
 	{
-		const auto my_send_sz = my_async->sendSize;
+		auto& my_send_sz = my_async->sendSize;
 
 		const auto packet = reinterpret_cast<Packet*>(my_async->sendCBuffer);
 		if (packet && sizeof(Packet) <= my_async->sendSize)
 		{
 			result = *packet;
 		}
+
+		my_send_sz += bytes;
 	}
 
 	return result;
@@ -168,6 +196,20 @@ int Network::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED asynchron)
 	if (!datas || !asynchron) return 0;
 
 	return WSASend(mySocket, datas, count, NULL, 0, asynchron, CallbackSend);
+}
+
+int Network::SendPacket(Packet* packet)
+{
+	if (!packet) return 0;
+
+	auto sendBuffer = new WSABUF;
+	sendBuffer->buf = reinterpret_cast<char*>(packet);
+	sendBuffer->len = ULONG(packet->Size);
+
+	auto asynchron = new Asynchron(ASYNC_OPERATIONS::SEND);
+	asynchron->SetSendBuffer(sendBuffer);
+
+	return Send(sendBuffer, 1, static_cast<WSAOVERLAPPED*>(asynchron));
 }
 
 inline SOCKET Network::CreateSocket() const

@@ -7,6 +7,7 @@ public:
 	virtual ~Asynchron();
 
 	void SetSendBuffer(const WSABUF& buffer);
+	void SetSendBuffer(WSABUF&& buffer);
 	void SetSendBuffer(LPWSABUF buffer);
 	void SetSendBuffer(CHAR* cbuffer, DWORD size);
 

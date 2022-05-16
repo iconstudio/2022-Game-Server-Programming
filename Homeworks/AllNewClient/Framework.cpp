@@ -52,7 +52,20 @@ bool Framework::JumpToPrevScene()
 
 bool Framework::JumpTo(const char* scene_name)
 {
-	return false;
+	auto scene = GetScene(scene_name);
+	auto it = std::find_if(myPipeline.rbegin(), myPipeline.rend()
+		, [scene_name](const shared_ptr<Scene>& scene) {
+		return (0 == std::strcmp(scene_name, scene->myName.c_str()));
+	});
+
+	if (it != myPipelineIterator)
+	{
+		myPipelineIterator = it;
+		myState = *myPipelineIterator;
+		myState->Start();
+	}
+
+	return bool(scene);
 }
 
 void Framework::Connect(const char* ip)
