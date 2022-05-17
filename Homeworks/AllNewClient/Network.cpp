@@ -11,7 +11,9 @@ Network::Network(const ULONG max_clients)
 	, serverIP(), serverPort(PORT)
 	, mySocket(NULL), serverAddress(), serverAddressSize(0)
 	, recvOverlap(ASYNC_OPERATIONS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
-{}
+{
+	myProfile.myNickname = "Nickname";
+}
 
 Network::~Network()
 {}
@@ -79,7 +81,7 @@ void Network::Update()
 
 int Network::SendSignInMsg()
 {
-	return SendPacket(new CSPacketSignIn(myProfile.myNickname));
+	return SendPacket(new CSPacketSignIn(myProfile.myNickname.c_str()));
 }
 
 int Network::SendSignOutMsg()
@@ -133,6 +135,9 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 
 					// 자신의 세션 등록
 					RegisterPlayer(pid);
+
+					// 시작
+					Update();
 				}
 				break;
 
@@ -201,17 +206,17 @@ std::optional<Packet*> Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
 	std::optional<Packet*> result{};
 	const auto my_async = static_cast<Asynchron*>(asynchron);
 
+	// WSABUF의 버퍼와 sendCBuffer가 다름!
 	if (0 < bytes)
 	{
 		auto& my_send_sz = my_async->sendSize;
+		my_send_sz += bytes;
 
-		const auto packet = reinterpret_cast<Packet*>(my_async->sendCBuffer);
-		if (packet && sizeof(Packet) <= my_async->sendSize)
+		const auto packet = reinterpret_cast<Packet*>(my_async->sendBuffer->buf);
+		if (packet && my_async->sendSzWant <= my_async->sendSize)
 		{
 			result = packet;
 		}
-
-		my_send_sz += bytes;
 	}
 
 	return result;

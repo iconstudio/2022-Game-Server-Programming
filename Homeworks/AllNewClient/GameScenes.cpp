@@ -55,7 +55,7 @@ void SceneMain::Complete()
 	Scene::Complete();
 }
 
-void SceneMain::OnNetwork(Packet * packet)
+void SceneMain::OnNetwork(Packet* packet)
 {
 	if (PACKET_TYPES::CS_SIGNIN == packet->Type) // 로그인 요청 전송 성공
 	{

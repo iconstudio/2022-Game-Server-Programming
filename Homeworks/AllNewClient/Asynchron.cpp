@@ -33,6 +33,11 @@ void Asynchron::SetSendBuffer(WSABUF&& buffer)
 
 void Asynchron::SetSendBuffer(LPWSABUF buffer)
 {
+	if (sendBuffer)
+	{
+		delete sendBuffer;
+		sendBuffer = nullptr;
+	}
 	sendBuffer = buffer;
 	sendSzWant = buffer->len;
 }

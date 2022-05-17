@@ -51,7 +51,7 @@ private:
 	NETWORK_STATES myStatus;
 	struct
 	{
-		char myNickname[100];
+		string myNickname;
 		PID myID = -1;
 	} myProfile;
 
