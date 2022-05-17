@@ -8,7 +8,7 @@
 Network::Network(const ULONG max_clients)
 	: clientsMax(max_clients), myLocalClients()
 	, myStatus(NETWORK_STATES::CLOSED), myProfile()
-	, serverIP(), serverPort(PORT)
+	, serverIP(), serverPort(PORT), mySemaphore(false)
 	, mySocket(NULL), serverAddress(), serverAddressSize(0)
 	, recvOverlap(ASYNC_OPERATIONS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 {
@@ -55,6 +55,9 @@ void Network::Start(const char* ip)
 			return;
 		}
 	}
+
+	mySemaphore = true;
+	mySemaphore.notify_one();
 
 	result = SendSignInMsg();
 	if (SOCKET_ERROR == result)
@@ -106,6 +109,8 @@ bool Network::IsNonPlayer(PID id) const
 
 std::optional<Packet*> Network::OnReceive(DWORD bytes)
 {
+	//unique_barrier flag(mySemaphore, true);
+
 	std::optional<Packet*> result{};
 
 	recvBytes += bytes;
@@ -192,10 +197,18 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 			MoveMemory(recvCBuffer, recvCBuffer + recvBytes, BUFFSZ - recvBytes);
 			recvBytes -= sz_want;
 		}
+		else
+		{
+			break;
+		}
 	}
 
 	if (SOCKET_ERROR == Receive(recvBytes))
 	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay(L"Receive(recvBytes)");
+		}
 	}
 
 	return result;
@@ -203,6 +216,8 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 
 std::optional<Packet*> Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
 {
+	//unique_barrier flag(mySemaphore, true);
+
 	std::optional<Packet*> result{};
 	const auto my_async = static_cast<Asynchron*>(asynchron);
 
@@ -273,4 +288,17 @@ inline void Network::RemovePlayer(const PID id)
 	{
 		myLocalClients.erase(it);
 	}
+}
+
+unique_barrier::unique_barrier(atomic_bool& boolean, bool init_flag)
+	: myBoolean(boolean), myFlag(init_flag)
+{
+	myBoolean.wait(!myFlag);
+	myBoolean = myFlag;
+}
+
+unique_barrier::~unique_barrier()
+{
+	myBoolean = !myFlag;
+	myBoolean.notify_one();
 }

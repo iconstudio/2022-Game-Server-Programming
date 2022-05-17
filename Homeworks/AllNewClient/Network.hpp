@@ -10,6 +10,16 @@ constexpr USHORT PORT = 6000;
 constexpr PID CLIENTS_ORDER_BEGIN = 10000;
 enum class NETWORK_STATES : UCHAR;
 
+class unique_barrier
+{
+public:
+	unique_barrier(atomic_bool& boolean, bool init_flag);
+	~unique_barrier();
+
+	const bool myFlag;
+	atomic_bool& myBoolean;
+};
+
 class Network
 {
 public:
@@ -60,6 +70,8 @@ private:
 	short serverPort;
 	SOCKADDR_IN serverAddress;
 	int serverAddressSize;
+
+	atomic_bool mySemaphore;
 
 	// 최대 접속자 수
 	const ULONG clientsMax;

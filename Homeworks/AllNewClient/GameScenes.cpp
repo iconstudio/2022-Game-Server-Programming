@@ -52,7 +52,7 @@ void SceneMain::Reset()
 
 void SceneMain::Complete()
 {
-	Scene::Complete();
+	isCompleted = true;
 }
 
 void SceneMain::OnNetwork(Packet* packet)
