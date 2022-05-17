@@ -12,7 +12,6 @@ public:
 	PACKET_TYPES Type;
 	PID playerID;
 };
-#pragma pack(pop)
 
 enum class PACKET_TYPES : UCHAR
 {
@@ -27,3 +26,4 @@ enum class PACKET_TYPES : UCHAR
 	SC_MOVE_CHARACTER,
 	SC_SIGNOUT
 };
+#pragma pack(pop)

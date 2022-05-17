@@ -1,4 +1,5 @@
 #include "pch.hpp"
+#include "stdafx.hpp"
 #include "Framework.hpp"
 #include "Network.hpp"
 #include "Scene.hpp"

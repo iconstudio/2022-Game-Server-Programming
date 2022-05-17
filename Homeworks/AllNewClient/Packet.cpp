@@ -1,4 +1,5 @@
 #include "pch.hpp"
+#include "stdafx.hpp"
 #include "Packet.hpp"
 
 Packet::Packet(PACKET_TYPES type, USHORT size, PID pid)

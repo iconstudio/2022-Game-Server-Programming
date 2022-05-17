@@ -106,7 +106,7 @@ struct SCPacketSignUp : public Packet
 };
 
 /// <summary>
-/// 특정 플레이어의 캐릭터 생성
+/// 특정 플레이어의 캐릭터 생성 (첫 접속 시에만 실행)
 /// </summary>
 struct SCPacketCreateCharacter : public Packet
 {

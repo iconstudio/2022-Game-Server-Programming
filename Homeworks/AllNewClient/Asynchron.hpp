@@ -3,7 +3,7 @@
 class Asynchron : public WSAOVERLAPPED
 {
 public:
-	Asynchron(ASYNC_OPERATIONS operation);
+	Asynchron(ASYNC_OPERATIONS operation, PACKET_TYPES type = PACKET_TYPES(0));
 	virtual ~Asynchron();
 
 	void SetSendBuffer(const WSABUF& buffer);
@@ -12,6 +12,8 @@ public:
 	void SetSendBuffer(CHAR* cbuffer, DWORD size);
 
 	const ASYNC_OPERATIONS myOperation;
+	const PACKET_TYPES myPacketType;
+
 	LPWSABUF sendBuffer;
 	CHAR sendCBuffer[BUFFSZ];
 	DWORD sendSize, sendSzWant;

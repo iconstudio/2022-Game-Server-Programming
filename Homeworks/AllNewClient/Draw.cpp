@@ -1,4 +1,4 @@
-#include "pch.hpp"
+#include "stdafx.hpp"
 #include "Draw.hpp"
 
 HGDIOBJ Draw::Attach(HDC canvas, HGDIOBJ object)

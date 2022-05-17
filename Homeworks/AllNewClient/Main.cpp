@@ -1,4 +1,5 @@
 #include "pch.hpp"
+#include "stdafx.hpp"
 #include "Main.hpp"
 #include "Panel.hpp"
 #include "Framework.hpp"

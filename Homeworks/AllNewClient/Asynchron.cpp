@@ -1,8 +1,9 @@
-#include "pch.hpp"
+#include "stdafx.hpp"
 #include "Asynchron.hpp"
+#include "Packet.hpp"
 
-Asynchron::Asynchron(ASYNC_OPERATIONS operation)
-	: myOperation(operation)
+Asynchron::Asynchron(ASYNC_OPERATIONS operation, PACKET_TYPES type)
+	: myOperation(operation), myPacketType(type)
 	, sendBuffer(nullptr), sendCBuffer(), sendSize(0), sendSzWant(0)
 {}
 

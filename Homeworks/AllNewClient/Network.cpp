@@ -1,4 +1,5 @@
 #include "pch.hpp"
+#include "stdafx.hpp"
 #include "Network.hpp"
 #include "Asynchron.hpp"
 #include "Packet.hpp"
@@ -141,6 +142,20 @@ std::optional<Packet> Network::OnReceive(DWORD bytes)
 				}
 				break;
 
+				case PACKET_TYPES::SC_APPEAR_CHARACTER:
+				{
+					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
+					result = SCPacketMoveCharacter(*rp);
+				}
+				break;
+
+				case PACKET_TYPES::SC_DISAPPEAR_CHARACTER:
+				{
+					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
+					result = SCPacketMoveCharacter(*rp);
+				}
+				break;
+
 				case PACKET_TYPES::SC_MOVE_CHARACTER:
 				{
 					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
@@ -206,7 +221,7 @@ int Network::SendPacket(Packet* packet)
 	sendBuffer->buf = reinterpret_cast<char*>(packet);
 	sendBuffer->len = ULONG(packet->Size);
 
-	auto asynchron = new Asynchron(ASYNC_OPERATIONS::SEND);
+	auto asynchron = new Asynchron(ASYNC_OPERATIONS::SEND, packet->Type);
 	asynchron->SetSendBuffer(sendBuffer);
 
 	return Send(sendBuffer, 1, static_cast<WSAOVERLAPPED*>(asynchron));
