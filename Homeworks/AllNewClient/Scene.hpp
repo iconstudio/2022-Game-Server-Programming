@@ -22,7 +22,7 @@ public:
 	virtual void Pause();
 	virtual void Resume();
 
-	virtual void OnNetwork(const Packet& packet);
+	virtual void OnNetwork(Packet* packet);
 	virtual void OnMouse(UINT type, WPARAM button, LPARAM cursor);
 	virtual void OnKeyboard(UINT type, WPARAM key, LPARAM states);
 	virtual void OnKeyDown(WPARAM key, LPARAM states);

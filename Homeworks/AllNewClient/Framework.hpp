@@ -24,7 +24,7 @@ public:
 	void Pause();
 	void Resume();
 
-	void OnNetwork(const Packet& packet);
+	void OnNetwork(Packet* packet);
 	void OnMouse(UINT type, WPARAM button, LPARAM cursor);
 	void OnKeyboard(UINT type, WPARAM key, LPARAM states);
 	void OnWindow(WPARAM aevent, LPARAM params);

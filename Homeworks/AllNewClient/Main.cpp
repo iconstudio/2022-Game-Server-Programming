@@ -4,7 +4,7 @@
 #include "Panel.hpp"
 #include "Framework.hpp"
 #include "Network.hpp"
-#include "Commons.hpp"
+#include "GameScenes.hpp"
 
 LRESULT CALLBACK myProcedure(HWND, UINT, WPARAM, LPARAM);
 

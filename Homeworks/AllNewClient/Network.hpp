@@ -1,6 +1,7 @@
 #pragma once
 #include "Asynchron.hpp"
 #include "Packet.hpp"
+#include "Session.hpp"
 
 void CallbackRecv(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags);
 void CallbackSend(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags);
@@ -23,17 +24,18 @@ public:
 	int SendSignOutMsg();
 	int SendKeyMsg(WPARAM key);
 
+	void AddLocalSession(PID id, const char* nickname);
 	/// <summary>
 	/// 플레이어, NPC, 상호작용 객체 등록
 	/// </summary>
 	/// <param name="id"></param>
-	void AddLocalEntity(PID id, const char* name);
+	void AddLocalEntity(PID id, int type, int x, int y);
 
 	bool IsPlayer(PID id) const;
 	bool IsNonPlayer(PID id) const;
 
-	std::optional<Packet> OnReceive(DWORD bytes);
-	std::optional<Packet> OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes);
+	std::optional<Packet*> OnReceive(DWORD bytes);
+	std::optional<Packet*> OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes);
 
 private:
 	int Receive(DWORD begin_bytes = 0);
@@ -41,6 +43,10 @@ private:
 	int SendPacket(Packet* packet);
 
 	inline SOCKET CreateSocket() const;
+
+	inline auto FindPlayer(const PID id) const;
+	inline void RegisterPlayer(const PID id);
+	inline void RemovePlayer(const PID id);
 
 	NETWORK_STATES myStatus;
 	struct
@@ -59,8 +65,6 @@ private:
 	const ULONG clientsMax;
 	// 접속한 모든 플레이어 목록
 	std::unordered_map<PID, shared_ptr<Session>> myLocalClients;
-	// 시야에 보이는 객체 목록 (시야)
-	std::vector<shared_ptr<GameEntity>> myLocalInstances;
 
 	Asynchron recvOverlap;
 	WSABUF recvBuffer;

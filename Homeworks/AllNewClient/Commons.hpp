@@ -1,70 +1,5 @@
 #pragma once
-#include "Scene.hpp"
 #include "Packet.hpp"
-
-class SceneMain : public Scene
-{
-public:
-	SceneMain(Framework& framework);
-
-	void Awake() override;
-	void Start() override;
-	void Update(float time_elapsed) override;
-	void Render(HDC surface) override;
-	void Reset() override;
-	void Complete() override;
-
-	void OnNetwork(const Packet& packet) override;
-	void OnKeyDown(WPARAM key, LPARAM states) override;
-
-private:
-	string streamIP;
-
-	const int draw_x = CLIENT_W / 2;
-	const int draw_y = CLIENT_H / 2;
-	const RECT streamRect;
-};
-
-class SceneLoading : public Scene
-{
-public:
-	SceneLoading(Framework& framework);
-
-	void Awake() override;
-	void Start() override;
-	void Update(float time_elapsed) override;
-	void Render(HDC surface) override;
-	void Reset() override;
-	void Complete() override;
-
-	void OnNetwork(const Packet& packet) override;
-
-private:
-	const int draw_x = CLIENT_W / 2;
-	const int draw_y = CLIENT_H / 2 - 70;
-	const RECT streamRect;
-
-	float myLife;
-};
-
-class SceneGame : public Scene
-{
-public:
-	SceneGame(Framework& framework);
-
-	void Awake() override;
-	void Start() override;
-	void Update(float time_elapsed) override;
-	void Render(HDC surface) override;
-	void Reset() override;
-	void Complete() override;
-
-	void OnNetwork(const Packet& packet) override;
-	void OnKeyDown(WPARAM key, LPARAM states) override;
-
-private:
-
-};
 
 #pragma pack(push, 1)
 /// <summary>
@@ -106,29 +41,47 @@ struct SCPacketSignUp : public Packet
 };
 
 /// <summary>
-/// 특정 플레이어의 캐릭터 생성 (첫 접속 시에만 실행)
+/// 특정 플레이어의 로컬 세션 생성 (첫 접속 시에만 실행)
 /// </summary>
-struct SCPacketCreateCharacter : public Packet
+struct SCPacketCreatePlayer : public Packet
 {
-	SCPacketCreateCharacter(PID pid, CHAR cx, CHAR cy);
+	SCPacketCreatePlayer(PID pid, int cx, int cy);
 
-	CHAR x, y;
+	int x, y;
 };
 
 /// <summary>
-/// 특정 플레이어의 캐릭터 이동
+/// 특정 개체의 시야 진입
+/// </summary>
+struct SCPacketAppearCharacter : public Packet
+{
+	SCPacketAppearCharacter(PID cid, int type, int cx, int cy);
+
+	int myType;
+	int x, y;
+};
+
+/// <summary>
+/// 특정 개체의 시야 탈출
+/// </summary>
+struct SCPacketDisppearCharacter : public Packet
+{
+	SCPacketDisppearCharacter(PID cid);
+};
+
+/// <summary>
+/// 특정 개체의 캐릭터 이동
 /// </summary>
 struct SCPacketMoveCharacter : public Packet
 {
-	SCPacketMoveCharacter(PID pid, CHAR nx, CHAR ny);
+	SCPacketMoveCharacter(PID cid, int nx, int ny);
 
-	CHAR x, y;
+	int x, y;
 };
 
 /// <summary>
 /// 특정 플레이어의 캐릭터 삭제 (나간 플레이어 이외에 다른 플레이어에 전송)
 /// </summary>
-
 struct SCPacketSignOut : public Packet
 {
 	SCPacketSignOut(PID pid, UINT users);

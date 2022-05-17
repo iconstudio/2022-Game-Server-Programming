@@ -6,7 +6,7 @@
 #include "Commons.hpp"
 
 Network::Network(const ULONG max_clients)
-	: clientsMax(max_clients), myLocalClients(), myLocalInstances()
+	: clientsMax(max_clients), myLocalClients()
 	, myStatus(NETWORK_STATES::CLOSED), myProfile()
 	, serverIP(), serverPort(PORT)
 	, mySocket(NULL), serverAddress(), serverAddressSize(0)
@@ -102,9 +102,9 @@ bool Network::IsNonPlayer(PID id) const
 	return id < PLAYERS_ID_BEGIN;
 }
 
-std::optional<Packet> Network::OnReceive(DWORD bytes)
+std::optional<Packet*> Network::OnReceive(DWORD bytes)
 {
-	std::optional<Packet> result{};
+	std::optional<Packet*> result{};
 
 	recvBytes += bytes;
 
@@ -116,50 +116,70 @@ std::optional<Packet> Network::OnReceive(DWORD bytes)
 
 		if (sz_want <= recvBytes)
 		{
-			auto type = packet->Type;
-			auto pid = packet->playerID;
+			const auto type = packet->Type;
+			const auto pid = packet->playerID;
 
 			switch (type)
 			{
 				case PACKET_TYPES::SC_SIGNUP:
 				{
 					auto rp = reinterpret_cast<SCPacketSignUp*>(recvCBuffer);
-					result = SCPacketSignUp(*rp);
+					result = new SCPacketSignUp(*rp);
+
+					if (myProfile.myID == PID(-1))
+					{
+						myProfile.myID = pid;
+					}
+
+					// 자신의 세션 등록
+					RegisterPlayer(pid);
 				}
 				break;
 
 				case PACKET_TYPES::SC_SIGNOUT:
 				{
 					auto rp = reinterpret_cast<SCPacketSignOut*>(recvCBuffer);
-					result = SCPacketSignOut(*rp);
+					result = new SCPacketSignOut(*rp);
+
+					if (pid == myProfile.myID)
+					{
+
+					}
+					else
+					{
+						RemovePlayer(pid);
+					}
 				}
 				break;
 
-				case PACKET_TYPES::SC_CREATE_CHARACTER:
+				case PACKET_TYPES::SC_CREATE_PLAYER:
 				{
-					auto rp = reinterpret_cast<SCPacketCreateCharacter*>(recvCBuffer);
-					result = SCPacketCreateCharacter(*rp);
+					auto rp = reinterpret_cast<SCPacketCreatePlayer*>(recvCBuffer);
+					result = new SCPacketCreatePlayer(*rp);
+
+					// 다른 플레이어의 세션 등록
+					RegisterPlayer(pid);
 				}
 				break;
 
 				case PACKET_TYPES::SC_APPEAR_CHARACTER:
 				{
-					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
-					result = SCPacketMoveCharacter(*rp);
+					auto rp = reinterpret_cast<SCPacketAppearCharacter*>(recvCBuffer);
+					result = new SCPacketAppearCharacter(*rp);
 				}
 				break;
 
 				case PACKET_TYPES::SC_DISAPPEAR_CHARACTER:
 				{
-					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
-					result = SCPacketMoveCharacter(*rp);
+					auto rp = reinterpret_cast<SCPacketDisppearCharacter*>(recvCBuffer);
+					result = new SCPacketDisppearCharacter(*rp);
 				}
 				break;
 
 				case PACKET_TYPES::SC_MOVE_CHARACTER:
 				{
 					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
-					result = SCPacketMoveCharacter(*rp);
+					result = new SCPacketMoveCharacter(*rp);
 				}
 				break;
 			}
@@ -176,9 +196,9 @@ std::optional<Packet> Network::OnReceive(DWORD bytes)
 	return result;
 }
 
-std::optional<Packet> Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
+std::optional<Packet*> Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
 {
-	std::optional<Packet> result{};
+	std::optional<Packet*> result{};
 	const auto my_async = static_cast<Asynchron*>(asynchron);
 
 	if (0 < bytes)
@@ -188,7 +208,7 @@ std::optional<Packet> Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
 		const auto packet = reinterpret_cast<Packet*>(my_async->sendCBuffer);
 		if (packet && sizeof(Packet) <= my_async->sendSize)
 		{
-			result = *packet;
+			result = packet;
 		}
 
 		my_send_sz += bytes;
@@ -230,4 +250,22 @@ int Network::SendPacket(Packet* packet)
 inline SOCKET Network::CreateSocket() const
 {
 	return WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, 0, 0, WSA_FLAG_OVERLAPPED);
+}
+
+inline auto Network::FindPlayer(const PID id) const
+{
+	return myLocalClients.find(id);
+}
+
+inline void Network::RegisterPlayer(const PID id)
+{
+	myLocalClients.try_emplace(id, make_shared<Session>(id));
+}
+
+inline void Network::RemovePlayer(const PID id)
+{
+	if (auto it = FindPlayer(id); it != myLocalClients.end())
+	{
+		myLocalClients.erase(it);
+	}
 }

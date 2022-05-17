@@ -8,11 +8,7 @@ constexpr COLORREF C_GOLD = RGB(223, 130, 20);
 constexpr int CLIENT_W = 800;
 constexpr int CLIENT_H = 600;
 
-class Panel;
-class Framework;
-class Scene;
-enum class SCENE_STATES : UCHAR;
-
+class ServerFramework;
 class Asynchron;
 class Packet;
 class Session;
