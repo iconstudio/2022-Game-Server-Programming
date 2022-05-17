@@ -1,6 +1,9 @@
 #include "stdafx.h"
 #include "Session.h"
+#include "Commons.hpp"
 #include "Network.hpp"
+#include "Packet.hpp"
+#include "Commons.hpp"
 #include "IOCP ServerFramework.hpp"
 
 Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
@@ -243,30 +246,40 @@ void Session::SendSignUp(PID nid)
 	}
 }
 
-void Session::SendCreateCharacter(PID id, CHAR cx, CHAR cy)
+void Session::SendCreatePlayer(PID id, int cx, int cy)
 {
-	std::cout << "SendCreateCharacter(" << id << ")\n";
-	auto result = SendPacket<SCPacketCreateCharacter>(id, cx, cy);
+	std::cout << "SendCreatePlayer(" << id << ")\n";
+	auto result = SendPacket<SCPacketCreatePlayer>(id, cx, cy);
 	if (SOCKET_ERROR == result)
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
-			ErrorDisplay("SendCreateCharacter()");
+			ErrorDisplay("SendCreatePlayer()");
 			Disconnect();
 			return;
 		}
 	}
 }
 
-void Session::SendMoveCharacter(PID id, CHAR nx, CHAR ny)
+void Session::SendAppearEntity(PID cid, int cx, int cy)
 {
-	std::cout << "SendMoveCharacter(" << id << ")\n";
+
+}
+
+void Session::SendDisppearEntity(PID cid)
+{
+
+}
+
+void Session::SendMoveEntity(PID id, int nx, int ny)
+{
+	std::cout << "SendMoveEntity(" << id << ")\n";
 	auto result = SendPacket<SCPacketMoveCharacter>(id, nx, ny);
 	if (SOCKET_ERROR == result)
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
-			ErrorDisplay("SendMoveCharacter()");
+			ErrorDisplay("SendMoveEntity()");
 			Disconnect();
 			return;
 		}

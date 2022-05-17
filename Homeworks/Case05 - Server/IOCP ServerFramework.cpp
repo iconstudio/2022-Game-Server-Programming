@@ -331,7 +331,7 @@ void IOCPFramework::SendWorldDataTo(SessionPtr& who)
 			auto& instance = other->Instance;
 			if (instance)
 			{
-				who->SendCreateCharacter(other->ID, instance->x, instance->y);
+				who->SendCreatePlayer(other->ID, instance->x, instance->y);
 			}
 		}
 	});
@@ -357,7 +357,7 @@ void IOCPFramework::BroadcastSignOut(SessionPtr& who)
 void IOCPFramework::BroadcastCreateCharacter(SessionPtr& who, CHAR cx, CHAR cy)
 {
 	ForeachClient([&](const SessionPtr& other) {
-		other->SendCreateCharacter(who->ID, cx, cy);
+		other->SendCreatePlayer(who->ID, cx, cy);
 	});
 }
 
@@ -366,7 +366,7 @@ void IOCPFramework::BroadcastMoveCharacterFrom(const UINT index, CHAR nx, CHAR n
 	auto& session = GetClient(index);
 
 	ForeachClient([&](const SessionPtr& other) {
-		other->SendMoveCharacter(session->ID, nx, ny);
+		other->SendMoveEntity(session->ID, nx, ny);
 	});
 }
 

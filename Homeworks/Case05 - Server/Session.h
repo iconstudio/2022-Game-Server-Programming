@@ -1,11 +1,8 @@
 #pragma once
 #include "stdafx.h"
 #include "Network.hpp"
-
-enum class SESSION_STATES
-{
-	NONE, CONNECTED, ACCEPTED, 
-};
+#include "GameEntity.hpp"
+#include "PlayerCharacter.hpp"
 
 class Session
 {
@@ -30,8 +27,11 @@ public:
 	void ProceedSent(EXOVERLAPPED* overlap, DWORD byte);
 	void SendSignUp(PID nid);
 	void SendSignOut(PID rid);
-	void SendCreateCharacter(PID id, CHAR cx, CHAR cy);
-	void SendMoveCharacter(PID id, CHAR nx, CHAR ny);
+
+	void SendCreatePlayer(PID id, int cx, int cy);
+	void SendAppearEntity(PID cid, int cx, int cy);
+	void SendDisppearEntity(PID cid);
+	void SendMoveEntity(PID id, int nx, int ny);
 
 	bool TryMove(WPARAM input);
 
@@ -52,8 +52,8 @@ private:
 	int Recv(DWORD flags = 0);
 	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
 
-	template<typename PACKET, typename ...Ty>
-		requires std::is_base_of_v<Packet, PACKET>
+	template<typename MY_PACKET, typename ...Ty>
+		requires std::is_base_of_v<Packet, MY_PACKET>
 	int SendPacket(Ty&&... args);
 
 	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
@@ -69,4 +69,11 @@ private:
 	EXOVERLAPPED* overlapSendSignOut;
 
 	IOCPFramework& Framework;
+
+	shared_concurrent_vector<GameEntity> myViewList;
+};
+
+enum class SESSION_STATES
+{
+	NONE, CONNECTED, ACCEPTED,
 };

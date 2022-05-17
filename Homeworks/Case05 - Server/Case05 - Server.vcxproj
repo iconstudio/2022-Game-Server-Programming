@@ -148,16 +148,22 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Commons.cpp" />
+    <ClCompile Include="GameEntity.cpp" />
     <ClCompile Include="IOCP Server.cpp" />
     <ClCompile Include="IOCP ServerFramework.cpp" />
     <ClCompile Include="Network.cpp" />
+    <ClCompile Include="Packet.cpp" />
+    <ClCompile Include="PlayerCharacter.cpp" />
     <ClCompile Include="Session.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Commons.hpp" />
+    <ClInclude Include="GameEntity.hpp" />
     <ClInclude Include="IOCP ServerFramework.hpp" />
     <ClInclude Include="Network.hpp" />
+    <ClInclude Include="Packet.hpp" />
+    <ClInclude Include="PlayerCharacter.hpp" />
     <ClInclude Include="Session.h" />
     <ClInclude Include="stdafx.h" />
   </ItemGroup>
