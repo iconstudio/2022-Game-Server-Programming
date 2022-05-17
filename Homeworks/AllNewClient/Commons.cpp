@@ -105,7 +105,7 @@ void SceneMain::OnKeyDown(WPARAM key, LPARAM states)
 
 		default:
 		{
-			if (isdigit(WPARAM(key)))
+			if (isdigit(int(key)))
 			{
 				if (streamIP.length() < 16)
 				{
