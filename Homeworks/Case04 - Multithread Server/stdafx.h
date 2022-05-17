@@ -5,15 +5,43 @@
 #include <WS2tcpip.h>
 #include <MSWSock.h>
 
+#include <DirectXMath.h>
+#include <DirectXPackedVector.h>
+#include <DirectXColors.h>
+#include <DirectXCollision.h>
+using DirectX::BoundingBox, DirectX::BoundingOrientedBox, DirectX::BoundingFrustum;
+using DirectX::XMFLOAT3, DirectX::XMFLOAT4, DirectX::XMFLOAT4X4;
+using DirectX::XMStoreFloat3, DirectX::XMStoreFloat4, DirectX::XMStoreFloat4x4;
+using DirectX::XMLoadFloat3, DirectX::XMLoadFloat4, DirectX::XMLoadFloat4x4;
+
+#include <string>
 #include <iostream>
+#include <mutex>
+#include <thread>
+#include <atomic>
+#include <chrono>
+#include <optional>
 #include <memory>
+#include <numeric>
+#include <concurrent_vector.h>
 #include <vector>
+#include <array>
 #include <unordered_map>
 #include <algorithm>
-#include <numeric>
-#include <mutex>
-#include <chrono>
-#include <array>
+
+using std::string;
+using std::array;
+using std::shared_ptr;
+using std::unique_ptr;
+using std::weak_ptr;
+using std::atomic;
+using std::atomic_bool;
+using std::atomic_int;
+using std::atomic_uint;
+using std::make_shared;
+using std::make_unique;
+
+using PID = long long;
 
 class IOCPFramework;
 class Session;

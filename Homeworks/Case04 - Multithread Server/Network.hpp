@@ -1,9 +1,9 @@
 #pragma once
 #include "stdafx.h"
+#include "Packet.hpp"
 
 void ClearOverlap(LPWSAOVERLAPPED overlap);
 
-using PID = ULONG;
 constexpr USHORT PORT = 6000;
 constexpr UINT CLIENTS_MAX_NUMBER = 10;
 constexpr PID CLIENTS_ORDER_BEGIN = 10000;
@@ -14,18 +14,6 @@ enum class OVERLAP_OPS : UCHAR
 	NONE = 0,
 	RECV,
 	SEND,
-};
-
-enum class PACKET_TYPES : UCHAR
-{
-	NONE = 0,
-	CS_SIGNIN,
-	CS_SIGNOUT,
-	CS_KEY,
-	SC_SIGNUP,
-	SC_CREATE_CHARACTER,
-	SC_MOVE_CHARACTER,
-	SC_SIGNOUT
 };
 
 #pragma pack(push, 1)
