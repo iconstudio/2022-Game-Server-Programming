@@ -28,10 +28,10 @@ public:
 
 private:
 	void Listen();
-	void ProceedAccept();
+	bool ProceedAccept();
 
 	PID MakeNewbieID();
-	SessionPtr SeekNewbieSession();
+	SessionPtr SeekNewbieSession() const;
 	void RegisterNewbie(const UINT index);
 
 	void Disconnect(const PID who);
@@ -51,21 +51,18 @@ private:
 	SOCKADDR_IN Address;
 	INT szAddress;
 	HANDLE completionPort;
+	const ULONG_PTR serverKey;
+	std::vector<std::thread> threadWorkers;
 
 	WSAOVERLAPPED acceptOverlap;
 	DWORD acceptBytes;
 	char acceptCBuffer[BUFSIZ];
-	SOCKET acceptNewbie;
-
-	const ULONG_PTR serverKey;
-
-	std::timed_mutex mutexClient;
+	atomic<SOCKET> acceptNewbie;
 
 	std::array<SessionPtr, CLIENTS_MAX_NUMBER> clientsPool;
-	PID orderClientIDs;
-	UINT numberClients;
-
-	std::vector<std::thread> threadWorkers;
+	atomic<PID> orderClientIDs;
+	atomic<UINT> numberClients;
+	std::timed_mutex mutexClient;
 };
 
 template<typename Predicate>

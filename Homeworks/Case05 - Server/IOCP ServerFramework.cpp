@@ -91,9 +91,9 @@ void IOCPFramework::Start()
 
 	std::cout << "서버 시작\n";
 
-	acceptNewbie = CreateSocket();
-	Listen();
+	acceptNewbie.store(CreateSocket(), std::memory_order_seq_cst);
 
+	Listen();
 	threadWorkers.emplace_back(::IOCPWorker, 0);
 	threadWorkers.emplace_back(::IOCPWorker, 1);
 	threadWorkers.emplace_back(::IOCPWorker, 2);
@@ -130,7 +130,14 @@ void IOCPFramework::Update()
 
 		if (serverKey == key) // AcceptEx
 		{
-			ProceedAccept();
+			if (!ProceedAccept())
+			{
+				// acceptNewbie의 소유권 내려놓기
+				acceptNewbie.store(CreateSocket(), std::memory_order_release);
+
+				// 다시 시작
+				Listen();
+			}
 		}
 		else // Recv / Send
 		{
@@ -170,7 +177,7 @@ void IOCPFramework::Listen()
 	}
 }
 
-void IOCPFramework::ProceedAccept()
+bool IOCPFramework::ProceedAccept()
 {
 	if (CLIENTS_MAX_NUMBER <= GetClientsNumber())
 	{
@@ -178,28 +185,29 @@ void IOCPFramework::ProceedAccept()
 	}
 	else
 	{
-		std::unique_lock barrier(mutexClient);
-
 		auto key = MakeNewbieID();
 		auto session = SeekNewbieSession();
+		auto newbie = acceptNewbie.load(std::memory_order_acquire);
+
 		if (!session)
 		{
-			std::cout << "클라이언트 " << acceptNewbie << "가 접속에 실패했습니다.\n";
-			closesocket(acceptNewbie);
-			return;
+			std::cout << "클라이언트 " << newbie << "가 접속에 실패했습니다.\n";
+			closesocket(newbie);
+			return false;
 		}
 
-		auto index = session->Index;
-		auto io = CreateIoCompletionPort(HANDLE(acceptNewbie), completionPort, key, 0);
+		const auto index = session->Index;
+		auto io = CreateIoCompletionPort(HANDLE(newbie), completionPort, key, 0);
 		if (NULL == io)
 		{
 			ErrorDisplay("ProceedAccept → CreateIoCompletionPort()");
-			std::cout << "클라이언트 " << acceptNewbie << "가 접속에 실패했습니다.\n";
-			closesocket(acceptNewbie);
+			std::cout << "클라이언트 " << newbie << "가 접속에 실패했습니다.\n";
+			closesocket(newbie);
+			return false;
 		}
 		else
 		{
-			session->SetSocket(acceptNewbie);
+			session->SetSocket(newbie);
 			session->SetID(key);
 			session->SetStatus(SESSION_STATES::CONNECTED);
 
@@ -210,28 +218,31 @@ void IOCPFramework::ProceedAccept()
 					ErrorDisplay("ProceedAccept → RecvStream()");
 					std::cout << "클라이언트 " << key << "에서 오류!\n";
 					session->Cleanup();
+					return false;
 				}
-			};
+			}
 		}
-
-		acceptNewbie = CreateSocket();
 	}
 
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
 
+	// acceptNewbie 소켓의 소유권 내려놓기
+	acceptNewbie.store(CreateSocket(), std::memory_order_release);
+
 	Listen();
+	return true;
 }
 
 PID IOCPFramework::MakeNewbieID()
 {
-	return orderClientIDs++;
+	return orderClientIDs.fetch_add(1, std::memory_order_acq_rel);
 }
 
-SessionPtr IOCPFramework::SeekNewbieSession()
+SessionPtr IOCPFramework::SeekNewbieSession() const
 {
-	auto it = std::find_if(clientsPool.begin(), clientsPool.end()
-		, [&](SessionPtr& session) {
+	auto it = std::find_if(clientsPool.cbegin(), clientsPool.cend()
+		, [&](const SessionPtr& session) {
 		return (session->IsDisconnected());
 	});
 

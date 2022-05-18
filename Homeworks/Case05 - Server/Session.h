@@ -16,9 +16,9 @@ public:
 	void Cleanup();
 	void Disconnect();
 
-	bool IsConnected() const;
-	bool IsDisconnected() const;
-	bool IsAccepted() const;
+	bool IsConnected() const volatile;
+	bool IsDisconnected() const volatile;
+	bool IsAccepted() const volatile;
 
 	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
 	int RecvStream(DWORD size, DWORD begin_bytes);
@@ -35,11 +35,12 @@ public:
 
 	bool TryMove(WPARAM input);
 
-	PID ID;
 	const UINT Index;
-	SOCKET Socket;
 
-	SESSION_STATES Status;
+	atomic<SESSION_STATES> Status;
+	atomic<PID> ID;
+	atomic<SOCKET> Socket;
+
 	CHAR Nickname[30];
 	std::shared_ptr<PlayerCharacter> Instance;
 
