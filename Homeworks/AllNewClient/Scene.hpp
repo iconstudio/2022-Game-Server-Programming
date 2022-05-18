@@ -7,13 +7,15 @@ public:
 	Scene(Framework& framework, const char* name, size_t instance_count = 0);
 	virtual ~Scene();
 
+	void SetCamera(const shared_ptr<GameCamera> cam);
+
+	template<typename Type, typename Op = std::remove_cvref_t<Type>, bool = std::is_base_of_v<GameObject, Op>>
+	Op* CreateInstance(float x, float y);
+
 	virtual void Awake() = 0;
 	virtual void Start() = 0;
 	virtual void Update(float time_elapsed) = 0;
 	virtual void Render(HDC surface) = 0;
-
-	template<typename Type, typename Op = std::remove_cvref_t<Type>, bool = std::is_base_of_v<GameObject, Op>>
-	Op* CreateInstance(float x, float y);
 
 	bool IsCompleted() const;
 	bool IsPaused() const;
@@ -36,6 +38,7 @@ protected:
 	virtual void Complete() = 0;
 
 	Framework& myFramework;
+	shared_ptr<GameCamera> mainCamera;
 
 	std::vector<shared_ptr<GameObject>> myInstances;
 

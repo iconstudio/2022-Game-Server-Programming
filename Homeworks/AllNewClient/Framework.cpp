@@ -2,14 +2,15 @@
 #include "stdafx.hpp"
 #include "Framework.hpp"
 #include "Network.hpp"
-#include "Scene.hpp"
 #include "Packet.hpp"
+#include "Scene.hpp"
+#include "GameCamera.hpp"
 
 Framework::Framework(Network& network)
 	: myScenes(), myPipeline(), myState(nullptr)
 	, myNetwork(network), myTasks()
 	, isPaused(false)
-	, appSurface(NULL), appPainter()
+	, appSurface(NULL), appPainter(), appCamera(nullptr)
 {
 	myScenes.reserve(10);
 	myPipeline.reserve(10);
@@ -84,6 +85,8 @@ void Framework::Awake()
 			scene.second->Awake();
 		}
 	}
+
+	appCamera = make_shared<GameCamera>();
 }
 
 void Framework::Start()

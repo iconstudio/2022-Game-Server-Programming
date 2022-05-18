@@ -18,6 +18,11 @@ Scene::~Scene()
 	}
 }
 
+void Scene::SetCamera(const shared_ptr<GameCamera> ptr)
+{
+	mainCamera = ptr;
+}
+
 void Scene::Awake()
 {
 	if (0 < myInstances.size())

@@ -53,4 +53,5 @@ private:
 
 	HDC appSurface;
 	PAINTSTRUCT appPainter;
+	shared_ptr<GameCamera> appCamera;
 };
