@@ -7,6 +7,30 @@ constexpr COLORREF C_GREEN = RGB(0, 128, 0);
 constexpr COLORREF C_GOLD = RGB(223, 130, 20);
 constexpr int CLIENT_W = 800;
 constexpr int CLIENT_H = 600;
+constexpr int FRAME_W = 800;
+constexpr int FRAME_H = 600;
+
+constexpr int CELL_SIZE = 32;
+
+constexpr int CELL_W = CELL_SIZE;
+constexpr int CELL_H = CELL_SIZE;
+constexpr int CELLS_CNT_H = 400;
+constexpr int CELLS_CNT_V = 400;
+constexpr int CELLS_LENGTH = CELLS_CNT_H * CELLS_CNT_V;
+constexpr int WORLD_W = CELL_W * CELLS_CNT_H;
+constexpr int WORLD_H = CELL_H * CELLS_CNT_V;
+
+constexpr int SIGHT_CELLS_CNT_H = 11;
+constexpr int SIGHT_CELLS_CNT_V = 11;
+constexpr int SIGHT_W = CELL_W * SIGHT_CELLS_CNT_H;
+constexpr int SIGHT_H = CELL_H * SIGHT_CELLS_CNT_V;
+
+constexpr int BOARD_CELLS_CNT_H = 16;
+constexpr int BOARD_CELLS_CNT_V = 16;
+constexpr int BOARD_W = CELL_W * BOARD_CELLS_CNT_H;
+constexpr int BOARD_H = CELL_H * BOARD_CELLS_CNT_V;
+constexpr int BOARD_X = (FRAME_W - BOARD_W) / 2;
+constexpr int BOARD_Y = (FRAME_H - BOARD_H - 20) / 2;
 
 class Panel;
 class Framework;

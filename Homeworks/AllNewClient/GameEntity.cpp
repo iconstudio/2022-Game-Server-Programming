@@ -9,9 +9,6 @@ GameEntity::GameEntity()
 GameEntity::~GameEntity()
 {}
 
-void GameEntity::Render(HDC surface)
-{}
-
 void GameEntity::Awake()
 {}
 
@@ -19,4 +16,12 @@ void GameEntity::Start()
 {}
 
 void GameEntity::Update(float time_elapsed)
+{}
+
+void GameEntity::Render(HDC surface) const
+{
+	GameEntity::Render(surface, 0.0f, 0.0f);
+}
+
+void GameEntity::Render(HDC surface, float ax, float ay) const
 {}

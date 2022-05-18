@@ -7,5 +7,5 @@ public:
 	void Awake() override;
 	void Start() override;
 	void Update(float time_elapsed) override;
-	void Render(HDC surface) override;
+	void Render(HDC surface, float ax, float ay) const override;
 };

@@ -9,7 +9,6 @@ public:
 	virtual void Awake() = 0;
 	virtual void Start() = 0;
 	virtual void Update(float time_elapsed) = 0;
-	virtual void Render(HDC surface) = 0;
-
-	XMFLOAT3 myPosition;
+	virtual void Render(HDC surface) const;
+	virtual void Render(HDC surface, float ax, float ay) const;
 };

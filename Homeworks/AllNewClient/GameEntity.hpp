@@ -10,8 +10,9 @@ public:
 	virtual void Awake() override;
 	virtual void Start() override;
 	virtual void Update(float time_elapsed) override;
-	virtual void Render(HDC surface) override;
+	virtual void Render(HDC surface) const override;
+	virtual void Render(HDC surface, float ax, float ay) const override;
 
 	PID myID;
-
+	XMFLOAT3 myPosition;
 };
