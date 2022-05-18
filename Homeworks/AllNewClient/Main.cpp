@@ -104,6 +104,14 @@ LRESULT myProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 			myFramework.Awake();
 			myNetwork.Awake();
 			myFramework.Start();
+
+			SetTimer(hwnd, 0, 10, NULL);
+		}
+		break;
+
+		case WM_TIMER:
+		{
+			myFramework.Update(0.01);
 		}
 		break;
 
