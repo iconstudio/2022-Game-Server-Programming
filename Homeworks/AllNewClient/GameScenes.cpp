@@ -183,6 +183,7 @@ bool SceneLoading::OnNetwork(const Packet& packet)
 SceneGame::SceneGame(Framework& framework)
 	: Scene(framework, "SceneGame", 10)
 	, myLocalInstances()
+	, myPlayerCharacter(nullptr)
 {}
 
 void SceneGame::Awake()
@@ -219,15 +220,26 @@ bool SceneGame::OnNetwork(const Packet& packet)
 
 	if (PACKET_TYPES::SC_SIGNUP == packet_type)
 	{
-		auto inst = new PlayerCharacter();
-		inst->myID = pid;
-
-		myLocalInstances.push_back(inst);
-
 		return true;
 	}
 	else if (PACKET_TYPES::SC_CREATE_PLAYER == packet_type)
 	{
+		auto ticket = const_cast<Packet*>(&packet);
+		const auto rp = static_cast<SCPacketCreatePlayer*>(ticket);
+
+		if (PID(-1) != pid && pid == myFramework.GetMyID())
+		{
+			// 내 캐릭터는 이때 생성한다.
+			myPlayerCharacter = CreateInstance<PlayerCharacter>(rp->x, rp->y);
+			myPlayerCharacter->myID = pid;
+
+			myLocalInstances.push_back(myPlayerCharacter);
+		}
+		else
+		{
+			// 다른 플레이어의 세션은 이때 생성한다.
+		}
+
 		return true;
 	}
 	else if (PACKET_TYPES::SC_APPEAR_CHARACTER == packet_type)

@@ -47,6 +47,13 @@ public:
 	std::optional<Packet*> OnReceive(DWORD bytes);
 	std::optional<Packet*> OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes);
 
+	NETWORK_STATES myStatus;
+	struct
+	{
+		string myNickname;
+		PID myID = -1;
+	} myProfile;
+
 private:
 	int Receive(DWORD begin_bytes = 0);
 	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED asynchron);
@@ -57,13 +64,6 @@ private:
 	inline auto FindPlayer(const PID id) const;
 	inline void RegisterPlayer(const PID id);
 	inline void RemovePlayer(const PID id);
-
-	NETWORK_STATES myStatus;
-	struct
-	{
-		string myNickname;
-		PID myID = -1;
-	} myProfile;
 
 	SOCKET mySocket;
 	string serverIP;

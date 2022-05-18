@@ -63,8 +63,9 @@ public:
 
 private:
 	const int sightRange = 5;
-	int view_x, view_y;
 
+	// 내 플레이어 캐릭터
+	PlayerCharacter* myPlayerCharacter;
 	// 시야에 보이는 객체 목록 (시야)
 	std::vector<GameEntity*> myLocalInstances;
 

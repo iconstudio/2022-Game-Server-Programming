@@ -12,6 +12,7 @@ public:
 	bool JumpToPrevScene();
 	bool JumpTo(const char* scene_name);
 	void Connect(const char* ip);
+	PID GetMyID() const;
 
 	void Awake();
 	void Start();

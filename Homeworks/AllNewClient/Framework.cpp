@@ -76,6 +76,11 @@ void Framework::Connect(const char* ip)
 	myNetwork.Update();
 }
 
+PID Framework::GetMyID() const
+{
+	return myNetwork.myProfile.myID;
+}
+
 void Framework::Awake()
 {
 	appCamera = make_shared<GameCamera>();
