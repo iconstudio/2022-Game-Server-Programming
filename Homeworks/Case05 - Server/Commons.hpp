@@ -45,9 +45,9 @@ struct SCPacketSignUp : public Packet
 /// </summary>
 struct SCPacketCreatePlayer : public Packet
 {
-	SCPacketCreatePlayer(PID pid, int cx, int cy);
+	SCPacketCreatePlayer(PID pid, float cx, float cy);
 
-	int x, y;
+	float x, y;
 };
 
 /// <summary>
@@ -55,10 +55,20 @@ struct SCPacketCreatePlayer : public Packet
 /// </summary>
 struct SCPacketAppearCharacter : public Packet
 {
-	SCPacketAppearCharacter(PID cid, int type, int cx, int cy);
+	SCPacketAppearCharacter(PID cid, int type, float cx, float cy);
 
 	int myType;
-	int x, y;
+	float x, y;
+};
+
+/// <summary>
+/// 특정 개체의 캐릭터 이동
+/// </summary>
+struct SCPacketMoveCharacter : public Packet
+{
+	SCPacketMoveCharacter(PID cid, float nx, float ny);
+
+	float x, y;
 };
 
 /// <summary>
@@ -67,16 +77,6 @@ struct SCPacketAppearCharacter : public Packet
 struct SCPacketDisppearCharacter : public Packet
 {
 	SCPacketDisppearCharacter(PID cid);
-};
-
-/// <summary>
-/// 특정 개체의 캐릭터 이동
-/// </summary>
-struct SCPacketMoveCharacter : public Packet
-{
-	SCPacketMoveCharacter(PID cid, int nx, int ny);
-
-	int x, y;
 };
 
 /// <summary>

@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "stdafx.hpp"
 #include "PlayerCharacter.hpp"
 
 PlayerCharacter::PlayerCharacter(int ox, int oy)

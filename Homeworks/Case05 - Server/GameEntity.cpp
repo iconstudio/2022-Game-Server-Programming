@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "stdafx.hpp"
 #include "GameEntity.hpp"
 
 GameEntity::GameEntity(PID id, int x, int y)

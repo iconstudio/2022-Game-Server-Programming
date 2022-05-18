@@ -1,5 +1,5 @@
 #pragma once
-#include "stdafx.h"
+#include "stdafx.hpp"
 
 #pragma pack(push, 1)
 class Packet

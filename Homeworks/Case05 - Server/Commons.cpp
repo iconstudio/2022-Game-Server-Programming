@@ -1,4 +1,4 @@
-#include "stdafx.h"
+#include "stdafx.hpp"
 #include "Commons.hpp"
 #include "Packet.hpp"
 
@@ -24,19 +24,19 @@ SCPacketSignUp::SCPacketSignUp(PID nid, UINT users, UINT usersmax)
 	, usersCurrent(users), usersMax(usersmax)
 {}
 
-SCPacketCreatePlayer::SCPacketCreatePlayer(PID pid, int cx, int cy)
+SCPacketCreatePlayer::SCPacketCreatePlayer(PID pid, float cx, float cy)
 	: Packet(PACKET_TYPES::SC_CREATE_PLAYER, sizeof(SCPacketCreatePlayer), pid)
 	, x(cx), y(cy)
 {}
 
-SCPacketMoveCharacter::SCPacketMoveCharacter(PID cid, int nx, int ny)
-	: Packet(PACKET_TYPES::SC_MOVE_CHARACTER, sizeof(SCPacketMoveCharacter), cid)
-	, x(nx), y(ny)
-{}
-
-SCPacketAppearCharacter::SCPacketAppearCharacter(PID cid, int type, int nx, int ny)
+SCPacketAppearCharacter::SCPacketAppearCharacter(PID cid, int type, float nx, float ny)
 	: Packet(PACKET_TYPES::SC_APPEAR_CHARACTER, sizeof(SCPacketAppearCharacter), cid)
 	, myType(type), x(nx), y(ny)
+{}
+
+SCPacketMoveCharacter::SCPacketMoveCharacter(PID cid, float nx, float ny)
+	: Packet(PACKET_TYPES::SC_MOVE_CHARACTER, sizeof(SCPacketMoveCharacter), cid)
+	, x(nx), y(ny)
 {}
 
 SCPacketDisppearCharacter::SCPacketDisppearCharacter(PID cid)
