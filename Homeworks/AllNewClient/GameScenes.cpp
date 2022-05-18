@@ -2,9 +2,10 @@
 #include "stdafx.hpp"
 #include "GameScenes.hpp"
 #include "Framework.hpp"
-#include "PlayerCharacter.hpp"
 #include "Commons.hpp"
 #include "Packet.hpp"
+#include "GameCamera.hpp"
+#include "PlayerCharacter.hpp"
 #include "Draw.hpp"
 
 SceneMain::SceneMain(Framework& framework)
@@ -193,22 +194,22 @@ void SceneGame::Start()
 void SceneGame::Update(float time_elapsed)
 {}
 
-void SceneGame::Render(HDC surface)
+void SceneGame::Reset()
 {
-	if (0 < myLocalInstances.size())
-	{
-		for (const auto& inst : myLocalInstances)
-		{
-			inst->Render(surface);
-		}
-	}
+	mainCamera->myPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
 }
 
-void SceneGame::Reset()
-{}
-
 void SceneGame::Complete()
-{}
+{
+	mainCamera->myPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
+
+	Scene::Complete();
+}
+
+void SceneGame::Render(HDC surface)
+{
+	Scene::Render(surface);
+}
 
 bool SceneGame::OnNetwork(const Packet& packet)
 {
@@ -222,7 +223,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		inst->myID = pid;
 
 		myLocalInstances.push_back(inst);
-	
+
 		return true;
 	}
 	else if (PACKET_TYPES::SC_CREATE_PLAYER == packet_type)
@@ -268,7 +269,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 				break;
 			}
 		}
-	
+
 		return true;
 	}
 	else if (PACKET_TYPES::SC_MOVE_CHARACTER == packet_type)
@@ -283,4 +284,3 @@ void SceneGame::OnKeyDown(WPARAM key, LPARAM states)
 {
 
 }
-

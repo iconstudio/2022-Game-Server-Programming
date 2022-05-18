@@ -3,6 +3,7 @@
 #include "Scene.hpp"
 #include "Framework.hpp"
 #include "Packet.hpp"
+#include "GameCamera.hpp"
 
 Scene::Scene(Framework& framework, const char* name, size_t instance_count)
 	: myFramework(framework), myName(name)
@@ -18,9 +19,9 @@ Scene::~Scene()
 	}
 }
 
-void Scene::SetCamera(const shared_ptr<GameCamera> ptr)
+void Scene::SetCamera(const shared_ptr<GameCamera> cam)
 {
-	mainCamera = ptr;
+	mainCamera = cam;
 }
 
 void Scene::Awake()
@@ -58,11 +59,13 @@ void Scene::Update(float time_elapsed)
 
 void Scene::Render(HDC surface)
 {
-	if (0 < myInstances.size())
+	if (0 < myInstances.size() && mainCamera)
 	{
+		const auto& my_cam_pos = mainCamera->myPosition;
+
 		for (auto& instance : myInstances)
 		{
-			instance->Render(surface);
+			instance->Render(surface, -my_cam_pos.x, -my_cam_pos.y);
 		}
 	}
 }

@@ -54,7 +54,7 @@ public:
 	void Awake() override;
 	void Start() override;
 	void Update(float time_elapsed) override;
-	void Render(HDC surface) override;
+	//void Render(HDC surface) override;
 	void Reset() override;
 	void Complete() override;
 
@@ -67,6 +67,9 @@ private:
 
 	// 시야에 보이는 객체 목록 (시야)
 	std::vector<GameEntity*> myLocalInstances;
+
+	// Scene을(를) 통해 상속됨
+	virtual void Render(HDC surface) override;
 	// 저장해 둔 고유 객체 캐시
 	//shared_concurrent_vector<GameEntity*> myLocalCached;
 };

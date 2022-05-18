@@ -78,6 +78,8 @@ void Framework::Connect(const char* ip)
 
 void Framework::Awake()
 {
+	appCamera = make_shared<GameCamera>();
+
 	if (0 < myScenes.size())
 	{
 		for (auto& scene : myScenes)
@@ -85,8 +87,6 @@ void Framework::Awake()
 			scene.second->Awake();
 		}
 	}
-
-	appCamera = make_shared<GameCamera>();
 }
 
 void Framework::Start()
@@ -202,12 +202,16 @@ void Framework::Resume()
 void Framework::Register(const shared_ptr<Scene>& scene)
 {
 	myScenes.try_emplace(scene->myName, scene);
+
+	scene->SetCamera(appCamera);
 }
 
 void Framework::Register(shared_ptr<Scene>&& scene)
 {
 	const auto&& my_scene = std::forward<shared_ptr<Scene>>(scene);
 	myScenes.try_emplace(my_scene->myName, my_scene);
+
+	scene->SetCamera(appCamera);
 }
 
 void Framework::AddTask(Packet* packet)
