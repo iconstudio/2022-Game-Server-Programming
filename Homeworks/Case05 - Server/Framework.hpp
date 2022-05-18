@@ -94,7 +94,7 @@ private:
 	atomic<SOCKET> acceptNewbie;
 
 	std::array<SessionPtr, CLIENTS_MAX_NUMBER> clientsPool;
-	std::concurr
+	concurrent_map<PID, SessionPtr> myClients;
 	atomic<PID> orderClientIDs;
 	atomic<UINT> numberClients;
 	std::timed_mutex mutexClient;
