@@ -4,13 +4,12 @@
 #include "Network.hpp"
 #include "Packet.hpp"
 #include "Scene.hpp"
-#include "GameCamera.hpp"
 
 Framework::Framework(Network& network)
 	: myScenes(), myPipeline(), myState(nullptr)
 	, myNetwork(network), myTasks()
 	, isPaused(false)
-	, appSurface(NULL), appPainter(), appCamera(nullptr)
+	, appSurface(NULL), appPainter()
 {
 	myScenes.reserve(10);
 	myPipeline.reserve(10);
@@ -83,8 +82,6 @@ PID Framework::GetMyID() const
 
 void Framework::Awake()
 {
-	appCamera = make_shared<GameCamera>();
-
 	if (0 < myScenes.size())
 	{
 		for (auto& scene : myScenes)
@@ -207,16 +204,12 @@ void Framework::Resume()
 void Framework::Register(const shared_ptr<Scene>& scene)
 {
 	myScenes.try_emplace(scene->myName, scene);
-
-	scene->SetCamera(appCamera);
 }
 
 void Framework::Register(shared_ptr<Scene>&& scene)
 {
 	const auto&& my_scene = std::forward<shared_ptr<Scene>>(scene);
 	myScenes.try_emplace(my_scene->myName, my_scene);
-
-	scene->SetCamera(appCamera);
 }
 
 void Framework::AddTask(Packet* packet)

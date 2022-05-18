@@ -7,9 +7,12 @@
 
 Scene::Scene(Framework& framework, const char* name, size_t instance_count)
 	: myFramework(framework), myName(name)
-	, myInstances(instance_count)
+	, myCamera()
+	, myInstances()
 	, isCompleted(false), isPaused(false), isConsistent(false)
-{}
+{
+	myInstances.reserve(instance_count);
+}
 
 Scene::~Scene()
 {
@@ -17,11 +20,6 @@ Scene::~Scene()
 	{
 		Reset();
 	}
-}
-
-void Scene::SetCamera(const shared_ptr<GameCamera> cam)
-{
-	mainCamera = cam;
 }
 
 void Scene::Awake()
@@ -59,9 +57,9 @@ void Scene::Update(float time_elapsed)
 
 void Scene::Render(HDC surface)
 {
-	if (0 < myInstances.size() && mainCamera)
+	if (0 < myInstances.size())
 	{
-		const auto& my_cam_pos = mainCamera->myPosition;
+		const auto& my_cam_pos = myCamera.myPosition;
 
 		for (auto& instance : myInstances)
 		{
@@ -78,6 +76,11 @@ void Scene::Reset()
 void Scene::Complete()
 {
 	isCompleted = true;
+}
+
+void Scene::AddInstance(GameObject* instance)
+{
+	myInstances.push_back(shared_ptr<GameObject>(instance));
 }
 
 bool Scene::TryPause()
@@ -149,17 +152,7 @@ bool Scene::IsPaused() const
 template<typename Type, typename Op, bool>
 Op* Scene::CreateInstance()
 {
-	return new Op();
-}
-
-template<>
-GameEntity* Scene::CreateInstance<GameEntity, GameEntity, true>()
-{
-	return new GameEntity();
-}
-
-template<>
-PlayerCharacter* Scene::CreateInstance<PlayerCharacter, PlayerCharacter, true>()
-{
-	return new PlayerCharacter();
+	auto ptr = new Op();
+	AddInstance(ptr);
+	return ptr;
 }

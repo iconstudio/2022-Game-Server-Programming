@@ -190,7 +190,9 @@ SceneGame::SceneGame(Framework& framework)
 	: Scene(framework, "SceneGame", 10)
 	, myLocalInstances()
 	, myPlayerCharacter(nullptr)
-{}
+{
+	myLocalInstances.reserve(100);
+}
 
 void SceneGame::Awake()
 {}
@@ -203,12 +205,13 @@ void SceneGame::Update(float time_elapsed)
 
 void SceneGame::Reset()
 {
-	mainCamera->myPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	myCamera.myPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
 }
 
 void SceneGame::Complete()
 {
-	mainCamera->myPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	myCamera.myPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	myLocalInstances.clear();
 
 	Scene::Complete();
 }
@@ -246,6 +249,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			myPlayerCharacter->myID = pid;
 
 			myLocalInstances.push_back(myPlayerCharacter);
+			InvalidateRect(NULL, NULL, TRUE);
 		}
 		else
 		{
@@ -274,6 +278,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		inst->myID = pid;
 
 		myLocalInstances.push_back(inst);
+		InvalidateRect(NULL, NULL, TRUE);
 
 		return true;
 	}
@@ -295,6 +300,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 				break;
 			}
 		}
+		InvalidateRect(NULL, NULL, TRUE);
 
 		return true;
 	}
@@ -309,4 +315,20 @@ bool SceneGame::OnNetwork(const Packet& packet)
 void SceneGame::OnKeyDown(WPARAM key, LPARAM states)
 {
 
+}
+
+template<>
+GameEntity* Scene::CreateInstance<GameEntity, GameEntity, true>()
+{
+	auto ptr = new GameEntity();
+	AddInstance(ptr);
+	return ptr;
+}
+
+template<>
+PlayerCharacter* Scene::CreateInstance<PlayerCharacter, PlayerCharacter, true>()
+{
+	auto ptr = new PlayerCharacter();
+	AddInstance(ptr);
+	return ptr;
 }

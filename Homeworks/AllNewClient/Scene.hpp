@@ -1,6 +1,7 @@
 #pragma once
 #include "GameObject.hpp"
 #include "PlayerCharacter.hpp"
+#include "GameCamera.hpp"
 
 class Scene
 {
@@ -8,14 +9,13 @@ public:
 	Scene(Framework& framework, const char* name, size_t instance_count = 0);
 	virtual ~Scene();
 
-	void SetCamera(const shared_ptr<GameCamera> cam);
-
 	template<typename Type, typename Op = std::remove_cvref_t<Type>, bool = std::is_base_of_v<GameObject, Op>>
 	Op* CreateInstance();
 	template<>
 	GameEntity* CreateInstance<GameEntity, GameEntity, true>();
 	template<>
 	PlayerCharacter* CreateInstance<PlayerCharacter, PlayerCharacter, true>();
+
 
 	virtual void Awake() = 0;
 	virtual void Start() = 0;
@@ -42,8 +42,10 @@ protected:
 	virtual void Reset() = 0;
 	virtual void Complete() = 0;
 
+	void AddInstance(GameObject* instance);
+
 	Framework& myFramework;
-	shared_ptr<GameCamera> mainCamera;
+	GameCamera myCamera;
 
 	std::vector<shared_ptr<GameObject>> myInstances;
 
