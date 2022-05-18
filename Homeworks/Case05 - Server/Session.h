@@ -28,10 +28,10 @@ public:
 	void SendSignUp(PID nid);
 	void SendSignOut(PID rid);
 
-	void SendCreatePlayer(PID id, int cx, int cy);
-	void SendAppearEntity(PID cid, int cx, int cy);
+	void SendCreatePlayer(PID id, float cx, float cy);
+	void SendAppearEntity(PID cid, float cx, float cy);
 	void SendDisppearEntity(PID cid);
-	void SendMoveEntity(PID id, int nx, int ny);
+	void SendMoveEntity(PID id, float nx, float ny);
 
 	bool TryMove(WPARAM input);
 

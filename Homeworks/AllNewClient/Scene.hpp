@@ -1,5 +1,6 @@
 #pragma once
 #include "GameObject.hpp"
+#include "PlayerCharacter.hpp"
 
 class Scene
 {
@@ -10,7 +11,11 @@ public:
 	void SetCamera(const shared_ptr<GameCamera> cam);
 
 	template<typename Type, typename Op = std::remove_cvref_t<Type>, bool = std::is_base_of_v<GameObject, Op>>
-	Op* CreateInstance(float x, float y);
+	Op* CreateInstance();
+	template<>
+	GameEntity* CreateInstance<GameEntity, GameEntity, true>();
+	template<>
+	PlayerCharacter* CreateInstance<PlayerCharacter, PlayerCharacter, true>();
 
 	virtual void Awake() = 0;
 	virtual void Start() = 0;
@@ -46,9 +51,3 @@ protected:
 	bool isCompleted;
 	bool isPaused;
 };
-
-template<typename Type, typename Op, bool>
-inline Op* Scene::CreateInstance(float x, float y)
-{
-	return nullptr;
-}

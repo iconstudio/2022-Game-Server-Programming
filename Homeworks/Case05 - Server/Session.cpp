@@ -246,7 +246,7 @@ void Session::SendSignUp(PID nid)
 	}
 }
 
-void Session::SendCreatePlayer(PID id, int cx, int cy)
+void Session::SendCreatePlayer(PID id, float cx, float cy)
 {
 	std::cout << "SendCreatePlayer(" << id << ")\n";
 	auto result = SendPacket<SCPacketCreatePlayer>(id, cx, cy);
@@ -261,7 +261,7 @@ void Session::SendCreatePlayer(PID id, int cx, int cy)
 	}
 }
 
-void Session::SendAppearEntity(PID cid, int cx, int cy)
+void Session::SendAppearEntity(PID cid, float cx, float cy)
 {
 
 }
@@ -271,7 +271,7 @@ void Session::SendDisppearEntity(PID cid)
 
 }
 
-void Session::SendMoveEntity(PID id, int nx, int ny)
+void Session::SendMoveEntity(PID id, float nx, float ny)
 {
 	std::cout << "SendMoveEntity(" << id << ")\n";
 	auto result = SendPacket<SCPacketMoveCharacter>(id, nx, ny);

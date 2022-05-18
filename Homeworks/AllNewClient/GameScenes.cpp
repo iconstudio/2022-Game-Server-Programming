@@ -230,7 +230,9 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		if (PID(-1) != pid && pid == myFramework.GetMyID())
 		{
 			// 내 캐릭터는 이때 생성한다.
-			myPlayerCharacter = CreateInstance<PlayerCharacter>(rp->x, rp->y);
+			myPlayerCharacter = CreateInstance<PlayerCharacter>();
+			myPlayerCharacter->myPosition.x = rp->x;
+			myPlayerCharacter->myPosition.y = rp->y;
 			myPlayerCharacter->myID = pid;
 
 			myLocalInstances.push_back(myPlayerCharacter);
@@ -256,7 +258,9 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		}
 
 		// 다른 플레이어의 캐릭터
-		auto inst = CreateInstance<PlayerCharacter>(rp->x, rp->y);
+		auto inst = CreateInstance<PlayerCharacter>();
+		inst->myPosition.x = rp->x;
+		inst->myPosition.y = rp->y;
 		inst->myID = pid;
 
 		myLocalInstances.push_back(inst);

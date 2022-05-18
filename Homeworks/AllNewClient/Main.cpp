@@ -111,7 +111,7 @@ LRESULT myProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)
 
 		case WM_TIMER:
 		{
-			myFramework.Update(0.01);
+			myFramework.Update(0.01f);
 		}
 		break;
 

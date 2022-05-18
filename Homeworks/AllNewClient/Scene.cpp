@@ -145,3 +145,21 @@ bool Scene::IsPaused() const
 {
 	return isPaused;
 }
+
+template<typename Type, typename Op, bool>
+Op* Scene::CreateInstance()
+{
+	return new Op();
+}
+
+template<>
+GameEntity* Scene::CreateInstance<GameEntity, GameEntity, true>()
+{
+	return new GameEntity();
+}
+
+template<>
+PlayerCharacter* Scene::CreateInstance<PlayerCharacter, PlayerCharacter, true>()
+{
+	return new PlayerCharacter();
+}
