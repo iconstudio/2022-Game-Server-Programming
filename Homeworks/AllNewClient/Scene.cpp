@@ -93,8 +93,10 @@ void Scene::Resume()
 	isPaused = false;
 }
 
-void Scene::OnNetwork(Packet* packet)
-{}
+bool Scene::OnNetwork(Packet* packet)
+{
+	return false;
+}
 
 void Scene::OnMouse(UINT type, WPARAM button, LPARAM cursor)
 {}

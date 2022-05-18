@@ -13,7 +13,7 @@ public:
 	virtual void Render(HDC surface) = 0;
 
 	template<typename Type, typename Op = std::remove_cvref_t<Type>, bool = std::is_base_of_v<GameObject, Op>>
-	 Op* CreateInstance(float x, float y);
+	Op* CreateInstance(float x, float y);
 
 	bool IsCompleted() const;
 	bool IsPaused() const;
@@ -22,7 +22,7 @@ public:
 	virtual void Pause();
 	virtual void Resume();
 
-	virtual void OnNetwork(Packet* packet);
+	[[nodiscard]] virtual bool OnNetwork(Packet* packet);
 	virtual void OnMouse(UINT type, WPARAM button, LPARAM cursor);
 	virtual void OnKeyboard(UINT type, WPARAM key, LPARAM states);
 	virtual void OnKeyDown(WPARAM key, LPARAM states);

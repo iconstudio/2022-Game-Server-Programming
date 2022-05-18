@@ -13,7 +13,7 @@ public:
 	void Reset() override;
 	void Complete() override;
 
-	void OnNetwork(Packet* packet) override;
+	[[nodiscard]] bool OnNetwork(Packet* packet) override;
 	void OnKeyDown(WPARAM key, LPARAM states) override;
 
 private:
@@ -36,7 +36,7 @@ public:
 	void Reset() override;
 	void Complete() override;
 
-	void OnNetwork(Packet* packet) override;
+	[[nodiscard]] bool OnNetwork(Packet* packet) override;
 
 private:
 	const int draw_x = CLIENT_W / 2;
@@ -58,10 +58,15 @@ public:
 	void Reset() override;
 	void Complete() override;
 
-	void OnNetwork(Packet* packet) override;
+	[[nodiscard]] bool OnNetwork(Packet* packet) override;
 	void OnKeyDown(WPARAM key, LPARAM states) override;
 
 private:
+	const int sightRange = 5;
+	int view_x, view_y;
+
 	// 시야에 보이는 객체 목록 (시야)
-	std::vector<GameEntity> myLocalInstances;
+	std::vector<GameEntity*> myLocalInstances;
+	// 저장해 둔 고유 객체 캐시
+	concurrren<GameEntity*> myLocalCached;
 };

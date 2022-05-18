@@ -52,15 +52,18 @@ void SceneMain::Reset()
 
 void SceneMain::Complete()
 {
-	isCompleted = true;
+	Scene::Complete();
 }
 
-void SceneMain::OnNetwork(Packet* packet)
+bool SceneMain::OnNetwork(Packet* packet)
 {
 	if (PACKET_TYPES::CS_SIGNIN == packet->Type) // 로그인 요청 전송 성공
 	{
 		Complete();
+		return true;
 	}
+
+	return false;
 }
 
 void SceneMain::OnKeyDown(WPARAM key, LPARAM states)
@@ -165,12 +168,15 @@ void SceneLoading::Complete()
 	Scene::Complete();
 }
 
-void SceneLoading::OnNetwork(Packet* packet)
+bool SceneLoading::OnNetwork(Packet* packet)
 {
 	if (PACKET_TYPES::SC_SIGNUP == packet->Type)
 	{
 		Complete();
+		return true;
 	}
+
+	return false;
 }
 
 SceneGame::SceneGame(Framework& framework)
@@ -196,7 +202,7 @@ void SceneGame::Reset()
 void SceneGame::Complete()
 {}
 
-void SceneGame::OnNetwork(Packet* packet)
+bool SceneGame::OnNetwork(Packet* packet)
 {
 	const auto& pid = packet->playerID;
 	const auto& packet_type = packet->Type;
@@ -204,13 +210,16 @@ void SceneGame::OnNetwork(Packet* packet)
 
 	if (PACKET_TYPES::SC_SIGNUP == packet_type)
 	{
-		auto inst = PlayerCharacter();
-		inst.myID = pid;
+		auto inst = new PlayerCharacter();
+		inst->myID = pid;
 
 		myLocalInstances.push_back(inst);
+	
+		return true;
 	}
 	else if (PACKET_TYPES::SC_CREATE_PLAYER == packet_type)
 	{
+		return true;
 	}
 	else if (PACKET_TYPES::SC_APPEAR_CHARACTER == packet_type)
 	{
@@ -218,33 +227,47 @@ void SceneGame::OnNetwork(Packet* packet)
 
 		for (const auto& inst : myLocalInstances)
 		{
-			if (inst.myID == pid)
+			if (inst->myID == pid)
 			{
-				return;
+				return false;
 			}
 		}
 
 		// 다른 플레이어의 캐릭터
 		auto inst = CreateInstance<PlayerCharacter>(rp->x, rp->y);
 		inst->myID = pid;
+
+		myLocalInstances.push_back(inst);
+
+		return true;
 	}
 	else if (PACKET_TYPES::SC_DISAPPEAR_CHARACTER == packet_type)
 	{
 		// 다른 플레이어의 캐릭터 삭제
+		auto rit = std::erase_if(myLocalInstances,
+			[pid](const GameEntity* entity) -> bool {
+			return (entity->myID == pid);
+		});
+
 		for (auto it = myLocalInstances.begin(); it != myLocalInstances.end(); it++)
 		{
 			auto& inst = *it;
 
-			if (inst.myID == pid)
+			if (inst->myID == pid)
 			{
 				myLocalInstances.erase(it);
 				break;
 			}
 		}
+	
+		return true;
 	}
 	else if (PACKET_TYPES::SC_MOVE_CHARACTER == packet_type)
 	{
+		return true;
 	}
+
+	return false;
 }
 
 void SceneGame::OnKeyDown(WPARAM key, LPARAM states)

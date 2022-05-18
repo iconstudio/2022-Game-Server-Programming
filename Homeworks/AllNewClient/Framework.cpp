@@ -134,7 +134,10 @@ void Framework::OnNetwork(Packet* packet)
 {
 	if (myState)
 	{
-		myState->OnNetwork(packet);
+		if (!myState->OnNetwork(packet))
+		{
+
+		}
 	}
 
 	// 전달 후 처리 과정을 거쳐 사용한 패킷은 삭제
