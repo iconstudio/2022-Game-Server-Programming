@@ -55,9 +55,9 @@ void SceneMain::Complete()
 	Scene::Complete();
 }
 
-bool SceneMain::OnNetwork(Packet* packet)
+bool SceneMain::OnNetwork(const Packet& packet)
 {
-	if (PACKET_TYPES::CS_SIGNIN == packet->Type) // 로그인 요청 전송 성공
+	if (PACKET_TYPES::CS_SIGNIN == packet.Type) // 로그인 요청 전송 성공
 	{
 		Complete();
 		return true;
@@ -168,12 +168,12 @@ void SceneLoading::Complete()
 	Scene::Complete();
 }
 
-bool SceneLoading::OnNetwork(Packet* packet)
+bool SceneLoading::OnNetwork(const Packet& packet)
 {
-	if (PACKET_TYPES::SC_SIGNUP == packet->Type)
+	if (PACKET_TYPES::SC_SIGNUP == packet.Type)
 	{
 		Complete();
-		return true;
+		return false; // 처리는 안 하지만 종료는 함.
 	}
 
 	return false;
@@ -194,7 +194,15 @@ void SceneGame::Update(float time_elapsed)
 {}
 
 void SceneGame::Render(HDC surface)
-{}
+{
+	if (0 < myLocalInstances.size())
+	{
+		for (const auto& inst : myLocalInstances)
+		{
+			inst->Render(surface);
+		}
+	}
+}
 
 void SceneGame::Reset()
 {}
@@ -202,11 +210,11 @@ void SceneGame::Reset()
 void SceneGame::Complete()
 {}
 
-bool SceneGame::OnNetwork(Packet* packet)
+bool SceneGame::OnNetwork(const Packet& packet)
 {
-	const auto& pid = packet->playerID;
-	const auto& packet_type = packet->Type;
-	const auto& packet_sz = packet->Size;
+	const auto& pid = packet.playerID;
+	const auto& packet_type = packet.Type;
+	const auto& packet_sz = packet.Size;
 
 	if (PACKET_TYPES::SC_SIGNUP == packet_type)
 	{
@@ -223,13 +231,14 @@ bool SceneGame::OnNetwork(Packet* packet)
 	}
 	else if (PACKET_TYPES::SC_APPEAR_CHARACTER == packet_type)
 	{
-		const auto rp = static_cast<SCPacketAppearCharacter*>(packet);
+		auto ticket = const_cast<Packet*>(&packet);
+		const auto rp = static_cast<SCPacketAppearCharacter*>(ticket);
 
 		for (const auto& inst : myLocalInstances)
 		{
 			if (inst->myID == pid)
 			{
-				return false;
+				return true;
 			}
 		}
 

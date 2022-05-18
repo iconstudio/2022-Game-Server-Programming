@@ -93,7 +93,7 @@ void Scene::Resume()
 	isPaused = false;
 }
 
-bool Scene::OnNetwork(Packet* packet)
+bool Scene::OnNetwork(const Packet& packet)
 {
 	return false;
 }
