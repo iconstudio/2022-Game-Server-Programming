@@ -3,6 +3,7 @@
 
 #pragma comment(lib, "MSWSock.lib")
 #pragma comment(lib, "Ws2_32.lib")
+#define NOMINMAX
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #include <WS2tcpip.h>
 #include <MSWSock.h>
@@ -28,6 +29,7 @@ using DirectX::XMLoadFloat3, DirectX::XMLoadFloat4, DirectX::XMLoadFloat4x4;
 #include <concurrent_vector.h>
 #include <vector>
 #include <array>
+#include <queue>
 #include <unordered_map>
 #include <algorithm>
 
@@ -45,6 +47,8 @@ using std::make_unique;
 
 using int_pair = std::pair<int, int>;
 using float_pair = std::pair<float, float>;
+using Clock = std::chrono::system_clock::time_point;
+using Duration = std::chrono::system_clock::duration;
 
 template<typename Type>
 using concurrent_vector = Concurrency::concurrent_vector<Type>;
