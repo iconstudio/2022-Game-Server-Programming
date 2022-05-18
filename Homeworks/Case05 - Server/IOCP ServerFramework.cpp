@@ -207,6 +207,9 @@ bool IOCPFramework::ProceedAccept()
 		}
 		else
 		{
+			// acceptNewbie 소켓의 소유권 내려놓기
+			acceptNewbie.store(CreateSocket(), std::memory_order_release);
+
 			session->SetSocket(newbie);
 			session->SetID(key);
 			session->SetStatus(SESSION_STATES::CONNECTED);
@@ -226,9 +229,6 @@ bool IOCPFramework::ProceedAccept()
 
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
-
-	// acceptNewbie 소켓의 소유권 내려놓기
-	acceptNewbie.store(CreateSocket(), std::memory_order_release);
 
 	Listen();
 	return true;

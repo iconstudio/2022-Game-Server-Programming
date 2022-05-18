@@ -59,17 +59,17 @@ void Session::Disconnect()
 
 bool Session::IsConnected() const volatile
 {
-	return SESSION_STATES::CONNECTED == Status.load(std::memory_order_acquire);
+	return SESSION_STATES::CONNECTED == Status.load(std::memory_order_acq_rel);
 }
 
 bool Session::IsDisconnected() const volatile
 {
-	return SESSION_STATES::NONE == Status.load(std::memory_order_acquire);
+	return SESSION_STATES::NONE == Status.load(std::memory_order_acq_rel);
 }
 
 bool Session::IsAccepted() const volatile
 {
-	return SESSION_STATES::ACCEPTED == Status.load(std::memory_order_acquire);
+	return SESSION_STATES::ACCEPTED == Status.load(std::memory_order_acq_rel);
 }
 
 void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)

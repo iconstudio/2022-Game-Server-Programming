@@ -151,9 +151,9 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 					auto rp = reinterpret_cast<SCPacketSignOut*>(recvCBuffer);
 					result = new SCPacketSignOut(*rp);
 
-					if (pid == myProfile.myID)
+					if (PID(-1) != pid && pid == myProfile.myID)
 					{
-
+						ErrorAbort(L"잘못된 접속 종료 호출!", 0);
 					}
 					else
 					{

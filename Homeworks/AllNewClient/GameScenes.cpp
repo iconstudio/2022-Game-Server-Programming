@@ -267,6 +267,10 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		{
 			if (inst->myID == pid)
 			{
+				inst->myPosition.x = rp->x;
+				inst->myPosition.y = rp->y;
+
+				InvalidateRect(NULL, NULL, TRUE);
 				return true;
 			}
 		}
@@ -285,26 +289,28 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	else if (PACKET_TYPES::SC_DISAPPEAR_CHARACTER == packet_type)
 	{
 		// 다른 플레이어의 캐릭터 삭제
-		auto rit = std::erase_if(myLocalInstances,
+		auto rit = std::remove_if(myLocalInstances.begin(), myLocalInstances.end(),
 			[pid](const GameEntity* entity) -> bool {
 			return (entity->myID == pid);
 		});
-
-		for (auto it = myLocalInstances.begin(); it != myLocalInstances.end(); it++)
+				
+		if (myLocalInstances.end() != rit)
 		{
-			auto& inst = *it;
+			myLocalInstances.erase(rit);
 
-			if (inst->myID == pid)
-			{
-				myLocalInstances.erase(it);
-				break;
-			}
+			InvalidateRect(NULL, NULL, TRUE);
 		}
-		InvalidateRect(NULL, NULL, TRUE);
 
 		return true;
 	}
 	else if (PACKET_TYPES::SC_MOVE_CHARACTER == packet_type)
+	{
+		auto ticket = const_cast<Packet*>(&packet);
+		const auto rp = static_cast<SCPacketMoveCharacter*>(ticket);
+
+		return true;
+	}
+	else if (PACKET_TYPES::SC_SIGNOUT == packet_type)
 	{
 		return true;
 	}
