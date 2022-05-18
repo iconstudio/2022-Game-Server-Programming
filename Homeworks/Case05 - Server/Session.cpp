@@ -4,7 +4,7 @@
 #include "Network.hpp"
 #include "Packet.hpp"
 #include "Commons.hpp"
-#include "IOCP ServerFramework.hpp"
+#include "Framework.hpp"
 
 Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
 	: Index(index), ID(id), Nickname(), Socket(sock), Framework(framework)

@@ -157,8 +157,8 @@
   <ItemGroup>
     <ClCompile Include="Commons.cpp" />
     <ClCompile Include="GameEntity.cpp" />
-    <ClCompile Include="IOCP Server.cpp" />
-    <ClCompile Include="IOCP ServerFramework.cpp" />
+    <ClCompile Include="Server.cpp" />
+    <ClCompile Include="Framework.cpp" />
     <ClCompile Include="Network.cpp" />
     <ClCompile Include="Packet.cpp" />
     <ClCompile Include="PlayerCharacter.cpp" />
@@ -168,7 +168,7 @@
   <ItemGroup>
     <ClInclude Include="Commons.hpp" />
     <ClInclude Include="GameEntity.hpp" />
-    <ClInclude Include="IOCP ServerFramework.hpp" />
+    <ClInclude Include="Framework.hpp" />
     <ClInclude Include="Network.hpp" />
     <ClInclude Include="Packet.hpp" />
     <ClInclude Include="PlayerCharacter.hpp" />

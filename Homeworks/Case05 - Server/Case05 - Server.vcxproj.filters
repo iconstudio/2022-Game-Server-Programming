@@ -18,10 +18,10 @@
     <ClCompile Include="Commons.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="IOCP Server.cpp">
+    <ClCompile Include="Server.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="IOCP ServerFramework.cpp">
+    <ClCompile Include="Framework.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Network.cpp">
@@ -47,7 +47,7 @@
     <ClInclude Include="Commons.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="IOCP ServerFramework.hpp">
+    <ClInclude Include="Framework.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="Network.hpp">
