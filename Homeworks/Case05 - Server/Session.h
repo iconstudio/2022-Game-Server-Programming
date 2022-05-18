@@ -21,13 +21,14 @@ public:
 	bool IsAccepted() const volatile;
 
 	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
-	int RecvStream(DWORD size, DWORD begin_bytes);
-	int RecvStream(DWORD begin_bytes = 0);
-
 	void ProceedSent(EXOVERLAPPED* overlap, DWORD byte);
+
+	template<typename MY_PACKET, typename ...Ty>
+		requires std::is_base_of_v<Packet, MY_PACKET>
+	int SendPacket(Ty&&... args);
+
 	void SendSignUp(PID nid);
 	void SendSignOut(PID rid);
-
 	void SendCreatePlayer(PID id, float cx, float cy);
 	void SendAppearEntity(PID cid, float cx, float cy);
 	void SendDisppearEntity(PID cid);
@@ -53,9 +54,8 @@ private:
 	int Recv(DWORD flags = 0);
 	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
 
-	template<typename MY_PACKET, typename ...Ty>
-		requires std::is_base_of_v<Packet, MY_PACKET>
-	int SendPacket(Ty&&... args);
+	int RecvStream(DWORD size, DWORD begin_bytes);
+	int RecvStream(DWORD begin_bytes = 0);
 
 	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
 

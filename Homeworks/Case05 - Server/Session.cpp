@@ -31,17 +31,17 @@ Session::~Session()
 
 void Session::SetStatus(SESSION_STATES state)
 {
-	Status = state;
+	Status.store(state, std::memory_order_relaxed);
 }
 
 void Session::SetSocket(SOCKET sock)
 {
-	Socket = sock;
+	Socket.store(sock, std::memory_order_relaxed);
 }
 
 void Session::SetID(const PID id)
 {
-	ID = id;
+	ID.store(id, std::memory_order_relaxed);
 }
 
 void Session::Cleanup()
@@ -113,7 +113,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 					Instance = std::make_shared<PlayerCharacter>(3, 3);
 
-					Framework.RegisterNewbie(Index);
+					Framework.ConnectFrom(Index);
 				}
 			}
 			break;

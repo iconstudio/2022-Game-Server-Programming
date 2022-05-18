@@ -11,7 +11,7 @@ int main()
 	return 0;
 }
 
-void IOCPWorker(const UINT index)
+void CALLBACK IOCPWorker()
 {
 	while (true)
 	{

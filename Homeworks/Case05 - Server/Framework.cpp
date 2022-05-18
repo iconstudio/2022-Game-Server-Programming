@@ -120,15 +120,12 @@ void IOCPFramework::Update()
 	WSAOVERLAPPED* portOverlap = nullptr;
 
 	auto result = GetQueuedCompletionStatus(completionPort, &portBytes, &portKey, &portOverlap, INFINITE);
-	auto key = portKey;
 
 	if (TRUE == result)
 	{
-		auto bytes = portBytes;
+		std::cout << "GQCS: " << portKey << ", Bytes: " << portBytes << "\n";
 
-		std::cout << "GQCS: " << key << ", Bytes: " << bytes << "\n";
-
-		if (serverKey == key) // AcceptEx
+		if (serverKey == portKey) // AcceptEx
 		{
 			if (!ProceedAccept())
 			{
@@ -141,16 +138,16 @@ void IOCPFramework::Update()
 		}
 		else // Recv / Send
 		{
-			ProceedPacket(portOverlap, key, bytes);
+			ProceedPacket(portOverlap, portKey, portBytes);
 		}
 	}
 	else
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
-			if (serverKey != key)
+			if (serverKey != portKey)
 			{
-				Disconnect(PID(key));
+				Disconnect(PID(portKey));
 			}
 			ErrorDisplay("GetQueuedCompletionStatus(2)");
 		}
@@ -159,7 +156,8 @@ void IOCPFramework::Update()
 
 void IOCPFramework::Listen()
 {
-	auto result = AcceptEx(Listener, acceptNewbie, acceptCBuffer
+	auto newbie = acceptNewbie.load(std::memory_order_acq_rel);
+	auto result = AcceptEx(Listener, newbie, acceptCBuffer
 		, 0
 		, sizeof(SOCKADDR_IN) + 16
 		, szAddress + 16
@@ -177,9 +175,29 @@ void IOCPFramework::Listen()
 	}
 }
 
+SessionPtr& IOCPFramework::GetClient(const UINT index)
+{
+	return clientsPool[index];
+}
+
+SessionPtr& IOCPFramework::GetClientByID(const PID id)
+{
+	auto it = std::find_if(clientsPool.begin(), clientsPool.end(), [&](SessionPtr& session) {
+		return (id == session->ID);
+	});
+
+	return *it;
+}
+
+UINT IOCPFramework::GetClientsNumber() const volatile
+{
+	return numberClients.load(std::memory_order_relaxed);
+}
+
 bool IOCPFramework::ProceedAccept()
 {
-	if (CLIENTS_MAX_NUMBER <= GetClientsNumber())
+	const auto number = GetAndAcquireClientsNumber();
+	if (CLIENTS_MAX_NUMBER <= number)
 	{
 		std::cout << "새 접속을 받을 수 없습니다!\n";
 	}
@@ -249,19 +267,22 @@ SessionPtr IOCPFramework::SeekNewbieSession() const
 	return *it;
 }
 
-void IOCPFramework::RegisterNewbie(const UINT index)
+void IOCPFramework::ConnectFrom(const UINT index)
 {
-	std::unique_lock barrier(mutexClient);
-
 	auto& session = GetClient(index);
-	session->SetStatus(SESSION_STATES::ACCEPTED);
+	auto status = session->Status.load(std::memory_order_acquire);
 
-	BroadcastSignUp(session);
-	
-	BroadcastCreateCharacter(session, session->Instance->x, session->Instance->y);
+	if (SESSION_STATES::CONNECTED == status)
+	{
+		BroadcastSignUp(session);
 
-	SendWorldDataTo(session);
-	numberClients++;
+		BroadcastCreateCharacter(session, session->Instance->x, session->Instance->y);
+
+		SendWorldDataTo(session);
+		numberClients++;
+
+		session->Status.store(SESSION_STATES::ACCEPTED, std::memory_order_release);
+	}
 }
 
 void IOCPFramework::Disconnect(const PID who)
@@ -365,7 +386,7 @@ void IOCPFramework::BroadcastSignOut(SessionPtr& who)
 	});
 }
 
-void IOCPFramework::BroadcastCreateCharacter(SessionPtr& who, CHAR cx, CHAR cy)
+void IOCPFramework::BroadcastCreateCharacter(SessionPtr& who)
 {
 	ForeachClient([&](const SessionPtr& other) {
 		other->SendCreatePlayer(who->ID, cx, cy);
@@ -381,23 +402,9 @@ void IOCPFramework::BroadcastMoveCharacterFrom(const UINT index, CHAR nx, CHAR n
 	});
 }
 
-SessionPtr& IOCPFramework::GetClient(const UINT index)
+UINT IOCPFramework::GetAndAcquireClientsNumber() const volatile
 {
-	return clientsPool[index];
-}
-
-SessionPtr& IOCPFramework::GetClientByID(const PID id)
-{
-	auto it = std::find_if(clientsPool.begin(), clientsPool.end(), [&](SessionPtr& session) {
-		return (id == session->ID);
-	});
-
-	return *it;
-}
-
-UINT IOCPFramework::GetClientsNumber() const
-{
-	return numberClients;
+	return numberClients.load(std::memory_order_acquire);
 }
 
 SOCKET&& IOCPFramework::CreateSocket() const
