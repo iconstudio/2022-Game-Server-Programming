@@ -9,13 +9,15 @@ public:
 	void SetSendBuffer(const WSABUF& buffer);
 	void SetSendBuffer(WSABUF&& buffer);
 	void SetSendBuffer(LPWSABUF buffer);
-	void SetSendBuffer(CHAR* cbuffer, DWORD size);
+	void SetSendBuffer(const char* cbuffer, const size_t size);
+	template<size_t _Size>
+	void SetSendBuffer(char cbuffer[_Size]);
 
 	const ASYNC_OPERATIONS myOperation;
 	const PACKET_TYPES myPacketType;
 
-	LPWSABUF sendBuffer;
-	CHAR sendCBuffer[BUFFSZ];
+	unique_ptr<WSABUF> sendBuffer;
+	unique_ptr<CHAR[BUFFSZ]> sendCBuffer;
 	DWORD sendSize, sendSzWant;
 };
 
