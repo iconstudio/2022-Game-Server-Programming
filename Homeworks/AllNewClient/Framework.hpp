@@ -33,11 +33,16 @@ private:
 	void Register(const shared_ptr<Scene>& scene);
 	void Register(shared_ptr<Scene>&& scene);
 
+	void AddTask(Packet* packet);
+	shared_ptr<Packet> GetLastTask() const;
+	void PopTask();
+
 	shared_ptr<Scene> Push(Scene* scene);
 	shared_ptr<Scene> Pop();
 	shared_ptr<Scene> GetScene(const char* name) const;
 
 	Network& myNetwork;
+	std::queue<shared_ptr<Packet>> myTasks;
 
 	std::unordered_map<string, shared_ptr<Scene>> myScenes;
 	std::vector<shared_ptr<Scene>> myPipeline;

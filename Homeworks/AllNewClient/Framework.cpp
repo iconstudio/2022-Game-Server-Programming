@@ -7,7 +7,7 @@
 
 Framework::Framework(Network& network)
 	: myScenes(), myPipeline(), myState(nullptr)
-	, myNetwork(network)
+	, myNetwork(network), myTasks()
 	, isPaused(false)
 	, appSurface(NULL), appPainter()
 {
@@ -101,6 +101,8 @@ void Framework::Start()
 
 void Framework::Update(float elapsed_time)
 {
+	auto packet = GetLastTask();
+
 	if (myState)
 	{
 		myState->Update(elapsed_time);
@@ -108,6 +110,14 @@ void Framework::Update(float elapsed_time)
 		if (myState->IsCompleted())
 		{
 			JumpToNextScene();
+		}
+
+		if (packet && myState->OnNetwork(*packet))
+		{
+			PopTask();
+
+			// 전달 후 처리 과정을 거쳐 사용한 패킷은 삭제
+			//delete packet;
 		}
 	}
 }
@@ -132,16 +142,7 @@ void Framework::Render(HDC surface)
 
 void Framework::OnNetwork(Packet* packet)
 {
-	if (myState)
-	{
-		if (!myState->OnNetwork(packet))
-		{
-
-		}
-	}
-
-	// 전달 후 처리 과정을 거쳐 사용한 패킷은 삭제
-	delete packet;
+	AddTask(packet);
 }
 
 void Framework::OnMouse(UINT type, WPARAM button, LPARAM cursor)
@@ -204,6 +205,24 @@ void Framework::Register(shared_ptr<Scene>&& scene)
 {
 	const auto&& my_scene = std::forward<shared_ptr<Scene>>(scene);
 	myScenes.try_emplace(my_scene->myName, my_scene);
+}
+
+void Framework::AddTask(Packet* packet)
+{
+	myTasks.push(shared_ptr<Packet>(packet));
+}
+
+shared_ptr<Packet> Framework::GetLastTask() const
+{
+	if (0 < myTasks.size())
+		return myTasks.front();
+	else
+		return nullptr;
+}
+
+void Framework::PopTask()
+{
+	myTasks.pop();
 }
 
 shared_ptr<Scene> Framework::Push(Scene* scene)
