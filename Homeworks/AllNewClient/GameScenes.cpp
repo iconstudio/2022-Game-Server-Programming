@@ -29,6 +29,7 @@ void SceneMain::Render(HDC surface)
 
 	auto filler = CreateSolidBrush(C_BLACK);
 	auto old_filler = Draw::Attach(surface, filler);
+	auto old_bk = SetBkMode(surface, TRANSPARENT);
 
 	auto old_align = SetTextAlign(surface, TA_CENTER);
 	constexpr auto notification = L"접속할 서버의 IP 주소를 입력해주세요.";
@@ -43,6 +44,7 @@ void SceneMain::Render(HDC surface)
 
 	SetTextAlign(surface, old_align);
 
+	SetBkMode(surface, old_bk);
 	Draw::Detach(surface, old_filler, filler);
 }
 
@@ -148,8 +150,11 @@ void SceneLoading::Update(float time_elapsed)
 
 void SceneLoading::Render(HDC surface)
 {
+	Draw::Clear(surface, CLIENT_W, CLIENT_H, C_WHITE);
+
 	auto filler = CreateSolidBrush(C_BLACK);
 	auto old_filler = Draw::Attach(surface, filler);
+	auto old_bk = SetBkMode(surface, TRANSPARENT);
 
 	auto old_align = SetTextAlign(surface, TA_CENTER);
 
@@ -158,6 +163,7 @@ void SceneLoading::Render(HDC surface)
 	TextOut(surface, draw_x, draw_y, notification, noti_len);
 
 	SetTextAlign(surface, old_align);
+	SetBkMode(surface, old_bk);
 	Draw::Detach(surface, old_filler, filler);
 }
 
@@ -209,7 +215,11 @@ void SceneGame::Complete()
 
 void SceneGame::Render(HDC surface)
 {
+	Draw::Clear(surface, CLIENT_W, CLIENT_H, C_GREEN);
+
+	auto old_bk = SetBkMode(surface, TRANSPARENT);
 	Scene::Render(surface);
+	SetBkMode(surface, old_bk);
 }
 
 bool SceneGame::OnNetwork(const Packet& packet)
