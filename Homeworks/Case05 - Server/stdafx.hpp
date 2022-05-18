@@ -24,6 +24,7 @@ using DirectX::XMLoadFloat3, DirectX::XMLoadFloat4, DirectX::XMLoadFloat4x4;
 #include <memory>
 #include <numeric>
 #include <concurrent_vector.h>
+#include <concurrent_unordered_map.h>
 #include <vector>
 #include <array>
 #include <unordered_map>
@@ -52,6 +53,11 @@ template<typename Type>
 using weak_concurrent_vector = concurrent_vector<weak_ptr<Type>>;
 template<typename Type>
 using unique_concurrent_vector = concurrent_vector<unique_ptr<Type>>;
+
+template<typename KeyType, typename ValueType>
+using concurrent_map = Concurrency::concurrent_unordered_map<KeyType, ValueType>;
+template<typename KeyType, typename ValueType>
+using shared_concurrent_map = concurrent_map<KeyType, shared_ptr<ValueType>>;
 
 template<typename Type>
 using shared_atomic = atomic<shared_ptr<Type>>;
@@ -93,7 +99,7 @@ class PlayerCharacter;
 void ErrorDisplay(const char* title);
 
 constexpr USHORT PORT = 6000;
-constexpr UINT CLIENTS_MAX_NUMBER = 10;
+constexpr UINT CLIENTS_MAX_NUMBER = 10000;
 constexpr PID CLIENTS_ORDER_BEGIN = 10000;
 constexpr UINT BUFFSIZE = 512;
 
