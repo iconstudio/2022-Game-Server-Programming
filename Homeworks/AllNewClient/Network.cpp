@@ -139,7 +139,7 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 					}
 
 					// 자신의 세션 등록
-					RegisterPlayer(pid);
+					//RegisterPlayer(pid);
 
 					// 시작
 					Update();
@@ -167,7 +167,7 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 					auto rp = reinterpret_cast<SCPacketCreatePlayer*>(recvCBuffer);
 					result = new SCPacketCreatePlayer(*rp);
 
-					// 다른 플레이어의 세션 등록
+					// 자신 또는 다른 플레이어의 세션 등록
 					RegisterPlayer(pid);
 				}
 				break;

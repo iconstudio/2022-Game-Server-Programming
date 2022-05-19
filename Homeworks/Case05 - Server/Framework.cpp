@@ -177,11 +177,7 @@ SessionPtr IOCPFramework::GetClient(const UINT index) const
 
 SessionPtr IOCPFramework::GetClientByID(const PID id) const
 {
-	auto it = std::find_if(clientsPool.cbegin(), clientsPool.cend(), [&](SessionPtr& session) {
-		return (id == session->ID.load(std::memory_order_relaxed));
-	});
-
-	return (*it).load(std::memory_order_relaxed);
+	return GetClient(myClients.find(id)->second);
 }
 
 UINT IOCPFramework::GetClientsNumber() const volatile
@@ -257,6 +253,7 @@ void IOCPFramework::ConnectFrom(const UINT index)
 
 	if (SESSION_STATES::CONNECTED == status)
 	{
+		AddClient(session->GetID(), index);
 		++numberClients;
 
 		BroadcastSignUp(session);
@@ -272,8 +269,6 @@ void IOCPFramework::ConnectFrom(const UINT index)
 
 void IOCPFramework::Disconnect(const PID id)
 {
-	std::unique_lock barrier(mutexClient);
-
 	if (auto session = GetClientByID(id); session)
 	{
 		if (session->IsAccepted())
@@ -289,6 +284,16 @@ void IOCPFramework::Disconnect(const PID id)
 			session->Cleanup();
 		}
 	}
+}
+
+void IOCPFramework::AddClient(const PID id, const UINT place)
+{
+	myClients.insert({id, place});
+}
+
+void IOCPFramework::RemoveClient(const PID rid)
+{
+
 }
 
 void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes)
@@ -334,22 +339,19 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 
 void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 {
-	ForeachClient([&](const SessionPtr& other) {
-		if (other != who)
-		{
-			who->SendSignUp(other->ID);
-
-			auto& instance = other->Instance;
-			if (instance)
-			{
-				who->SendCreatePlayer(other->ID, instance->x, instance->y);
-			}
-		}
-	});
+	for (auto& info : myClients)
+	{
+		who->SendSignUp(GetClient(info.first)->GetID());
+	}
 }
 
 void IOCPFramework::BroadcastSignUp(SessionPtr& who)
 {
+	for (auto& other : myClients)
+	{
+		auto session = GetClientByID(other.first);
+	}
+
 	ForeachClient([&](const SessionPtr& other) {
 		other->SendCreatePlayer(who->ID);
 	});

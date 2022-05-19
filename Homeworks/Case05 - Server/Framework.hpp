@@ -29,6 +29,11 @@ private:
 	void Listen();
 	bool ProceedAccept();
 
+	void ConnectFrom(const UINT index);
+	void Disconnect(const PID id);
+	void AddClient(const PID id, const UINT place);
+	void RemoveClient(const PID id);
+
 	UINT AcquireClientsNumber() const volatile;
 	shared_ptr<Session> AcquireClient(const UINT index) const;
 	shared_ptr<Session> AcquireClient(const shared_atomic<Session>& ptr) const volatile;
@@ -42,9 +47,6 @@ private:
 	void ReleaseClient(const UINT home, shared_ptr<Session>& original);
 	void ReleaseNewbieSocket(const SOCKET n_socket) volatile;
 	void ReleaseNewbieID(const PID next) volatile;
-
-	void ConnectFrom(const UINT index);
-	void Disconnect(const PID id);
 
 	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
@@ -93,8 +95,6 @@ private:
 	/// <param name="ny"></param>
 	int SendMoveEntity(SessionPtr& target, PID cid, float nx, float ny);
 
-	template<typename Predicate> void ForeachClient(Predicate predicate);
-
 	SOCKET Listener;
 	SOCKADDR_IN Address;
 	INT szAddress;
@@ -119,15 +119,3 @@ private:
 	atomic<PID> orderClientIDs;
 	std::timed_mutex mutexClient;
 };
-
-template<typename Predicate>
-inline void IOCPFramework::ForeachClient(Predicate predicate)
-{
-	for (auto& session : clientsPool)
-	{
-		if (session->IsAccepted())
-		{
-			predicate(session);
-		}
-	}
-}
