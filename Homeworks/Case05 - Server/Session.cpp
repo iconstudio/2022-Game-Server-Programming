@@ -139,7 +139,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 					strcpy_s(Nickname, result->Nickname);
 					std::cout << ID << "'s Nickname: " << Nickname << ".\n";
 
-					Instance = std::make_shared<PlayerCharacter>(3, 3);
+					Instance = std::make_shared<PlayerCharacter>(ID, 30.0f, 30.0f, 0.0f);
 
 					Framework.ConnectFrom(Index);
 				}
