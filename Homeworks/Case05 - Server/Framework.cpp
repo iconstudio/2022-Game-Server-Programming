@@ -295,13 +295,13 @@ void IOCPFramework::Disconnect(const PID id)
 
 		if (session->IsAccepted())
 		{
+			// 서버에서 해당 클라이언트를 삭제
+			DeregisterPlayer(id);
 			// Broadcast: 클라이언트에게 접속 종료를 통지
 			for (auto& player : myClients)
 			{
 				GetClient(player.second)->SendSignOut(id);
 			}
-			// 서버에서 해당 클라이언트를 삭제
-			DeregisterPlayer(id);
 			// 원래 클라이언트가 있던 세션 청소
 			session->Cleanup();
 		}
