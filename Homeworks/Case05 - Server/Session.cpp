@@ -242,75 +242,40 @@ int Session::RecvStream(DWORD begin_bytes)
 	return RecvStream(BUFFSIZE, begin_bytes);
 }
 
-void Session::SendSignUp(PID nid)
+int Session::SendSignUp(PID nid)
 {
 	std::cout << "SendSignUp(" << nid << ")\n";
-	auto result = SendPacket<SCPacketSignUp>(nid
-		, Framework.GetClientsNumber(), CLIENTS_MAX_NUMBER);
-	if (SOCKET_ERROR == result)
-	{
-		if (WSA_IO_PENDING != WSAGetLastError())
-		{
-			ErrorDisplay("SendSignUp()");
-			Disconnect();
-			return;
-		}
-	}
+	return SendPacket<SCPacketSignUp>(nid, Framework.GetClientsNumber(), CLIENTS_MAX_NUMBER);
 }
 
-void Session::SendCreatePlayer(PID id, float cx, float cy)
+int Session::SendCreatePlayer(PID id)
 {
 	std::cout << "SendCreatePlayer(" << id << ")\n";
-	auto result = SendPacket<SCPacketCreatePlayer>(id, cx, cy);
-	if (SOCKET_ERROR == result)
-	{
-		if (WSA_IO_PENDING != WSAGetLastError())
-		{
-			ErrorDisplay("SendCreatePlayer()");
-			Disconnect();
-			return;
-		}
-	}
+	return SendPacket<SCPacketCreatePlayer>(id, 0.0f, 0.0f);
 }
 
-void Session::SendAppearEntity(PID cid, float cx, float cy)
+int Session::SendAppearEntity(PID cid, int type, float cx, float cy)
 {
-
+	std::cout << "SendAppearEntity(" << cid << ")\n";
+	return SendPacket<SCPacketAppearCharacter>(cid, type, cx, cy);
 }
 
-void Session::SendDisppearEntity(PID cid)
+int Session::SendDisppearEntity(PID cid)
 {
-
+	std::cout << "SendDisppearEntity(" << cid << ")\n";
+	return SendPacket<SCPacketDisppearCharacter>(cid);
 }
 
-void Session::SendMoveEntity(PID id, float nx, float ny)
+int Session::SendMoveEntity(PID id, float nx, float ny)
 {
 	std::cout << "SendMoveEntity(" << id << ")\n";
-	auto result = SendPacket<SCPacketMoveCharacter>(id, nx, ny);
-	if (SOCKET_ERROR == result)
-	{
-		if (WSA_IO_PENDING != WSAGetLastError())
-		{
-			ErrorDisplay("SendMoveEntity()");
-			Disconnect();
-			return;
-		}
-	}
+	return SendPacket<SCPacketMoveCharacter>(id, nx, ny);
 }
 
-void Session::SendSignOut(PID rid)
+int Session::SendSignOut(PID rid)
 {
 	std::cout << "SendSignOut(" << rid << ")\n";
-	auto result = SendPacket<SCPacketSignOut>(rid, Framework.GetClientsNumber());
-	if (SOCKET_ERROR == result)
-	{
-		if (WSA_IO_PENDING != WSAGetLastError())
-		{
-			ErrorDisplay("SendSignOut()");
-			Disconnect();
-			return;
-		}
-	}
+	return SendPacket<SCPacketSignOut>(rid, Framework.GetClientsNumber());
 }
 
 void Session::ClearRecvBuffer()
