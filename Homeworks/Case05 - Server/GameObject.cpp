@@ -20,3 +20,13 @@ GameObject::GameObject(const XMFLOAT3& pos)
 GameObject::GameObject(XMFLOAT3&& pos)
 	: myPosition(pos)
 {}
+
+const XMFLOAT3& GameObject::GetPosition() const
+{
+	return myPosition;
+}
+
+XMFLOAT3& GameObject::GetPosition()
+{
+	return myPosition;
+}

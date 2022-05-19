@@ -9,5 +9,8 @@ public:
 	GameObject(const XMFLOAT3& pos);
 	GameObject(XMFLOAT3&& pos);
 
+	const XMFLOAT3& GetPosition() const;
+	XMFLOAT3& GetPosition();
+
 	XMFLOAT3 myPosition;
 };

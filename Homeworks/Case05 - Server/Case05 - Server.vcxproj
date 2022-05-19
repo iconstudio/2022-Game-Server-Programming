@@ -164,7 +164,12 @@
     <ClCompile Include="Packet.cpp" />
     <ClCompile Include="PlayerCharacter.cpp" />
     <ClCompile Include="Session.cpp" />
-    <ClCompile Include="SightManager.cpp" />
+    <ClCompile Include="SightManager.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="SightSector.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
