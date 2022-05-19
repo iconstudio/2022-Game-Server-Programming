@@ -163,6 +163,8 @@
     <ClCompile Include="Packet.cpp" />
     <ClCompile Include="PlayerCharacter.cpp" />
     <ClCompile Include="Session.cpp" />
+    <ClCompile Include="SightManager.cpp" />
+    <ClCompile Include="SightSector.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -173,6 +175,8 @@
     <ClInclude Include="Packet.hpp" />
     <ClInclude Include="PlayerCharacter.hpp" />
     <ClInclude Include="Session.h" />
+    <ClInclude Include="SightManager.hpp" />
+    <ClInclude Include="SightSector.hpp" />
     <ClInclude Include="stdafx.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
