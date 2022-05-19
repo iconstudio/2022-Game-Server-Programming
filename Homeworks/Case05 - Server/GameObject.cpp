@@ -2,7 +2,7 @@
 #include "GameObject.hpp"
 
 GameObject::GameObject()
-	: GameObject(0.0f, 0.0f)
+	: GameObject(0.0f, 0.0f, 0.0f)
 {}
 
 GameObject::GameObject(float x, float y, float z)

@@ -167,8 +167,8 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 				{
 					auto key = result->Key;
 					bool moved = TryMove(key);
-					auto px = Instance->x;
-					auto py = Instance->y;
+					auto px = Instance->myPosition.x;
+					auto py = Instance->myPosition.y;
 
 					if (!moved)
 					{
