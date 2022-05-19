@@ -320,13 +320,17 @@ void IOCPFramework::Disconnect(const PID id)
 void IOCPFramework::RegisterPlayer(const PID id, const UINT place)
 {
 	myClients.insert({ id, place });
-	numberClients++;
+
+	const auto value = AcquireClientsNumber();
+	ReleaseClientsNumber(value + 1);
 }
 
 void IOCPFramework::DeregisterPlayer(const PID rid)
 {
 	myClients.unsafe_erase(myClients.find(rid));
-	numberClients--;
+
+	const auto value = AcquireClientsNumber();
+	ReleaseClientsNumber(value - 1);
 }
 
 void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes)
@@ -382,6 +386,11 @@ void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 	}
 
 	// 시야 목록을 전달
+}
+
+void IOCPFramework::SetClientsNumber(const UINT number) volatile
+{
+	numberClients.store(number, std::memory_order_relaxed);
 }
 
 UINT IOCPFramework::AcquireClientsNumber() const volatile

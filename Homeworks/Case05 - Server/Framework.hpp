@@ -36,6 +36,7 @@ private:
 	void RegisterPlayer(const PID id, const UINT place);
 	void DeregisterPlayer(const PID id);
 
+	void SetClientsNumber(const UINT number) volatile;
 	UINT AcquireClientsNumber() const volatile;
 	shared_ptr<Session> AcquireClient(const UINT index) const;
 	shared_ptr<Session> AcquireClientByID(const PID id) const;
