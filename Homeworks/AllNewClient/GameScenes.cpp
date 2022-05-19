@@ -254,7 +254,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		else
 		{
 			// 다른 플레이어의 세션은 이때 생성한다.
-		}
+		}	
 
 		return true;
 	}

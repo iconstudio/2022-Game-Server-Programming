@@ -25,6 +25,7 @@ using DirectX::XMLoadFloat3, DirectX::XMLoadFloat4, DirectX::XMLoadFloat4x4;
 #include <numeric>
 #include <concurrent_vector.h>
 #include <concurrent_unordered_map.h>
+#include <concurrent_unordered_set.h>
 #include <vector>
 #include <array>
 #include <unordered_map>
@@ -56,8 +57,12 @@ using unique_concurrent_vector = concurrent_vector<unique_ptr<Type>>;
 
 template<typename KeyType, typename ValueType>
 using concurrent_map = Concurrency::concurrent_unordered_map<KeyType, ValueType>;
+template<typename KeyType>
+using concurrent_set = Concurrency::concurrent_unordered_set<KeyType>;
 template<typename KeyType, typename ValueType>
 using shared_concurrent_map = concurrent_map<KeyType, shared_ptr<ValueType>>;
+template<typename KeyType>
+using shared_concurrent_set = Concurrency::concurrent_unordered_set<shared_ptr<KeyType>>;
 
 template<typename Type>
 using shared_atomic = atomic<shared_ptr<Type>>;
@@ -68,6 +73,10 @@ template<typename Type>
 using shared_atomic_concurrent_vector = concurrent_vector<shared_atomic<Type>>;
 template<typename Type>
 using weak_atomic_concurrent_vector = concurrent_vector<weak_atomic<Type>>;
+template<typename KeyType, typename ValueType>
+using shared_atomic_concurrent_map = concurrent_map<KeyType, shared_atomic<ValueType>>;
+template<typename KeyType>
+using shared_atomic_concurrent_set = Concurrency::concurrent_unordered_set<shared_atomic<KeyType>>;
 
 constexpr double PI = 3.141592653589793;
 
@@ -99,8 +108,10 @@ class PlayerCharacter;
 void ErrorDisplay(const char* title);
 
 constexpr USHORT PORT = 6000;
+constexpr PID NPC_ORDER_BEGIN = 0;
 constexpr UINT CLIENTS_MAX_NUMBER = 10000;
 constexpr PID CLIENTS_ORDER_BEGIN = 10000;
+constexpr UINT ENTITIES_MAX_NUMBER = CLIENTS_ORDER_BEGIN + 10000;
 constexpr UINT BUFFSIZE = 512;
 
 constexpr SIZE_T WND_SZ_W = 800, WND_SZ_H = 600; // Ã¢ Å©±â
