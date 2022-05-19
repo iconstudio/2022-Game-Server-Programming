@@ -48,10 +48,15 @@ private:
 
 	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
+	// 
 	void BroadcastSignUp(SessionPtr& who);
 	void BroadcastSignOut(SessionPtr& who);
 	void InitializeWorldFor(SessionPtr& who);
 
+	// 
+
+
+	// 
 	/// <summary>
 	/// 클라이언트에게 새로운 접속을 알리고, 로컬 플레이어 세션을 생성하도록 명령한다.
 	/// </summary>
