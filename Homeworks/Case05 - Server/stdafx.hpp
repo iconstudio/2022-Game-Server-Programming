@@ -96,10 +96,15 @@ using PID = long long;
 class IOCPFramework;
 class Session;
 class Packet;
+class Asynchron;
 class EXOVERLAPPED;
 enum class SESSION_STATES;
 enum class OVERLAP_OPS : UCHAR;
 enum class PACKET_TYPES : UCHAR;
+
+class GameCamera;
+class SightManager;
+class SightSector;
 
 class GameObject;
 class GameEntity;
