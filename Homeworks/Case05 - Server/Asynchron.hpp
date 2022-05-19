@@ -1,11 +1,11 @@
 #pragma once
 #include "stdafx.hpp"
 
-class EXOVERLAPPED : public WSAOVERLAPPED
+class Asynchron : public WSAOVERLAPPED
 {
 public:
-	EXOVERLAPPED(OVERLAP_OPS operation);
-	~EXOVERLAPPED();
+	Asynchron(OVERLAP_OPS operation);
+	~Asynchron();
 
 	void SetSendBuffer(const WSABUF& buffer);
 	void SetSendBuffer(LPWSABUF buffer);

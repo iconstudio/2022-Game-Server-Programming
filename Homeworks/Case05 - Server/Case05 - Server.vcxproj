@@ -160,7 +160,7 @@
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="Framework.cpp" />
-    <ClCompile Include="Network.cpp" />
+    <ClCompile Include="Asynchron.cpp" />
     <ClCompile Include="Packet.cpp" />
     <ClCompile Include="PlayerCharacter.cpp" />
     <ClCompile Include="Session.cpp" />
@@ -173,7 +173,7 @@
     <ClInclude Include="GameEntity.hpp" />
     <ClInclude Include="Framework.hpp" />
     <ClInclude Include="GameObject.hpp" />
-    <ClInclude Include="Network.hpp" />
+    <ClInclude Include="Asynchron.hpp" />
     <ClInclude Include="Packet.hpp" />
     <ClInclude Include="PlayerCharacter.hpp" />
     <ClInclude Include="Session.h" />

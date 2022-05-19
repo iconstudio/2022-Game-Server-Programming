@@ -1,7 +1,7 @@
 #include "stdafx.hpp"
 #include "Session.h"
 #include "Commons.hpp"
-#include "Network.hpp"
+#include "Asynchron.hpp"
 #include "Packet.hpp"
 #include "Commons.hpp"
 #include "Framework.hpp"
@@ -100,7 +100,7 @@ bool Session::IsAccepted() const volatile
 	return SESSION_STATES::ACCEPTED == Status.load(std::memory_order_relaxed);
 }
 
-void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
+void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 {
 	std::cout << "ProceedReceived (" << ID << ")" << "\n";
 	auto& wbuffer = recvBuffer;
@@ -225,7 +225,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 	}
 }
 
-void Session::ProceedSent(EXOVERLAPPED* overlap, DWORD byte)
+void Session::ProceedSent(Asynchron* overlap, DWORD byte)
 {
 	if (0 == byte)
 	{
@@ -339,7 +339,7 @@ int Session::SendPacket(Ty&&... args)
 	wbuffer->buf = reinterpret_cast<char*>(packet);
 	wbuffer->len = packet->Size;
 
-	auto overlap = new EXOVERLAPPED{ OVERLAP_OPS::SEND };
+	auto overlap = new Asynchron{ OVERLAP_OPS::SEND };
 	overlap->Type = packet->Type;
 	overlap->SetSendBuffer(wbuffer);
 

@@ -1,6 +1,6 @@
 #pragma once
 #include "stdafx.hpp"
-#include "Network.hpp"
+#include "Asynchron.hpp"
 #include "Session.h"
 
 const UINT THREADS_COUNT = 6;

@@ -1,6 +1,6 @@
 #include "stdafx.hpp"
 #include "Framework.hpp"
-#include "Network.hpp"
+#include "Asynchron.hpp"
 #include "Session.h"
 
 IOCPFramework::IOCPFramework()
@@ -347,7 +347,7 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 	}
 	else
 	{
-		volatile auto exoverlap = static_cast<EXOVERLAPPED*>(overlap);
+		volatile auto exoverlap = static_cast<Asynchron*>(overlap);
 		if (0 == bytes)
 		{
 			ErrorDisplay("ProceedPacket(bytes=0)");

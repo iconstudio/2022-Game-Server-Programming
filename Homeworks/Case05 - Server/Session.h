@@ -1,6 +1,6 @@
 #pragma once
 #include "stdafx.hpp"
-#include "Network.hpp"
+#include "Asynchron.hpp"
 #include "GameEntity.hpp"
 #include "PlayerCharacter.hpp"
 
@@ -29,8 +29,8 @@ public:
 	void Cleanup();
 	void Disconnect();
 
-	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
-	void ProceedSent(EXOVERLAPPED* overlap, DWORD byte);
+	void ProceedReceived(Asynchron* overlap, DWORD byte);
+	void ProceedSent(Asynchron* overlap, DWORD byte);
 
 	int RecvStream(DWORD size, DWORD begin_bytes);
 	int RecvStream(DWORD begin_bytes = 0);
@@ -66,15 +66,15 @@ private:
 	atomic<PID> ID;
 	atomic<SOCKET> Socket;
 
-	EXOVERLAPPED recvOverlap;
+	Asynchron recvOverlap;
 	WSABUF recvBuffer;
 	char recvCBuffer[BUFFSIZE];
 	DWORD recvBytes;
 
-	EXOVERLAPPED* overlapSendSignUp;
-	EXOVERLAPPED* overlapSendCreateChar;
-	EXOVERLAPPED* overlapSendMoveChar;
-	EXOVERLAPPED* overlapSendSignOut;
+	Asynchron* overlapSendSignUp;
+	Asynchron* overlapSendCreateChar;
+	Asynchron* overlapSendMoveChar;
+	Asynchron* overlapSendSignOut;
 
 	IOCPFramework& Framework;
 
