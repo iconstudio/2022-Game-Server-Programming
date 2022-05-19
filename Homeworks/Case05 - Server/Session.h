@@ -13,12 +13,17 @@ public:
 	void SetStatus(SESSION_STATES state);
 	void SetSocket(SOCKET sock);
 	void SetID(const PID id);
-	void Cleanup();
-	void Disconnect();
+	
+	SESSION_STATES GetStatus();
+	SESSION_STATES AcquireStatus();
+	void ReleaseStatus(SESSION_STATES state);
 
 	bool IsConnected() const volatile;
 	bool IsDisconnected() const volatile;
 	bool IsAccepted() const volatile;
+
+	void Cleanup();
+	void Disconnect();
 
 	void ProceedReceived(EXOVERLAPPED* overlap, DWORD byte);
 	void ProceedSent(EXOVERLAPPED* overlap, DWORD byte);
@@ -26,6 +31,9 @@ public:
 	template<typename MY_PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, MY_PACKET>
 	int SendPacket(Ty&&... args);
+
+	int RecvStream(DWORD size, DWORD begin_bytes);
+	int RecvStream(DWORD begin_bytes = 0);
 
 	void SendSignUp(PID nid);
 	void SendSignOut(PID rid);
@@ -53,9 +61,6 @@ private:
 
 	int Recv(DWORD flags = 0);
 	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
-
-	int RecvStream(DWORD size, DWORD begin_bytes);
-	int RecvStream(DWORD begin_bytes = 0);
 
 	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
 

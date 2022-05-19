@@ -19,8 +19,8 @@ public:
 	void Update();
 	friend void CALLBACK IOCPWorker();
 
-	SessionPtr& GetClient(const UINT index);
-	SessionPtr& GetClientByID(const PID id);
+	SessionPtr GetClient(const UINT index) const;
+	SessionPtr GetClientByID(const PID id) const;
 	UINT GetClientsNumber() const volatile;
 
 	friend class Session;
@@ -28,18 +28,29 @@ public:
 private:
 	void Listen();
 	bool ProceedAccept();
-	UINT GetAndAcquireClientsNumber() const volatile;
 
-	PID MakeNewbieID();
-	SessionPtr SeekNewbieSession() const;
+	UINT AcquireClientsNumber() const volatile;
+	shared_ptr<Session> AcquireClient(const UINT index) const;
+	shared_ptr<Session> AcquireClient(const shared_atomic<Session>& ptr) const volatile;
+	SOCKET AcquireNewbieSocket() const volatile;
+	PID AcquireNewbieID() const volatile;
+
+	SOCKET&& CreateSocket() const volatile;
+	shared_ptr<Session> FindPlaceForNewbie() const;
+
+	void ReleaseClientsNumber(const UINT number) volatile;
+	void ReleaseClient(const UINT home, shared_ptr<Session>& original);
+	void ReleaseNewbieSocket(const SOCKET n_socket) volatile;
+	void ReleaseNewbieID(const PID next) volatile;
+
 	void ConnectFrom(const UINT index);
-	void SendWorldDataTo(SessionPtr& who);
-	void Disconnect(const PID who);
+	void Disconnect(const PID id);
 
 	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
 	void BroadcastSignUp(SessionPtr& who);
 	void BroadcastSignOut(SessionPtr& who);
+	void InitializeWorldFor(SessionPtr& who);
 
 	/// <summary>
 	/// 클라이언트에게 새로운 접속을 알리고, 로컬 플레이어 세션을 생성하도록 명령한다.
@@ -58,7 +69,7 @@ private:
 	/// </summary>
 	/// <param name="target">클라이언트의 세션</param>
 	/// <param name="cid">NPC, 특수 객체, 플레이어의 고유 식별자</param>
-	/// <param name="type"></param>
+	/// <param name="type">종류</param>
 	/// <param name="cx"></param>
 	/// <param name="cy"></param>
 	int SendAppearEntity(SessionPtr& target, PID cid, int type, float cx, float cy);
@@ -77,8 +88,6 @@ private:
 	/// <param name="ny"></param>
 	int SendMoveEntity(SessionPtr& target, PID cid, float nx, float ny);
 
-	SOCKET&& CreateSocket() const;
-
 	template<typename Predicate> void ForeachClient(Predicate predicate);
 
 	SOCKET Listener;
@@ -93,10 +102,16 @@ private:
 	char acceptCBuffer[BUFSIZ];
 	atomic<SOCKET> acceptNewbie;
 
-	std::array<SessionPtr, CLIENTS_MAX_NUMBER> clientsPool;
-	concurrent_map<PID, SessionPtr> myClients;
-	atomic<PID> orderClientIDs;
+	/// <summary>
+	/// NPC, 특수 객체, 플레이어를 저장하는 저장소
+	/// </summary>
+	std::array<shared_atomic<Session>, ENTITIES_MAX_NUMBER> clientsPool;
+	/// <summary>
+	/// 플레이어의 ID -> clientsPool의 번호 (CLIETNS_ORDER_BEGIN부터 시작)
+	/// </summary>
+	concurrent_map<PID, UINT> myClients;
 	atomic<UINT> numberClients;
+	atomic<PID> orderClientIDs;
 	std::timed_mutex mutexClient;
 };
 
