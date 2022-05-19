@@ -22,11 +22,6 @@ Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
 Session::~Session()
 {
 	closesocket(Socket);
-
-	if (Instance)
-	{
-		Instance.reset();
-	}
 }
 
 void Session::SetStatus(SESSION_STATES state)
@@ -44,9 +39,27 @@ void Session::SetID(const PID id)
 	ID.store(id, std::memory_order_relaxed);
 }
 
+SESSION_STATES Session::GetStatus()
+{
+	return Status.load(std::memory_order_relaxed);
+}
+
+SESSION_STATES Session::AcquireStatus()
+{
+	return Status.load(std::memory_order_acquire);
+}
+
+void Session::ReleaseStatus(SESSION_STATES state)
+{
+	Status.store(state, std::memory_order_release);
+}
+
 void Session::Cleanup()
 {
-	closesocket(Socket);
+	closesocket(Socket.load(std::memory_order_seq_cst));
+
+	Instance.reset();
+
 	SetStatus(SESSION_STATES::NONE);
 	SetSocket(NULL);
 	SetID(-1);
@@ -59,17 +72,17 @@ void Session::Disconnect()
 
 bool Session::IsConnected() const volatile
 {
-	return SESSION_STATES::CONNECTED == Status.load(std::memory_order_acq_rel);
+	return SESSION_STATES::CONNECTED == Status.load(std::memory_order_relaxed);
 }
 
 bool Session::IsDisconnected() const volatile
 {
-	return SESSION_STATES::NONE == Status.load(std::memory_order_acq_rel);
+	return SESSION_STATES::NONE == Status.load(std::memory_order_relaxed);
 }
 
 bool Session::IsAccepted() const volatile
 {
-	return SESSION_STATES::ACCEPTED == Status.load(std::memory_order_acq_rel);
+	return SESSION_STATES::ACCEPTED == Status.load(std::memory_order_relaxed);
 }
 
 void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
@@ -150,14 +163,13 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 					{
 						std::cout << "플레이어 " << ID
 							<< " - 위치: ("
-							<< px * CELL_W << ", "
-							<< py * CELL_H
+							<< px << ", " << py
 							<< ")\n";
 					}
 
 					if (moved)
 					{
-						Framework.BroadcastMoveCharacterFrom(Index, px, py);
+						Framework.SendMoveEntity(Index, px, py);
 					}
 				}
 				else // 잘못된 메시지 받음.
