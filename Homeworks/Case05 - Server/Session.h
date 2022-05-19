@@ -14,9 +14,13 @@ public:
 	void SetSocket(SOCKET sock);
 	void SetID(const PID id);
 	
-	SESSION_STATES GetStatus();
-	SESSION_STATES AcquireStatus();
+	SESSION_STATES GetStatus() const volatile;
+	SESSION_STATES AcquireStatus() const volatile;
+	PID GetID() const volatile;
+	PID AcquireID() const volatile;
+
 	void ReleaseStatus(SESSION_STATES state);
+	void ReleaseID(PID id);
 
 	bool IsConnected() const volatile;
 	bool IsDisconnected() const volatile;
@@ -30,7 +34,6 @@ public:
 
 	int RecvStream(DWORD size, DWORD begin_bytes);
 	int RecvStream(DWORD begin_bytes = 0);
-
 
 	template<typename MY_PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, MY_PACKET>
@@ -46,10 +49,6 @@ public:
 
 	const UINT Index;
 
-	atomic<SESSION_STATES> Status;
-	atomic<PID> ID;
-	atomic<SOCKET> Socket;
-
 	CHAR Nickname[30];
 	std::shared_ptr<PlayerCharacter> Instance;
 
@@ -63,7 +62,9 @@ private:
 	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
 	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
 
-
+	atomic<SESSION_STATES> Status;
+	atomic<PID> ID;
+	atomic<SOCKET> Socket;
 
 	EXOVERLAPPED recvOverlap;
 	WSABUF recvBuffer;

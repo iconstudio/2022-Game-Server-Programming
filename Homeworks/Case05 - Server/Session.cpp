@@ -39,19 +39,34 @@ void Session::SetID(const PID id)
 	ID.store(id, std::memory_order_relaxed);
 }
 
-SESSION_STATES Session::GetStatus()
+SESSION_STATES Session::GetStatus() const volatile
 {
 	return Status.load(std::memory_order_relaxed);
 }
 
-SESSION_STATES Session::AcquireStatus()
+SESSION_STATES Session::AcquireStatus() const volatile
 {
 	return Status.load(std::memory_order_acquire);
+}
+
+PID Session::GetID() const volatile
+{
+	return ID.load(std::memory_order_relaxed);
+}
+
+PID Session::AcquireID() const volatile
+{
+	return ID.load(std::memory_order_acquire);
 }
 
 void Session::ReleaseStatus(SESSION_STATES state)
 {
 	Status.store(state, std::memory_order_release);
+}
+
+void Session::ReleaseID(PID id)
+{
+	ID.store(id, std::memory_order_release);
 }
 
 void Session::Cleanup()
@@ -333,7 +348,7 @@ int Session::SendPacket(Ty&&... args)
 
 void Session::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
 {
-	MoveMemory(buffer, buffer + position, max_size - position);
+	MoveMemory(buffer, (buffer + position), max_size - position);
 	ZeroMemory(buffer + max_size - position, position);
 }
 
