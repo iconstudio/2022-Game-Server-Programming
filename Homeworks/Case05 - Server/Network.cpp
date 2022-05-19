@@ -9,9 +9,6 @@ EXOVERLAPPED::EXOVERLAPPED(OVERLAP_OPS operation)
 
 EXOVERLAPPED::~EXOVERLAPPED()
 {
-	if (sendBuffer) sendBuffer.release();
-	if (sendCBuffer) sendCBuffer.release();
-
 	sendSzWant = 0;
 }
 

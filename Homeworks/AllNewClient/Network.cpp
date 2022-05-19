@@ -109,8 +109,6 @@ bool Network::IsNonPlayer(PID id) const
 
 std::optional<Packet*> Network::OnReceive(DWORD bytes)
 {
-	//unique_barrier flag(mySemaphore, true);
-
 	std::optional<Packet*> result{};
 
 	recvBytes += bytes;
@@ -203,6 +201,7 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 		}
 	}
 
+	ClearOverlap(&recvOverlap);
 	if (SOCKET_ERROR == Receive(recvBytes))
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())

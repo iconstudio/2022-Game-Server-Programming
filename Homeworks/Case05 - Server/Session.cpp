@@ -184,7 +184,7 @@ void Session::ProceedReceived(EXOVERLAPPED* overlap, DWORD byte)
 
 					if (moved)
 					{
-						Framework.SendMoveEntity(Index, px, py);
+					//	Framework.SendMoveEntity(Index, px, py);
 					}
 				}
 				else // 잘못된 메시지 받음.

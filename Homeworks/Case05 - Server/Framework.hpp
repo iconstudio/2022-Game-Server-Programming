@@ -6,7 +6,7 @@
 const UINT THREADS_COUNT = 6;
 using SessionPtr = shared_ptr<Session>;
 
-void CALLBACK IOCPWorker();
+void IOCPWorker();
 
 class IOCPFramework
 {
@@ -17,7 +17,7 @@ public:
 	void Init();
 	void Start();
 	void Update();
-	friend void CALLBACK IOCPWorker();
+	friend void IOCPWorker();
 
 	SessionPtr GetClient(const UINT index) const;
 	SessionPtr GetClientByID(const PID id) const;
@@ -26,16 +26,19 @@ public:
 	friend class Session;
 
 private:
+	bool IsClientsBound(const UINT index) const;
+
 	void Listen();
-	bool ProceedAccept();
+	void ProceedAccept();
 
 	void ConnectFrom(const UINT index);
 	void Disconnect(const PID id);
-	void AddClient(const PID id, const UINT place);
-	void RemoveClient(const PID id);
+	void RegisterPlayer(const PID id, const UINT place);
+	void DeregisterPlayer(const PID id);
 
 	UINT AcquireClientsNumber() const volatile;
 	shared_ptr<Session> AcquireClient(const UINT index) const;
+	shared_ptr<Session> AcquireClientByID(const PID id) const;
 	shared_ptr<Session> AcquireClient(const shared_atomic<Session>& ptr) const volatile;
 	SOCKET AcquireNewbieSocket() const volatile;
 	PID AcquireNewbieID() const volatile;
@@ -51,8 +54,6 @@ private:
 	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
 	// 
-	void BroadcastSignUp(SessionPtr& who);
-	void BroadcastSignOut(SessionPtr& who);
 	void InitializeWorldFor(SessionPtr& who);
 
 	// 
@@ -100,7 +101,7 @@ private:
 	INT szAddress;
 	HANDLE completionPort;
 	const ULONG_PTR serverKey;
-	std::vector<std::thread> threadWorkers;
+	std::vector<std::jthread> threadWorkers;
 
 	WSAOVERLAPPED acceptOverlap;
 	DWORD acceptBytes;
