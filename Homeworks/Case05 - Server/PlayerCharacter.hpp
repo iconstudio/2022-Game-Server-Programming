@@ -4,7 +4,7 @@
 class PlayerCharacter : public GameEntity
 {
 public:
-	PlayerCharacter(int ox, int oy);
+	PlayerCharacter(PID id, float x, float y, float z);
 
 	bool TryMoveLT();
 	bool TryMoveRT();

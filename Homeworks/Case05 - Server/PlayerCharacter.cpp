@@ -1,15 +1,21 @@
 #include "stdafx.hpp"
 #include "PlayerCharacter.hpp"
 
-PlayerCharacter::PlayerCharacter(int ox, int oy)
-	: GameEntity(-1, ox, oy)
+
+PlayerCharacter::PlayerCharacter(PID id, float x, float y, float z)
+	: GameEntity(id, x, y, z)
 {}
 
 bool PlayerCharacter::TryMoveLT()
 {
-	if (0 < x)
+	if (8.0f < myPosition.x)
 	{
-		x--;
+		myPosition.x -= 0.5f;
+		return true;
+	}
+	else if (myPosition.x != 8.0f)
+	{
+		myPosition.x = 8.0f;
 		return true;
 	}
 	return false;
@@ -17,9 +23,14 @@ bool PlayerCharacter::TryMoveLT()
 
 bool PlayerCharacter::TryMoveRT()
 {
-	if (x < CELLS_CNT_H - 1)
+	if (myPosition.x < WORLD_W - 8.0f)
 	{
-		x++;
+		myPosition.x += 5.0f;
+		return true;
+	}
+	else if (myPosition.x != WORLD_W - 8.0f)
+	{
+		myPosition.x = WORLD_W - 8.0f;
 		return true;
 	}
 	return false;
@@ -27,9 +38,14 @@ bool PlayerCharacter::TryMoveRT()
 
 bool PlayerCharacter::TryMoveUP()
 {
-	if (0 < y)
+	if (8.0f < myPosition.y)
 	{
-		y--;
+		myPosition.y -= 0.5f;
+		return true;
+	}
+	else if (myPosition.y != 8.0f)
+	{
+		myPosition.y = 8.0f;
 		return true;
 	}
 	return false;
@@ -37,9 +53,14 @@ bool PlayerCharacter::TryMoveUP()
 
 bool PlayerCharacter::TryMoveDW()
 {
-	if (y < CELLS_CNT_V - 1)
+	if (myPosition.y < WORLD_H - 8.0f)
 	{
-		y++;
+		myPosition.y += 5.0f;
+		return true;
+	}
+	else if (myPosition.y != WORLD_H - 8.0f)
+	{
+		myPosition.y = WORLD_H - 8.0f;
 		return true;
 	}
 	return false;
