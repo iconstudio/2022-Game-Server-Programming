@@ -29,16 +29,16 @@ void SightManager::Add(GameObject& obj)
 {
 	const auto& position = obj.GetPosition();
 	auto& sector = AtByPosition(position);
-	const auto& sector_before = obj.mySector.load();
+	//const auto& sector_before = obj.mySector.load();
 
-	if (sector != sector_before)
+	//if (sector != sector_before)
 	{
-		if (sector_before)
+		//if (sector_before)
 		{
-			obj.EnterSector(nullptr);
+			//obj.EnterSector(nullptr);
 		}
 
-		obj.EnterSector(sector);
+		//obj.EnterSector(sector);
 	}
 }
 
