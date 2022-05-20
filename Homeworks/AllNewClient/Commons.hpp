@@ -45,9 +45,11 @@ struct SCPacketSignUp : public Packet
 /// </summary>
 struct SCPacketCreatePlayer : public Packet
 {
-	SCPacketCreatePlayer(PID pid, float cx, float cy);
+	/// <param name="pid">다른 플레이어의 고유 식별자</param>
+	/// <param name="nickname">별명</param>
+	SCPacketCreatePlayer(PID pid, const CHAR* nickname);
 
-	float x, y;
+	CHAR Nickname[30];
 };
 
 /// <summary>

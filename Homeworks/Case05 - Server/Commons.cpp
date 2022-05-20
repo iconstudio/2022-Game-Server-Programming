@@ -24,10 +24,13 @@ SCPacketSignUp::SCPacketSignUp(PID nid, UINT users, UINT usersmax)
 	, usersCurrent(users), usersMax(usersmax)
 {}
 
-SCPacketCreatePlayer::SCPacketCreatePlayer(PID pid, float cx, float cy)
+SCPacketCreatePlayer::SCPacketCreatePlayer(PID pid, const CHAR* nickname)
 	: Packet(PACKET_TYPES::SC_CREATE_PLAYER, sizeof(SCPacketCreatePlayer), pid)
-	, x(cx), y(cy)
-{}
+	, Nickname()
+{
+	ZeroMemory(Nickname, sizeof(Nickname));
+	strcpy_s(Nickname, nickname);
+}
 
 SCPacketAppearCharacter::SCPacketAppearCharacter(PID cid, int type, float nx, float ny)
 	: Packet(PACKET_TYPES::SC_APPEAR_CHARACTER, sizeof(SCPacketAppearCharacter), cid)
