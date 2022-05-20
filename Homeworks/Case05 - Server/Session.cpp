@@ -1,3 +1,4 @@
+#include "pch.hpp"
 #include "stdafx.hpp"
 #include "Session.h"
 #include "Commons.hpp"

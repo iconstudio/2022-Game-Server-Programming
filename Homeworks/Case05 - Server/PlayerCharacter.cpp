@@ -1,9 +1,26 @@
+#include "pch.hpp"
 #include "stdafx.hpp"
 #include "PlayerCharacter.hpp"
 
-
 PlayerCharacter::PlayerCharacter(PID id, float x, float y, float z)
-	: GameEntity(id, x, y, z)
+	: PlayerCharacter(id, XMFLOAT3(x, y, z))
+{}
+
+PlayerCharacter::PlayerCharacter(PID id, const XMFLOAT3& pos)
+	: PlayerCharacter(id, XMFLOAT3(pos))
+{}
+
+PlayerCharacter::PlayerCharacter(PID id, XMFLOAT3&& pos)
+	: GameEntity(id, std::forward<XMFLOAT3>(pos))
+{}
+
+void PlayerCharacter::Awake()
+{}
+
+void PlayerCharacter::Start()
+{}
+
+void PlayerCharacter::Update(float time_elapsed)
 {}
 
 bool PlayerCharacter::TryMoveLT()

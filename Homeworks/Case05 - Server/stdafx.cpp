@@ -1,3 +1,4 @@
+#include "pch.hpp"
 #include "stdafx.hpp"
 
 TCHAR* msgBuffer = NULL;
