@@ -26,20 +26,18 @@ public:
 	bool IsDisconnected() const volatile;
 	bool IsAccepted() const volatile;
 
-	void Cleanup();
-	void Disconnect();
-
 	void ProceedReceived(Asynchron* overlap, DWORD byte);
 	void ProceedSent(Asynchron* overlap, DWORD byte);
 
+	int Recv(DWORD flags = 0);
+	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
 	int RecvStream(DWORD size, DWORD begin_bytes);
 	int RecvStream(DWORD begin_bytes = 0);
 
-	template<typename MY_PACKET, typename ...Ty>
-		requires std::is_base_of_v<Packet, MY_PACKET>
-	int SendPacket(Ty&&... args);
-
 	bool TryMove(WPARAM input);
+
+	void Cleanup();
+	void Disconnect();
 
 	const UINT Index;
 
@@ -52,8 +50,6 @@ private:
 	void SetRecvBuffer(CHAR* cbuffer, DWORD size);
 	void ClearRecvBuffer();
 
-	int Recv(DWORD flags = 0);
-	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap);
 	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
 
 	atomic<SESSION_STATES> Status;

@@ -56,9 +56,18 @@ private:
 
 	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
-	// 
+	/// <summary>
+	/// 클라이언트의 첫 초기화를 위한 정보 전송
+	/// </summary>
+	/// <param name="who"></param>
 	void InitializeWorldFor(SessionPtr& who);
 
+	/// <summary>
+	/// 클라이언트에게 패킷 전송
+	/// </summary>
+	template<typename MY_PACKET, typename ...Ty>
+		requires std::is_base_of_v<Packet, MY_PACKET>
+	std::pair<LPWSABUF, Asynchron*> CreateTicket(Ty&&... args);
 	/// <summary>
 	/// 클라이언트에게 새로운 접속을 알리고, 로컬 플레이어 세션을 생성하도록 명령한다.
 	/// </summary>

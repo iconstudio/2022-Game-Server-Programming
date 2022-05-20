@@ -4,6 +4,7 @@
 #include "Asynchron.hpp"
 #include "Session.h"
 #include "Commons.hpp"
+#include "SightManager.hpp"
 
 constexpr USHORT PORT = 6000;
 
@@ -248,7 +249,9 @@ void IOCPFramework::ProceedAccept()
 						std::cout << "클라이언트 " << key << "에서 오류!\n";
 						session->Cleanup();
 					}
-				} else{
+				}
+				else
+				{
 					key++;
 				}
 			}
@@ -396,6 +399,23 @@ void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 	// 시야 목록을 전달
 }
 
+template<typename MY_PACKET, typename ...Ty>
+	requires std::is_base_of_v<Packet, MY_PACKET>
+std::pair<LPWSABUF, Asynchron*> IOCPFramework::CreateTicket(Ty&&... args)
+{
+	auto packet = new MY_PACKET(std::remove_cvref_t<Ty>(args)...);
+
+	auto wbuffer = new WSABUF{};
+	wbuffer->buf = reinterpret_cast<char*>(packet);
+	wbuffer->len = packet->Size;
+
+	auto overlap = new Asynchron{ OVERLAP_OPS::SEND };
+	overlap->Type = packet->Type;
+	overlap->SetSendBuffer(wbuffer);
+
+	return std::make_pair(wbuffer, overlap);
+}
+
 int IOCPFramework::SendSignUp(const SessionPtr& target, const PID who, char* nickname)
 {
 	return SendSignUp(SessionPtr(target), who, nickname);
@@ -404,7 +424,9 @@ int IOCPFramework::SendSignUp(const SessionPtr& target, const PID who, char* nic
 int IOCPFramework::SendSignUp(SessionPtr&& target, const PID who, char* nickname)
 {
 	std::cout << target->GetID() << " → SendSignUp(" << who << ")\n";
-	return target->SendPacket<SCPacketCreatePlayer>(who, nickname);
+
+	const auto ticket = CreateTicket<SCPacketCreatePlayer>(who, nickname);
+	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);
 }
 
 int IOCPFramework::SendSignOut(const SessionPtr& target, const PID who)
@@ -415,7 +437,9 @@ int IOCPFramework::SendSignOut(const SessionPtr& target, const PID who)
 int IOCPFramework::SendSignOut(SessionPtr&& target, const PID who)
 {
 	std::cout << target->GetID() << " → SendSignOut(" << who << ")\n";
-	return target->SendPacket<SCPacketSignOut>(who);
+
+	const auto ticket = CreateTicket<SCPacketSignOut>(who, GetClientsNumber());
+	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);
 }
 
 int IOCPFramework::SendAppearEntity(const SessionPtr& target, PID cid, int type, float cx, float cy)
@@ -426,7 +450,9 @@ int IOCPFramework::SendAppearEntity(const SessionPtr& target, PID cid, int type,
 int IOCPFramework::SendAppearEntity(SessionPtr&& target, PID cid, int type, float cx, float cy)
 {
 	std::cout << target->GetID() << " → SendAppearEntity(" << cid << ")\n";
-	return target->SendPacket<SCPacketAppearCharacter>(cid, type, cx, cy);
+
+	const auto ticket = CreateTicket<SCPacketAppearCharacter>(cid, type, cx, cy);
+	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);
 }
 
 int IOCPFramework::SendDisppearEntity(const SessionPtr& target, PID cid)
@@ -437,7 +463,9 @@ int IOCPFramework::SendDisppearEntity(const SessionPtr& target, PID cid)
 int IOCPFramework::SendDisppearEntity(SessionPtr&& target, PID cid)
 {
 	std::cout << target->GetID() << " → SendDisppearEntity(" << cid << ")\n";
-	return target->SendPacket<SCPacketDisppearCharacter>(cid);
+
+	const auto ticket = CreateTicket<SCPacketDisppearCharacter>(cid);
+	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);
 }
 
 int IOCPFramework::SendMoveEntity(const SessionPtr& target, PID cid, float nx, float ny)
@@ -448,7 +476,9 @@ int IOCPFramework::SendMoveEntity(const SessionPtr& target, PID cid, float nx, f
 int IOCPFramework::SendMoveEntity(SessionPtr&& target, PID cid, float nx, float ny)
 {
 	std::cout << target->GetID() << " → SendMoveEntity(" << cid << ")\n";
-	return target->SendPacket<SCPacketMoveCharacter>(cid, nx, ny);
+
+	const auto ticket = CreateTicket<SCPacketMoveCharacter>(cid, nx, ny);
+	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);
 }
 
 void IOCPFramework::SetClientsNumber(const UINT number) volatile

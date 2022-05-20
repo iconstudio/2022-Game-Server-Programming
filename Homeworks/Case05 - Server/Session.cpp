@@ -294,23 +294,6 @@ int Session::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED overlap)
 	return WSASend(Socket, datas, count, NULL, 0, overlap, NULL);
 }
 
-template<typename PACKET, typename ...Ty>
-	requires std::is_base_of_v<Packet, PACKET>
-int Session::SendPacket(Ty&&... args)
-{
-	auto packet = new PACKET{ std::forward<Ty>(args)... };
-
-	auto wbuffer = new WSABUF{};
-	wbuffer->buf = reinterpret_cast<char*>(packet);
-	wbuffer->len = packet->Size;
-
-	auto overlap = new Asynchron{ OVERLAP_OPS::SEND };
-	overlap->Type = packet->Type;
-	overlap->SetSendBuffer(wbuffer);
-
-	return Send(wbuffer, 1, overlap);
-}
-
 void Session::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
 {
 	MoveMemory(buffer, (buffer + position), max_size - position);
