@@ -257,42 +257,6 @@ int Session::RecvStream(DWORD begin_bytes)
 	return RecvStream(BUFSIZ, begin_bytes);
 }
 
-int Session::SendSignUp(PID nid)
-{
-	std::cout << "SendSignUp(" << nid << ")\n";
-	return SendPacket<SCPacketSignUp>(nid, Framework.GetClientsNumber(), PLAYERS_MAX_NUMBER);
-}
-
-int Session::SendCreatePlayer(PID id)
-{
-	std::cout << "SendCreatePlayer(" << id << ")\n";
-	return SendPacket<SCPacketCreatePlayer>(id, 0.0f, 0.0f);
-}
-
-int Session::SendAppearEntity(PID cid, int type, float cx, float cy)
-{
-	std::cout << "SendAppearEntity(" << cid << ")\n";
-	return SendPacket<SCPacketAppearCharacter>(cid, type, cx, cy);
-}
-
-int Session::SendDisppearEntity(PID cid)
-{
-	std::cout << "SendDisppearEntity(" << cid << ")\n";
-	return SendPacket<SCPacketDisppearCharacter>(cid);
-}
-
-int Session::SendMoveEntity(PID id, float nx, float ny)
-{
-	std::cout << "SendMoveEntity(" << id << ")\n";
-	return SendPacket<SCPacketMoveCharacter>(id, nx, ny);
-}
-
-int Session::SendSignOut(PID rid)
-{
-	std::cout << "SendSignOut(" << rid << ")\n";
-	return SendPacket<SCPacketSignOut>(rid, Framework.GetClientsNumber());
-}
-
 void Session::ClearRecvBuffer()
 {
 	recvBytes = 0;

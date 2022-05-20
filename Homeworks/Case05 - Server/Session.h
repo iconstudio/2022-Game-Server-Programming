@@ -38,12 +38,6 @@ public:
 	template<typename MY_PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, MY_PACKET>
 	int SendPacket(Ty&&... args);
-	int SendSignUp(PID nid);
-	int SendSignOut(PID rid);
-	int SendCreatePlayer(PID id);
-	int SendAppearEntity(PID cid, int type, float cx, float cy);
-	int SendDisppearEntity(PID cid);
-	int SendMoveEntity(PID id, float nx, float ny);
 
 	bool TryMove(WPARAM input);
 

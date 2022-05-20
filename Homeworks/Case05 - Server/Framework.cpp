@@ -2,6 +2,7 @@
 #include "Framework.hpp"
 #include "Asynchron.hpp"
 #include "Session.h"
+#include "Commons.hpp"
 
 constexpr USHORT PORT = 6000;
 
@@ -283,7 +284,7 @@ void IOCPFramework::ConnectFrom(const UINT index)
 		const auto pid = session->GetID();
 		for (auto& player : myClients)
 		{
-			GetClient(player.second)->SendSignUp(pid);
+			SendSignUp(GetClient(player.second), pid, session->Nickname);
 		}
 		// 시야 정보 전송
 		InitializeWorldFor(session);
@@ -308,7 +309,7 @@ void IOCPFramework::Disconnect(const PID id)
 			// Broadcast: 클라이언트에게 접속 종료를 통지
 			for (auto& player : myClients)
 			{
-				GetClient(player.second)->SendSignOut(id);
+				SendSignOut(GetClient(player.second), id);
 			}
 			// 원래 클라이언트가 있던 세션 청소
 			session->Cleanup();
@@ -327,17 +328,15 @@ void IOCPFramework::Disconnect(const PID id)
 
 void IOCPFramework::RegisterPlayer(const PID id, const UINT place)
 {
-	myClients.insert({ id, place });
-
 	const auto value = AcquireClientsNumber();
+	myClients.insert({ id, place });
 	ReleaseClientsNumber(value + 1);
 }
 
 void IOCPFramework::DeregisterPlayer(const PID rid)
 {
-	myClients.unsafe_erase(myClients.find(rid));
-
 	const auto value = AcquireClientsNumber();
+	myClients.unsafe_erase(myClients.find(rid));
 	ReleaseClientsNumber(value - 1);
 }
 
@@ -390,10 +389,65 @@ void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 	for (auto& player : myClients)
 	{
 		// 기존에 있던 모든 플레이어의 목록을 전달
-		who->SendCreatePlayer(player.first);
+		SendSignUp(who, player.first, GetClient(player.second)->Nickname);
 	}
 
 	// 시야 목록을 전달
+}
+
+int IOCPFramework::SendSignUp(const SessionPtr& target, const PID who, char* nickname)
+{
+	return SendSignUp(SessionPtr(target), who, nickname);
+}
+
+int IOCPFramework::SendSignUp(SessionPtr&& target, const PID who, char* nickname)
+{
+	std::cout << target->GetID() << " → SendSignUp(" << who << ")\n";
+	return target->SendPacket<SCPacketCreatePlayer>(who, nickname);
+}
+
+int IOCPFramework::SendSignOut(const SessionPtr& target, const PID who)
+{
+	return SendSignOut(SessionPtr(target), who);
+}
+
+int IOCPFramework::SendSignOut(SessionPtr&& target, const PID who)
+{
+	std::cout << target->GetID() << " → SendSignOut(" << who << ")\n";
+	return target->SendPacket<SCPacketSignOut>(who);
+}
+
+int IOCPFramework::SendAppearEntity(const SessionPtr& target, PID cid, int type, float cx, float cy)
+{
+	return SendAppearEntity(SessionPtr(target), cid, type, cx, cy);
+}
+
+int IOCPFramework::SendAppearEntity(SessionPtr&& target, PID cid, int type, float cx, float cy)
+{
+	std::cout << target->GetID() << " → SendAppearEntity(" << cid << ")\n";
+	return target->SendPacket<SCPacketAppearCharacter>(cid, type, cx, cy);
+}
+
+int IOCPFramework::SendDisppearEntity(const SessionPtr& target, PID cid)
+{
+	return SendDisppearEntity(SessionPtr(target), cid);
+}
+
+int IOCPFramework::SendDisppearEntity(SessionPtr&& target, PID cid)
+{
+	std::cout << target->GetID() << " → SendDisppearEntity(" << cid << ")\n";
+	return target->SendPacket<SCPacketDisppearCharacter>(cid);
+}
+
+int IOCPFramework::SendMoveEntity(const SessionPtr& target, PID cid, float nx, float ny)
+{
+	return SendMoveEntity(SessionPtr(target), cid, nx, ny);
+}
+
+int IOCPFramework::SendMoveEntity(SessionPtr&& target, PID cid, float nx, float ny)
+{
+	std::cout << target->GetID() << " → SendMoveEntity(" << cid << ")\n";
+	return target->SendPacket<SCPacketMoveCharacter>(cid, nx, ny);
 }
 
 void IOCPFramework::SetClientsNumber(const UINT number) volatile
