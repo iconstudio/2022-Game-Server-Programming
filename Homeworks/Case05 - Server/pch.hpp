@@ -46,6 +46,8 @@ using std::make_unique;
 
 using int_pair = std::pair<int, int>;
 using float_pair = std::pair<float, float>;
+using Clock = std::chrono::system_clock::time_point;
+using Duration = std::chrono::system_clock::duration;
 
 template<typename Type>
 using concurrent_vector = Concurrency::concurrent_vector<Type>;
