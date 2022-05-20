@@ -285,9 +285,6 @@ void IOCPFramework::ConnectFrom(const UINT index)
 	if (SESSION_STATES::CONNECTED == status)
 	{
 		// Broadcast: 다른 클라이언트에게 새 클라이언트의 세션 생성 시기를 통지
-		const auto pid = session->GetID();
-		auto ticket = CreateTicket<SCPacketSignUp>(pid, GetClientsNumber(), PLAYERS_MAX_NUMBER);
-
 		//for (auto& player : myClients)
 		{
 		//	if (pid != player.first)
@@ -295,6 +292,8 @@ void IOCPFramework::ConnectFrom(const UINT index)
 				//SendPlayerCreate(GetClient(player.second), pid, session->Nickname);
 			}
 		}
+		// 클라이언트 ID 부여
+		SendSignUp(session, session->GetID());
 		// 시야 정보 전송
 		InitializeWorldFor(session);
 
@@ -419,6 +418,14 @@ std::pair<LPWSABUF, Asynchron*> IOCPFramework::CreateTicket(Ty&&... args)
 	overlap->SetSendBuffer(wbuffer);
 
 	return std::make_pair(wbuffer, overlap);
+}
+
+int IOCPFramework::SendSignUp(const SessionPtr& target, const PID id)
+{
+	std::cout << target->GetID() << " → SendSignUp(" << id << ")\n";
+
+	const auto ticket = CreateTicket<SCPacketSignUp>(id);
+	return target->Send(ticket.first, 1, ticket.second);
 }
 
 int IOCPFramework::SendPlayerCreate(const SessionPtr& target, const PID who, char* nickname)
