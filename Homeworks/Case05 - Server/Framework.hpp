@@ -61,6 +61,11 @@ private:
 	/// </summary>
 	/// <param name="who"></param>
 	void InitializeWorldFor(SessionPtr& who);
+	/// <summary>
+	/// 특정 플레이어 주변의 시야 목록 갱신 및 전송
+	/// </summary>
+	/// <param name="who"></param>
+	void UpdateViewOf(SessionPtr& who);
 
 	/// <summary>
 	/// 클라이언트에게 패킷 전송

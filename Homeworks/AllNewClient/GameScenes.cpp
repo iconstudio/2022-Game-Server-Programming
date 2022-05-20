@@ -254,7 +254,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		else
 		{
 			// 다른 플레이어의 캐릭터는 이때 생성한다.
-		}	
+		}
 
 		return true;
 	}
@@ -293,7 +293,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			[pid](const GameEntity* entity) -> bool {
 			return (entity->myID == pid);
 		});
-				
+
 		if (myLocalInstances.end() != rit)
 		{
 			myLocalInstances.erase(rit);
@@ -320,7 +320,17 @@ bool SceneGame::OnNetwork(const Packet& packet)
 
 void SceneGame::OnKeyDown(WPARAM key, LPARAM states)
 {
-
+	switch (key)
+	{
+		case VK_LEFT:
+		case VK_RIGHT:
+		case VK_UP:
+		case VK_DOWN:
+		{
+			myFramework.myNetwork.SendKeyMsg(key);
+		}
+		break;
+	}
 }
 
 template<>

@@ -284,14 +284,6 @@ void IOCPFramework::ConnectFrom(const UINT index)
 
 	if (SESSION_STATES::CONNECTED == status)
 	{
-		// Broadcast: 다른 클라이언트에게 새 클라이언트의 세션 생성 시기를 통지
-		//for (auto& player : myClients)
-		{
-		//	if (pid != player.first)
-			{
-				//SendPlayerCreate(GetClient(player.second), pid, session->Nickname);
-			}
-		}
 		// 클라이언트 ID 부여
 		SendSignUp(session, session->GetID());
 		// 시야 정보 전송
