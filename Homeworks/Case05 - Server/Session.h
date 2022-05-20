@@ -68,7 +68,7 @@ private:
 
 	Asynchron recvOverlap;
 	WSABUF recvBuffer;
-	char recvCBuffer[BUFFSIZE];
+	char recvCBuffer[BUFSIZ];
 	DWORD recvBytes;
 
 	Asynchron* overlapSendSignUp;

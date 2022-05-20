@@ -9,6 +9,10 @@ public:
 	GameObject(const XMFLOAT3& pos);
 	GameObject(XMFLOAT3&& pos);
 
+	virtual void Awake() = 0;
+	virtual void Start() = 0;
+	virtual void Update(float time_elapsed) = 0;
+
 	const XMFLOAT3& GetPosition() const;
 	XMFLOAT3& GetPosition();
 

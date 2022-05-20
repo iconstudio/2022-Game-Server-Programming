@@ -6,7 +6,7 @@ private:
 	using mySights = std::vector<std::vector<shared_ptr<SightSector>>>;
 
 public:
-	SightManager(float w, float hw, float sector_w, float sector_h);
+	SightManager(float w, float h, float sector_w, float sector_h);
 	~SightManager();
 
 	void Add(const shared_ptr<GameObject>& obj);

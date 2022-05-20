@@ -1,13 +1,14 @@
 #include "stdafx.hpp"
 #include "SightManager.hpp"
+#include "SightSector.hpp"
 #include "GameObject.hpp"
 #include "GameEntity.hpp"
 
 SightManager::SightManager(float w, float h, float sector_w, float sector_h)
 	: sizeWorldH(w), sizeWorldV(h)
 	, sizeSectorH(sector_w), sizeSectorV(sector_h)
-	, countHrzSectors(size_t(w / sector_w) + 1)
-	, countVrtSectors(size_t(h / sector_h) + 1)
+	, countHrzSectors(size_t(std::ceil(w / sector_w)))
+	, countVrtSectors(size_t(std::ceil(h / sector_h)))
 	, mySectors(BuildSectors(countHrzSectors, countVrtSectors))
 {
 

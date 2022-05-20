@@ -6,6 +6,10 @@ class PlayerCharacter : public GameEntity
 public:
 	PlayerCharacter(PID id, float x, float y, float z);
 
+	void Awake() override;
+	void Start() override;
+	void Update(float time_elapsed) override;
+
 	bool TryMoveLT();
 	bool TryMoveRT();
 	bool TryMoveUP();

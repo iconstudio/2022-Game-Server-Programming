@@ -9,5 +9,9 @@ public:
 	GameEntity(PID id, XMFLOAT3&& pos);
 	virtual ~GameEntity();
 
+	virtual void Awake() = 0;
+	virtual void Start() = 0;
+	virtual void Update(float time_elapsed) = 0;
+
 	PID myID;
 };

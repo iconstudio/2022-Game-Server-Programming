@@ -3,11 +3,14 @@
 #include "Asynchron.hpp"
 #include "Session.h"
 
+constexpr USHORT PORT = 6000;
+
 IOCPFramework::IOCPFramework()
 	: acceptOverlap(), acceptBytes(0), acceptCBuffer()
 	, serverKey(100)
 	, clientsPool(), orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
 	, threadWorkers(THREADS_COUNT)
+	, mySightManager(WORLD_W, WORLD_H, SIGHT_W, SIGHT_H)
 {
 	setlocale(LC_ALL, "KOREAN");
 	std::cout.sync_with_stdio(false);
@@ -15,7 +18,7 @@ IOCPFramework::IOCPFramework()
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
 
-	for (int i = 0; i < CLIENTS_MAX_NUMBER; ++i)
+	for (int i = 0; i < PLAYERS_MAX_NUMBER; ++i)
 	{
 		auto& empty = clientsPool.at(i);
 		empty = std::make_shared<Session>(i, -1, NULL, *this);
@@ -83,7 +86,7 @@ void IOCPFramework::Start()
 		return;
 	}
 
-	if (SOCKET_ERROR == listen(Listener, CLIENTS_MAX_NUMBER))
+	if (SOCKET_ERROR == listen(Listener, PLAYERS_MAX_NUMBER))
 	{
 		ErrorDisplay("listen()");
 		return;
@@ -109,7 +112,12 @@ void IOCPFramework::Start()
 	std::cout << "서버 종료\n";
 }
 
-void IOCPFramework::Update()
+void IOCPFramework::Update(float time_elapsed)
+{
+
+}
+
+void IOCPFramework::Communicate()
 {
 	DWORD portBytes = 0;
 	ULONG_PTR portKey = 0;
@@ -201,7 +209,7 @@ UINT IOCPFramework::GetClientsNumber() const volatile
 void IOCPFramework::ProceedAccept()
 {
 	auto number = GetClientsNumber();
-	if (CLIENTS_MAX_NUMBER <= number)
+	if (PLAYERS_MAX_NUMBER <= number)
 	{
 		std::cout << "새 접속을 받을 수 없습니다!\n";
 	}

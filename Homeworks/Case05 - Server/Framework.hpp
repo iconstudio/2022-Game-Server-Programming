@@ -2,6 +2,7 @@
 #include "stdafx.hpp"
 #include "Asynchron.hpp"
 #include "Session.h"
+#include "SightManager.hpp"
 
 const UINT THREADS_COUNT = 6;
 using SessionPtr = shared_ptr<Session>;
@@ -16,7 +17,8 @@ public:
 
 	void Init();
 	void Start();
-	void Update();
+	void Update(float time_elapsed);
+	void Communicate();
 	friend void IOCPWorker();
 
 	SessionPtr GetClient(const UINT index) const;
@@ -60,7 +62,6 @@ private:
 	// 
 
 
-	// 
 	/// <summary>
 	/// 클라이언트에게 새로운 접속을 알리고, 로컬 플레이어 세션을 생성하도록 명령한다.
 	/// </summary>
@@ -120,4 +121,6 @@ private:
 	atomic<UINT> numberClients;
 	atomic<PID> orderClientIDs;
 	std::timed_mutex mutexClient;
+
+	SightManager mySightManager;
 };

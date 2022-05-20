@@ -15,6 +15,6 @@ void IOCPWorker()
 {
 	while (true)
 	{
-		framework.Update();
+		framework.Communicate();
 	}
 }

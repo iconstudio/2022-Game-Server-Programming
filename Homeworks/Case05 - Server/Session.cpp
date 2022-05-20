@@ -15,7 +15,7 @@ Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
 	ClearOverlap(&recvOverlap);
 
 	recvBuffer.buf = recvCBuffer;
-	recvBuffer.len = BUFFSIZE;
+	recvBuffer.len = BUFSIZ;
 	ClearRecvBuffer();
 }
 
@@ -208,7 +208,7 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 		recvBytes -= sz_want;
 		if (0 < recvBytes)
 		{
-			MoveStream(cbuffer, sz_want, BUFFSIZE);
+			MoveStream(cbuffer, sz_want, BUFSIZ);
 		}
 	}
 
@@ -254,13 +254,13 @@ int Session::RecvStream(DWORD size, DWORD begin_bytes)
 
 int Session::RecvStream(DWORD begin_bytes)
 {
-	return RecvStream(BUFFSIZE, begin_bytes);
+	return RecvStream(BUFSIZ, begin_bytes);
 }
 
 int Session::SendSignUp(PID nid)
 {
 	std::cout << "SendSignUp(" << nid << ")\n";
-	return SendPacket<SCPacketSignUp>(nid, Framework.GetClientsNumber(), CLIENTS_MAX_NUMBER);
+	return SendPacket<SCPacketSignUp>(nid, Framework.GetClientsNumber(), PLAYERS_MAX_NUMBER);
 }
 
 int Session::SendCreatePlayer(PID id)
