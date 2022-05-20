@@ -32,6 +32,7 @@ struct CSPacketKeyInput : public Packet
 
 /// <summary>
 /// 새로 접속한 플레이어에게 ID 부여, 현재 동접자 수, 최대 동접자 수 알리기
+/// (첫 접속 시에만 실행)
 /// </summary>
 struct SCPacketSignUp : public Packet
 {
@@ -41,7 +42,7 @@ struct SCPacketSignUp : public Packet
 };
 
 /// <summary>
-/// 특정 플레이어의 로컬 세션 생성 (첫 접속 시에만 실행)
+/// 특정 플레이어의 로컬 세션 생성
 /// </summary>
 struct SCPacketCreatePlayer : public Packet
 {
