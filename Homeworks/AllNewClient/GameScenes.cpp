@@ -244,8 +244,8 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		{
 			// 내 캐릭터는 이때 생성한다.
 			myPlayerCharacter = CreateInstance<PlayerCharacter>();
-			myPlayerCharacter->myPosition.x = rp->x;
-			myPlayerCharacter->myPosition.y = rp->y;
+			myPlayerCharacter->myPosition.x = 30.0f;
+			myPlayerCharacter->myPosition.y = 30.0f;
 			myPlayerCharacter->myID = pid;
 
 			myLocalInstances.push_back(myPlayerCharacter);

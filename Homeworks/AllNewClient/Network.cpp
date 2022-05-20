@@ -137,7 +137,7 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 					}
 
 					// 자신의 세션 등록
-					//RegisterPlayer(pid);
+					RegisterPlayer(pid);
 
 					// 시작
 					Update();

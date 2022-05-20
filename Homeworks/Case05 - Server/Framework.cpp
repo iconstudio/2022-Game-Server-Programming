@@ -286,9 +286,14 @@ void IOCPFramework::ConnectFrom(const UINT index)
 	{
 		// Broadcast: 다른 클라이언트에게 새 클라이언트의 세션 생성 시기를 통지
 		const auto pid = session->GetID();
-		for (auto& player : myClients)
+		auto ticket = CreateTicket<SCPacketSignUp>(pid, GetClientsNumber(), PLAYERS_MAX_NUMBER);
+
+		//for (auto& player : myClients)
 		{
-			SendSignUp(GetClient(player.second), pid, session->Nickname);
+		//	if (pid != player.first)
+			{
+				//SendSignUp(GetClient(player.second), pid, session->Nickname);
+			}
 		}
 		// 시야 정보 전송
 		InitializeWorldFor(session);
@@ -390,10 +395,10 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 
 void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 {
-	for (auto& player : myClients)
+	//for (auto& player : myClients)
 	{
 		// 기존에 있던 모든 플레이어의 목록을 전달
-		SendSignUp(who, player.first, GetClient(player.second)->Nickname);
+		//SendSignUp(who, player.first, GetClient(player.second)->Nickname);
 	}
 
 	// 시야 목록을 전달
