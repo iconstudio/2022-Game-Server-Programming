@@ -13,6 +13,12 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="헤더 파일\Network">
+      <UniqueIdentifier>{b19cc607-66e6-4213-8bbe-11eaf965c45c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\System">
+      <UniqueIdentifier>{efe31269-ecdf-40f3-b22a-9a3f1418dea0}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Commons.cpp">
@@ -51,39 +57,45 @@
     <ClCompile Include="GameObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="pch.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Commons.hpp">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Framework.hpp">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Asynchron.hpp">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Session.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="stdafx.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="Asynchron.hpp">
+      <Filter>헤더 파일\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Commons.hpp">
+      <Filter>헤더 파일\Network</Filter>
+    </ClInclude>
     <ClInclude Include="Packet.hpp">
-      <Filter>헤더 파일</Filter>
+      <Filter>헤더 파일\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Session.h">
+      <Filter>헤더 파일\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Framework.hpp">
+      <Filter>헤더 파일\System</Filter>
     </ClInclude>
     <ClInclude Include="GameEntity.hpp">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="PlayerCharacter.hpp">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="SightManager.hpp">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="SightSector.hpp">
-      <Filter>헤더 파일</Filter>
+      <Filter>헤더 파일\System</Filter>
     </ClInclude>
     <ClInclude Include="GameObject.hpp">
+      <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="PlayerCharacter.hpp">
+      <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="SightManager.hpp">
+      <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="SightSector.hpp">
+      <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="pch.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
