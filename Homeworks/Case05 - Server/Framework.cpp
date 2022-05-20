@@ -292,7 +292,7 @@ void IOCPFramework::ConnectFrom(const UINT index)
 		{
 		//	if (pid != player.first)
 			{
-				//SendSignUp(GetClient(player.second), pid, session->Nickname);
+				//SendPlayerCreate(GetClient(player.second), pid, session->Nickname);
 			}
 		}
 		// 시야 정보 전송
@@ -398,7 +398,7 @@ void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 	//for (auto& player : myClients)
 	{
 		// 기존에 있던 모든 플레이어의 목록을 전달
-		//SendSignUp(who, player.first, GetClient(player.second)->Nickname);
+		//SendPlayerCreate(who, player.first, GetClient(player.second)->Nickname);
 	}
 
 	// 시야 목록을 전달
@@ -421,14 +421,14 @@ std::pair<LPWSABUF, Asynchron*> IOCPFramework::CreateTicket(Ty&&... args)
 	return std::make_pair(wbuffer, overlap);
 }
 
-int IOCPFramework::SendSignUp(const SessionPtr& target, const PID who, char* nickname)
+int IOCPFramework::SendPlayerCreate(const SessionPtr& target, const PID who, char* nickname)
 {
-	return SendSignUp(SessionPtr(target), who, nickname);
+	return SendPlayerCreate(SessionPtr(target), who, nickname);
 }
 
-int IOCPFramework::SendSignUp(SessionPtr&& target, const PID who, char* nickname)
+int IOCPFramework::SendPlayerCreate(SessionPtr&& target, const PID who, char* nickname)
 {
-	std::cout << target->GetID() << " → SendSignUp(" << who << ")\n";
+	std::cout << target->GetID() << " → SendPlayerCreate(" << who << ")\n";
 
 	const auto ticket = CreateTicket<SCPacketCreatePlayer>(who, nickname);
 	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);

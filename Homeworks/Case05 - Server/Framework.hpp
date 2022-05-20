@@ -68,14 +68,15 @@ private:
 	template<typename MY_PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, MY_PACKET>
 	std::pair<LPWSABUF, Asynchron*> CreateTicket(Ty&&... args);
+	//int SendPlayerCreate(const SessionPtr& target, const PID who, char* nickname);
 	/// <summary>
 	/// 클라이언트에게 새로운 접속을 알리고, 로컬 플레이어 세션을 생성하도록 명령한다.
 	/// </summary>
 	/// <param name="target">클라이언트의 세션</param>
 	/// <param name="who">새로 접속한 플레이어의 세션</param>
 	/// <param name="nickname">새로 접속한 플레이어의 별명</param>
-	int SendSignUp(const SessionPtr& target, const PID who, char* nickname);
-	int SendSignUp(SessionPtr&& target, const PID who, char* nickname);
+	int SendPlayerCreate(const SessionPtr& target, const PID who, char* nickname);
+	int SendPlayerCreate(SessionPtr&& target, const PID who, char* nickname);
 	/// <summary>
 	/// 클라이언트의 접속을 종료시키고, 다른 클라이언트에 알린다.
 	/// </summary>
