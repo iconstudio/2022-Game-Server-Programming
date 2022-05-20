@@ -30,6 +30,8 @@ public:
 	void OnKeyboard(UINT type, WPARAM key, LPARAM states);
 	void OnWindow(WPARAM aevent, LPARAM params);
 
+	Network& myNetwork;
+
 private:
 	void Register(const shared_ptr<Scene>& scene);
 	void Register(shared_ptr<Scene>&& scene);
@@ -42,7 +44,6 @@ private:
 	shared_ptr<Scene> Pop();
 	shared_ptr<Scene> GetScene(const char* name) const;
 
-	Network& myNetwork;
 	std::queue<shared_ptr<Packet>> myTasks;
 
 	std::unordered_map<string, shared_ptr<Scene>> myScenes;
