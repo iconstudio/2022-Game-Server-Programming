@@ -20,107 +20,101 @@ SightManager::~SightManager()
 
 }
 
-void SightManager::Add(const shared_ptr<GameEntity>& obj)
+void SightManager::Register(const shared_ptr<GameEntity>& obj)
 {
-	Add(*obj);
-}
-
-void SightManager::Add(GameEntity& obj)
-{
-	const auto& position = obj.GetPosition();
-	auto& sector = AtByPosition(position);
-	//const auto& sector_before = obj.mySector.load();
-
-	//if (sector != sector_before)
-	{
-		//if (sector_before)
-		{
-			//obj.EnterSector(nullptr);
-		}
-
-		//obj.EnterSector(sector);
-	}
+	AtByPosition(obj->GetPosition()).load()->Add(obj);
 }
 
 void SightManager::Update(const shared_ptr<GameEntity>& obj)
 {
-	Update(*obj);
-}
+	auto curr_sector = AtByPosition(obj->GetPosition());
+	auto curr = curr_sector.load(std::memory_order_acquire);
 
-void SightManager::Update(GameEntity& obj)
-{
-	auto& prev = obj.mySightSector;
-	auto& curr = AtByPosition(obj.GetPosition());
+	auto& prev_sector = obj->mySightSector;
+	auto prev = prev_sector.load(std::memory_order_acquire);
 
 	if (prev != curr)
 	{
-
+		prev->Remove(obj);
+		curr->Add(obj);
+		prev_sector.store(curr, std::memory_order_release);
 	}
+	else
+	{
+		prev_sector.store(prev, std::memory_order_release);
+	}
+
+	curr_sector.store(curr, std::memory_order_release);
 }
 
-const shared_ptr<SightSector>& SightManager::At(int x, int y) const
+const shared_sight SightManager::At(int x, int y) const
 {
-	return (mySectors.at(y).at(x));
+	return (mySectors.at(y).at(x).load(std::memory_order_relaxed));
 }
 
-const shared_ptr<SightSector>& SightManager::At(const int_pair& coord_index) const
+const shared_sight SightManager::At(const int_pair& coord_index) const
 {
 	return At(std::move(int_pair(coord_index)));
 }
 
-const shared_ptr<SightSector>& SightManager::At(int_pair&& coord_index) const
+const shared_sight SightManager::At(int_pair&& coord_index) const
 {
 	const auto&& coords = std::forward<int_pair>(coord_index);
 	return At(coords.first, coords.second);
 }
 
-shared_ptr<SightSector>& SightManager::At(int x, int y)
+shared_sight SightManager::At(int x, int y)
 {
-	return At(PickCoords(x, y));
+	return (mySectors.at(y).at(x).load(std::memory_order_relaxed));
 }
 
-shared_ptr<SightSector>& SightManager::At(const int_pair& coord_index)
+shared_sight SightManager::At(const int_pair& coord_index)
 {
 	return At(std::move(int_pair(coord_index)));
 }
 
-shared_ptr<SightSector>& SightManager::At(int_pair&& coord_index)
+shared_sight SightManager::At(int_pair&& coord_index)
 {
 	const auto&& coords = std::forward<int_pair>(coord_index);
 	return At(coords.first, coords.second);
 }
 
-const shared_ptr<SightSector>& SightManager::AtByPosition(float x, float y) const
+const shared_sight SightManager::AtByPosition(float x, float y) const
 {
 	return At(PickCoords(x, y));
 }
 
-const shared_ptr<SightSector>& SightManager::AtByPosition(const XMFLOAT3& position) const
+const shared_sight SightManager::AtByPosition(const XMFLOAT3& position) const
 {
 	return At(PickCoords(position.x, position.y));
 }
 
-shared_ptr<SightSector>& SightManager::AtByPosition(float x, float y)
+shared_sight SightManager::AtByPosition(float x, float y)
 {
 	return At(PickCoords(x, y));
 }
 
-shared_ptr<SightSector>& SightManager::AtByPosition(const XMFLOAT3& position)
+shared_sight SightManager::AtByPosition(const XMFLOAT3& position)
 {
 	return At(PickCoords(position.x, position.y));
 }
 
 SightManager::mySights SightManager::BuildSectors(size_t count_h, size_t count_v)
 {
-	std::vector<std::vector<shared_ptr<SightSector>>> result(count_v);
+	std::vector<std::vector<shared_sight>> result(count_v);
 
 	for (int i = 0; i < count_v; ++i)
 	{
-		std::vector<shared_ptr<SightSector>> pusher(count_h);
+		std::vector<shared_sight> pusher(count_h);
 
 		for (int j = 0; j < count_h; ++j)
 		{
-			pusher.emplace_back(new SightSector(j, i, sizeSectorH * i, sizeSectorV * j));
+			auto ptr = make_shared<SightSector>(j, i, sizeSectorH * i, sizeSectorV * j);
+			
+			//shared_sight sight{};
+			//sight.store(ptr, std::memory_order_relaxed);
+
+			//pusher.push_back(sight);
 		}
 
 		result.push_back(pusher);
@@ -129,10 +123,25 @@ SightManager::mySights SightManager::BuildSectors(size_t count_h, size_t count_v
 	return result;
 }
 
+int_pair SightManager::ClampCoords(const XMFLOAT3& position) const
+{
+	return ClampCoords(std::move(XMFLOAT3(position)));
+}
+
+int_pair SightManager::ClampCoords(XMFLOAT3&& position) const
+{
+	const auto&& pos = std::forward<XMFLOAT3>(position);
+	const float clamped_x = std::clamp(0.0f, pos.x, sizeWorldH);
+	const float clamped_y = std::clamp(0.0f, pos.y, sizeWorldV);
+
+	return PickCoords(clamped_x, clamped_y);
+}
+
 inline int_pair SightManager::PickCoords(float x, float y) const
 {
 	const int index_x = static_cast<int>(x / sizeSectorH);
 	const int index_y = static_cast<int>(y / sizeSectorV);
+
 	return std::make_pair(index_y, index_x);
 }
 

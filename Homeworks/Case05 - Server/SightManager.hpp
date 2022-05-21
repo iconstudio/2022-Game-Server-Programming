@@ -1,30 +1,29 @@
 #pragma once
+#include "SightSector.hpp"
 
 class SightManager
 {
 private:
-	using mySights = std::vector<std::vector<shared_ptr<SightSector>>>;
+	using mySights = std::vector<std::vector<shared_sight>>;
 
 public:
 	SightManager(float w, float h, float sector_w, float sector_h);
 	~SightManager();
 
-	void Add(const shared_ptr<GameEntity>& obj);
-	void Add(GameEntity& obj);
+	void Register(const shared_ptr<GameEntity>& obj);
 	void Update(const shared_ptr<GameEntity>& obj);
-	void Update(GameEntity& obj);
 
-	const shared_ptr<SightSector>& At(int x, int y) const;
-	const shared_ptr<SightSector>& At(const int_pair& coord_index) const;
-	const shared_ptr<SightSector>& At(int_pair&& coord_index) const;
-	shared_ptr<SightSector>& At(int x, int y);
-	shared_ptr<SightSector>& At(const int_pair& coord_index);
-	shared_ptr<SightSector>& At(int_pair&& coord_index);
+	const shared_sight At(int x, int y) const;
+	const shared_sight At(const int_pair& coord_index) const;
+	const shared_sight At(int_pair&& coord_index) const;
+	shared_sight At(int x, int y);
+	shared_sight At(const int_pair& coord_index);
+	shared_sight At(int_pair&& coord_index);
 
-	const shared_ptr<SightSector>& AtByPosition(float x, float y) const;
-	const shared_ptr<SightSector>& AtByPosition(const XMFLOAT3& position) const;
-	shared_ptr<SightSector>& AtByPosition(float x, float y);
-	shared_ptr<SightSector>& AtByPosition(const XMFLOAT3& position);
+	const shared_sight AtByPosition(float x, float y) const;
+	const shared_sight AtByPosition(const XMFLOAT3& position) const;
+	shared_sight AtByPosition(float x, float y);
+	shared_sight AtByPosition(const XMFLOAT3& position);
 
 	const float sizeWorldH;
 	const float sizeWorldV;
@@ -35,6 +34,9 @@ public:
 
 private:
 	mySights BuildSectors(size_t count_h, size_t count_v);
+
+	int_pair ClampCoords(const XMFLOAT3& position) const;
+	int_pair ClampCoords(XMFLOAT3&& position) const;
 
 	/// <summary>
 	/// 월드 좌표에 위치한 시야 영역의 번호
@@ -72,5 +74,5 @@ private:
 	/// <summary>
 	/// 행우선 행렬: [Y][X]
 	/// </summary>
-	const mySights mySectors;
+	mySights mySectors;
 };
