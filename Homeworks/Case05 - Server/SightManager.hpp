@@ -12,20 +12,6 @@ public:
 	SightManager(IOCPFramework& framework, float w, float h, float sector_w, float sector_h);
 	~SightManager();
 
-	/// <summary>
-	/// 객체를 시야 관리기에 등록한다.
-	/// 그러나 이것만으로는 시야를 갱신하지 않는다.
-	/// </summary>
-	/// <param name="entity">등록할 개체 (NPC, 특수 개체, 플레이어)</param>
-	void Register(const shared_ptr<GameEntity>& entity);
-	/// <summary>
-	/// 객체 근처에 있는 세션의 시야 목록을 갱신한다.
-	/// 상, 하, 좌, 우, 대각선 9개의 목록을 전송한다.
-	/// 이때 변화한 점만 전송한다. 변화하는 즉시 전송한다.
-	/// </summary>
-	/// <param name="entity">갱신할 개체 (NPC, 특수 개체, 플레이어)</param>
-	void Update(const shared_ptr<GameEntity>& entity);
-
 	const mySector& At(int x, int y) const;
 	const mySector& At(const int_pair& coord_index) const;
 	const mySector& At(int_pair&& coord_index) const;

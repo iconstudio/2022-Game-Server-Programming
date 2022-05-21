@@ -76,8 +76,7 @@ private:
 	/// <param name="who"></param>
 	int SendSightOf(SessionPtr& who);
 
-	void NotifyEntity(const shared_ptr<GameEntity>& inst);
-
+	void NotifyEntity(const shared_ptr<GameEntity>& inst)
 
 	/// <summary>
 	/// 클라이언트에게 패킷 전송

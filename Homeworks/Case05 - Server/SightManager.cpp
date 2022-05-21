@@ -19,25 +19,6 @@ SightManager::SightManager(IOCPFramework& framework, float w, float h, float sec
 
 SightManager::~SightManager()
 {
-
-}
-
-void SightManager::Register(const shared_ptr<GameEntity>& obj)
-{
-	auto& sector = AtByPosition(obj->GetPosition());
-
-	// 적법한 구역의 소유권 획득
-	sector->Acquire();
-
-	// 여기서 설정하지 않는다.
-	//obj->SetSightArea(sector);
-	sector->Add(obj->myID);
-
-	sector->Release();
-}
-
-void SightManager::Update(const shared_ptr<GameEntity>& obj)
-{
 }
 
 const mySector& SightManager::At(int x, int y) const

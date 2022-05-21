@@ -387,12 +387,9 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 
 void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 {
-	// 시야 관리에 등록 (잠금 없음),
-	mySightManager.Register(who->Instance);
-
 	auto viewlist_prev = who->GetSight();
 
-	// 시야 목록을 갱신
+	// 시야 목록을 갱신 (잠금 없음),
 	UpdateViewOf(who);
 
 	auto viewlist_curr = who->GetSight();
