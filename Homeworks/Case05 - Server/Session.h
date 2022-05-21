@@ -61,11 +61,6 @@ private:
 	char recvCBuffer[BUFSIZ];
 	DWORD recvBytes;
 
-	Asynchron* overlapSendSignUp;
-	Asynchron* overlapSendCreateChar;
-	Asynchron* overlapSendMoveChar;
-	Asynchron* overlapSendSignOut;
-
 	IOCPFramework& Framework;
 
 	shared_concurrent_vector<GameEntity> myViewList;
