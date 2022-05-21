@@ -4,10 +4,29 @@
 
 SightSector::SightSector(int x, int y, float w, float h)
 	: index_x(x), index_y(y)
-{}
+	, isOwned()
+	, seeingInstances()
+{
+	seeingInstances.reserve(10);
+}
 
 SightSector::~SightSector()
 {}
+
+void SightSector::Acquire()
+{
+	isOwned.test_and_set(std::memory_order_acquire);
+}
+
+void SightSector::Release()
+{
+	isOwned.clear(std::memory_order_release);
+}
+
+bool SightSector::TryAcquire()
+{
+	return !isOwned.test_and_set(std::memory_order_acquire);
+}
 
 void SightSector::Add(const shared_ptr<GameEntity>& entity)
 {
