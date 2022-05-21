@@ -14,6 +14,9 @@ public:
 	virtual void Start() = 0;
 	virtual void Update(float time_elapsed) = 0;
 
+	void SetSightArea(const shared_ptr<SightSector>& sector);
+	void SetSightArea(shared_ptr<SightSector>&& sector);
+
 	PID myID;
-	shared_sight mySightSector;
+	shared_ptr<SightSector> mySightSector;
 };
