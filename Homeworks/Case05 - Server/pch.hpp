@@ -29,6 +29,7 @@ using DirectX::XMLoadFloat3, DirectX::XMLoadFloat4, DirectX::XMLoadFloat4x4;
 #include <concurrent_unordered_set.h>
 #include <vector>
 #include <array>
+#include <unordered_set>
 #include <unordered_map>
 #include <algorithm>
 
