@@ -23,18 +23,20 @@ public:
 
 	SessionPtr GetClient(const UINT index) const;
 	SessionPtr GetClientByID(const PID id) const;
+	SessionPtr GetClient(const PID) const = delete;
+	SessionPtr GetClientByID(const UINT) const = delete;
 	UINT GetClientsNumber() const volatile;
 
 	friend class Session;
 
 private:
-	bool IsClientsBound(const UINT index) const;
-
 	void Listen();
 	void ProceedAccept();
 
 	void ConnectFrom(const UINT index);
 	void Disconnect(const PID id);
+	void ConnectFrom(const PID) = delete;
+	void Disconnect(const UINT) = delete;
 	void RegisterPlayer(const PID id, const UINT place);
 	void DeregisterPlayer(const PID id);
 
@@ -132,6 +134,8 @@ private:
 	/// <param name="ny"></param>
 	int SendMoveEntity(const SessionPtr& target, PID cid, float nx, float ny);
 	int SendMoveEntity(SessionPtr&& target, PID cid, float nx, float ny);
+
+	bool IsClientsBound(const UINT index) const;
 
 	SOCKET Listener;
 	SOCKADDR_IN Address;
