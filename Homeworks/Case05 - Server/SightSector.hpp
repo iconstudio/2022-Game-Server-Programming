@@ -11,6 +11,6 @@ public:
 	const int index_x, index_y;
 
 private:
-	weak_atomic_concurrent_vector<GameObject> seeingInstances;
-	weak_atomic_concurrent_vector<GameObject>::iterator::difference_type seeingLast;
+	weak_concurrent_vector<GameObject> seeingInstances;
+	weak_concurrent_vector<GameObject>::iterator::difference_type seeingLast;
 };

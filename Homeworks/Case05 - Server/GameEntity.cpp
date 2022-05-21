@@ -13,6 +13,7 @@ GameEntity::GameEntity(PID id, const XMFLOAT3& pos)
 GameEntity::GameEntity(PID id, XMFLOAT3&& pos)
 	: GameObject(std::forward<XMFLOAT3>(pos))
 	, myID(id)
+	, mySightSector(nullptr)
 {}
 
 GameEntity::~GameEntity()

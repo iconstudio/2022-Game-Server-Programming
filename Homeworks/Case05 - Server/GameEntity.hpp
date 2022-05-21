@@ -1,5 +1,6 @@
 #pragma once
 #include "GameObject.hpp"
+#include "SightSector.hpp"
 
 class GameEntity : public GameObject
 {
@@ -14,4 +15,5 @@ public:
 	virtual void Update(float time_elapsed) = 0;
 
 	PID myID;
+	shared_ptr<SightSector> mySightSector;
 };

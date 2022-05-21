@@ -20,12 +20,12 @@ SightManager::~SightManager()
 
 }
 
-void SightManager::Add(const shared_ptr<GameObject>& obj)
+void SightManager::Add(const shared_ptr<GameEntity>& obj)
 {
 	Add(*obj);
 }
 
-void SightManager::Add(GameObject& obj)
+void SightManager::Add(GameEntity& obj)
 {
 	const auto& position = obj.GetPosition();
 	auto& sector = AtByPosition(position);
@@ -42,14 +42,20 @@ void SightManager::Add(GameObject& obj)
 	}
 }
 
-void SightManager::Update(const shared_ptr<GameObject>& obj)
+void SightManager::Update(const shared_ptr<GameEntity>& obj)
 {
 	Update(*obj);
 }
 
-void SightManager::Update(GameObject& obj)
+void SightManager::Update(GameEntity& obj)
 {
+	auto& prev = obj.mySightSector;
+	auto& curr = AtByPosition(obj.GetPosition());
 
+	if (prev != curr)
+	{
+
+	}
 }
 
 const shared_ptr<SightSector>& SightManager::At(int x, int y) const
@@ -68,12 +74,38 @@ const shared_ptr<SightSector>& SightManager::At(int_pair&& coord_index) const
 	return At(coords.first, coords.second);
 }
 
+shared_ptr<SightSector>& SightManager::At(int x, int y)
+{
+	return At(PickCoords(x, y));
+}
+
+shared_ptr<SightSector>& SightManager::At(const int_pair& coord_index)
+{
+	return At(std::move(int_pair(coord_index)));
+}
+
+shared_ptr<SightSector>& SightManager::At(int_pair&& coord_index)
+{
+	const auto&& coords = std::forward<int_pair>(coord_index);
+	return At(coords.first, coords.second);
+}
+
 const shared_ptr<SightSector>& SightManager::AtByPosition(float x, float y) const
 {
 	return At(PickCoords(x, y));
 }
 
 const shared_ptr<SightSector>& SightManager::AtByPosition(const XMFLOAT3& position) const
+{
+	return At(PickCoords(position.x, position.y));
+}
+
+shared_ptr<SightSector>& SightManager::AtByPosition(float x, float y)
+{
+	return At(PickCoords(x, y));
+}
+
+shared_ptr<SightSector>& SightManager::AtByPosition(const XMFLOAT3& position)
 {
 	return At(PickCoords(position.x, position.y));
 }

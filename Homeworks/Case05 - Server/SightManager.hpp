@@ -9,16 +9,22 @@ public:
 	SightManager(float w, float h, float sector_w, float sector_h);
 	~SightManager();
 
-	void Add(const shared_ptr<GameObject>& obj);
-	void Add(GameObject& obj);
-	void Update(const shared_ptr<GameObject>& obj);
-	void Update(GameObject& obj);
+	void Add(const shared_ptr<GameEntity>& obj);
+	void Add(GameEntity& obj);
+	void Update(const shared_ptr<GameEntity>& obj);
+	void Update(GameEntity& obj);
 
 	const shared_ptr<SightSector>& At(int x, int y) const;
 	const shared_ptr<SightSector>& At(const int_pair& coord_index) const;
 	const shared_ptr<SightSector>& At(int_pair&& coord_index) const;
+	shared_ptr<SightSector>& At(int x, int y);
+	shared_ptr<SightSector>& At(const int_pair& coord_index);
+	shared_ptr<SightSector>& At(int_pair&& coord_index);
+
 	const shared_ptr<SightSector>& AtByPosition(float x, float y) const;
 	const shared_ptr<SightSector>& AtByPosition(const XMFLOAT3& position) const;
+	shared_ptr<SightSector>& AtByPosition(float x, float y);
+	shared_ptr<SightSector>& AtByPosition(const XMFLOAT3& position);
 
 	const float sizeWorldH;
 	const float sizeWorldV;
