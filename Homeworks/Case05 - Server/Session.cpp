@@ -8,7 +8,8 @@
 #include "Framework.hpp"
 
 Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
-	: Index(index), ID(id), Nickname(), Socket(sock), Framework(framework)
+	: Index(index), ID(id), Nickname(), Socket(sock)
+	, Framework(framework)
 	, Status(SESSION_STATES::NONE)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 	, Instance(nullptr)
@@ -137,7 +138,7 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 				}
 				else // 클라이언트 수용.
 				{
-					strcpy_s(Nickname, result->Nickname);
+					Nickname = result->Nickname;
 					std::cout << ID << "'s Nickname: " << Nickname << ".\n";
 
 					Instance = std::make_shared<PlayerCharacter>(ID, 100.0f, 100.0f, 0.0f);

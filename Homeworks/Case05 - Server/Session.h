@@ -41,7 +41,7 @@ public:
 
 	const UINT Index;
 
-	CHAR Nickname[30];
+	string Nickname;
 	std::shared_ptr<PlayerCharacter> Instance;
 
 private:
@@ -63,7 +63,8 @@ private:
 
 	IOCPFramework& Framework;
 
-	shared_concurrent_vector<GameEntity> myViewList;
+	// 시야 목록 (식별자만 저장)
+	std::vector<PID> myViewList;
 };
 
 enum class SESSION_STATES
