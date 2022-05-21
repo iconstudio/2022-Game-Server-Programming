@@ -5,8 +5,9 @@
 #include "GameObject.hpp"
 #include "GameEntity.hpp"
 
-SightManager::SightManager(float w, float h, float sector_w, float sector_h)
-	: sizeWorldH(w), sizeWorldV(h)
+SightManager::SightManager(IOCPFramework& framework, float w, float h, float sector_w, float sector_h)
+	: myFramework(framework)
+	, sizeWorldH(w), sizeWorldV(h)
 	, sizeSectorH(sector_w), sizeSectorV(sector_h)
 	, countHrzSectors(size_t(std::ceil(w / sector_w)))
 	, countVrtSectors(size_t(std::ceil(h / sector_h)))
@@ -27,8 +28,9 @@ void SightManager::Register(const shared_ptr<GameEntity>& obj)
 	// 적법한 구역의 소유권 획득
 	sector->Acquire();
 
-	obj->SetSightArea(sector);
-	sector->Add(obj);
+	// 여기서 설정하지 않는다.
+	//obj->SetSightArea(sector);
+	sector->Add(obj->myID);
 
 	sector->Release();
 }
@@ -40,13 +42,41 @@ void SightManager::Update(const shared_ptr<GameEntity>& obj)
 	// 적법한 구역의 소유권 획득
 	curr_sector->Acquire();
 
-	auto& prev_sector = obj->mySightSector;
-	if (prev_sector->TryAcquire())
+	// 다른 메서드라면 소유권 획득이 안된다
+	auto& prev_sector = obj->GetSightArea();
+	if (nullptr == prev_sector || prev_sector->TryAcquire())
 	{
 		if (curr_sector != prev_sector)
 		{
-			prev_sector->Remove(obj);
-			curr_sector->Add(obj);
+			// NPC, 특수 개체, 플레이어의 고유 식별자
+			const PID obj_id = obj->myID;
+
+			constexpr int_pair pos_pairs[] = {
+				{ -1, -1 }, { -1, 0 }, { -1, +1 },
+				{  0, -1 }, {  0, 0 }, { +1, +1 },
+				{ +1, -1 }, { +1, 0 }, { +1, +1 }
+			};
+
+			// 주변의 시야 구역 갱신
+			for (int k = 0; k < 9; ++k)
+			{
+				const auto indexes = pos_pairs[k];
+				const auto index_x = indexes.first;
+				const auto index_y = indexes.second;
+
+				//auto& sector = At(index_x, index_y);
+			}
+
+			// 시야 구역 내에 있는 모든 플레이어 훑기
+			// 모든 플레이어의 시야 목록 갱신
+
+			// 이전 시야 구역은 해제
+			if (prev_sector)
+			{
+				prev_sector->Remove(obj_id);
+			}
+			// 시야 구역에 등록
+			curr_sector->Add(obj_id);
 			obj->SetSightArea(curr_sector);
 		}
 
@@ -122,7 +152,7 @@ SightManager::mySights SightManager::BuildSectors(size_t count_h, size_t count_v
 		for (int j = 0; j < count_h; ++j)
 		{
 			auto ptr = make_shared<SightSector>(j, i, sizeSectorH * i, sizeSectorV * j);
-			
+
 			pusher.push_back(ptr);
 		}
 
