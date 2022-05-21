@@ -12,7 +12,7 @@ Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
 	, Framework(framework)
 	, Status(SESSION_STATES::NONE)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
-	, Instance(nullptr)
+	, Instance(nullptr), myViewList()
 {
 	ClearOverlap(&recvOverlap);
 
@@ -39,6 +39,17 @@ void Session::SetSocket(SOCKET sock)
 void Session::SetID(const PID id)
 {
 	ID.store(id, std::memory_order_relaxed);
+}
+
+void Session::AssignSight(const std::vector<PID>& view)
+{
+	myViewList.clear();
+	myViewList.assign(view.begin(), view.end());
+}
+
+void Session::AssignSight(std::vector<PID>&& view)
+{
+	myViewList = (std::forward<std::vector<PID>>(view));
 }
 
 SESSION_STATES Session::GetStatus() const volatile
@@ -186,7 +197,7 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 
 					if (moved)
 					{
-					//	Framework.SendMoveEntity(Index, px, py);
+						Framework.SendMoveEntity(Index, px, py);
 					}
 				}
 				else // 잘못된 메시지 받음.
