@@ -38,19 +38,6 @@ public:
 	mySector& AtByPosition(float x, float y);
 	mySector& AtByPosition(const XMFLOAT3& position);
 
-	const float sizeWorldH;
-	const float sizeWorldV;
-	const float sizeSectorH;
-	const float sizeSectorV;
-	const volatile size_t countHrzSectors;
-	const volatile size_t countVrtSectors;
-
-private:
-	mySights BuildSectors(size_t count_h, size_t count_v);
-
-	int_pair ClampCoords(const XMFLOAT3& position) const;
-	int_pair ClampCoords(XMFLOAT3&& position) const;
-
 	/// <summary>
 	/// 월드 좌표에 위치한 시야 영역의 번호
 	/// </summary>
@@ -83,6 +70,19 @@ private:
 	/// <param name="coord_index">영역의 번호 쌍</param>
 	/// <returns>영역의 월드 좌표</returns>
 	inline float_pair PickPositionLast(int_pair coord_index) const;
+
+	const float sizeWorldH;
+	const float sizeWorldV;
+	const float sizeSectorH;
+	const float sizeSectorV;
+	const volatile size_t countHrzSectors;
+	const volatile size_t countVrtSectors;
+
+private:
+	mySights BuildSectors(size_t count_h, size_t count_v);
+
+	int_pair ClampCoords(const XMFLOAT3& position) const;
+	int_pair ClampCoords(XMFLOAT3&& position) const;
 
 	IOCPFramework& myFramework;
 

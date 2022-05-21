@@ -62,11 +62,22 @@ private:
 	/// <param name="who"></param>
 	void InitializeWorldFor(SessionPtr& who);
 	/// <summary>
-	/// 특정 플레이어 주변의 시야 목록 갱신 및 전송
+	/// 특정 개체의 시야 목록 갱신
+	/// </summary>
+	void UpdateViewOf(const shared_ptr<GameEntity>& inst);
+	/// <summary>
+	/// 특정 플레이어 주변의 시야 목록 갱신
 	/// </summary>
 	/// <param name="who"></param>
 	void UpdateViewOf(SessionPtr& who);
-	bool SendSightOf(SessionPtr& who);
+	/// <summary>
+	/// 특정 플레이어의 현재 시야 목록과 바뀐 시야 목록을 비교해서 전송
+	/// </summary>
+	/// <param name="who"></param>
+	int SendSightOf(SessionPtr& who);
+
+	void NotifyEntity(const shared_ptr<GameEntity>& inst);
+
 
 	/// <summary>
 	/// 클라이언트에게 패킷 전송

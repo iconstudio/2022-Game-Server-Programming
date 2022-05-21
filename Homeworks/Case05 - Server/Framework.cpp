@@ -5,6 +5,7 @@
 #include "Session.h"
 #include "Commons.hpp"
 #include "SightManager.hpp"
+#include "SightSector.hpp"
 
 constexpr USHORT PORT = 6000;
 
@@ -13,7 +14,7 @@ IOCPFramework::IOCPFramework()
 	, serverKey(100)
 	, clientsPool(), orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
 	, threadWorkers(THREADS_COUNT)
-	, mySightManager(WORLD_W, WORLD_H, SIGHT_W, SIGHT_H)
+	, mySightManager(*this, WORLD_W, WORLD_H, SIGHT_W, SIGHT_H)
 {
 	setlocale(LC_ALL, "KOREAN");
 	std::cout.sync_with_stdio(false);
@@ -388,19 +389,121 @@ void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 {
 	// 시야 관리에 등록 (잠금 없음),
 	mySightManager.Register(who->Instance);
+
+	auto viewlist_prev = who->GetSight();
+
 	// 시야 목록을 갱신
 	UpdateViewOf(who);
-	// 시야 목록을 전달
+
+	auto viewlist_curr = who->GetSight();
+
+	// 차이점을 전송
+	// * 현재 없는 개체는 Disappear
+	// * 현재 있는 개체는, 과거에도 있으면 Move, 없으면 Appear
+	PID cid, pid;
+
+	for (auto cit = viewlist_curr.cbegin(); viewlist_curr.cend() != cit;
+		++cit)
+	{
+		cid = *cit;
+
+		auto curr_session = GetClientByID(cid);
+		const auto& curr_inst = curr_session->Instance;
+		const auto& curr_pos = curr_inst->GetPosition();
+
+		const auto pit = std::find(viewlist_prev.cbegin(), viewlist_prev.cend(), cid);
+
+		if (viewlist_prev.cend() == pit)
+		{
+			// Appear: 새로운 개체 등록
+			SendAppearEntity(who, cid, 0, curr_pos.x, curr_pos.y);
+		}
+		else
+		{
+			// Move
+			SendMoveEntity(who, cid, curr_pos.x, curr_pos.y);
+			viewlist_prev.erase(pit);
+		}
+	}
+
+	// Disappear
+	for (auto pit = viewlist_prev.cbegin(); viewlist_prev.cend() != pit;
+		++pit)
+	{
+		pid = *pit;
+
+		SendDisppearEntity(who, pid);
+	}
+}
+
+void IOCPFramework::UpdateViewOf(const shared_ptr<GameEntity>& inst)
+{
 }
 
 void IOCPFramework::UpdateViewOf(SessionPtr& who)
 {
-	mySightManager.Update((who->Instance));
+	auto& obj = who->Instance;
+	const auto& pos = obj->GetPosition();
+
+	auto curr_coords = mySightManager.PickCoords(pos.x, pos.y);
+	auto& curr_sector = mySightManager.At(curr_coords);
+
+	// 적법한 구역의 소유권 획득
+	curr_sector->Acquire();
+
+	// 다른 메서드라면 소유권 획득이 안된다
+	auto& prev_sector = obj->GetSightArea();
+	if (nullptr == prev_sector || prev_sector->TryAcquire())
+	{
+		if (curr_sector != prev_sector)
+		{
+			// NPC, 특수 개체, 플레이어의 고유 식별자
+			const PID obj_id = obj->myID;
+
+			// 주변 9구역의 개체를 시야 목록에 등록
+			constexpr int_pair pos_pairs[] = {
+				{ -1, -1 }, { -1, 0 }, { -1, +1 },
+				{  0, -1 }, {  0, 0 }, { +1, +1 },
+				{ +1, -1 }, { +1, 0 }, { +1, +1 }
+			};
+
+			// 주변의 시야 구역 열거
+			for (int k = 0; k < 9; ++k)
+			{
+				const auto indexes = pos_pairs[k];
+				const auto index_x = indexes.first;
+				const auto index_y = indexes.second;
+
+				//auto& sector = At(index_x, index_y);
+
+				// 시야 구역 내에 있는 모든 플레이어 훑기
+				// 
+			}
+
+			// 이전 시야 구역은 해제
+			if (prev_sector)
+			{
+				prev_sector->Remove(obj_id);
+			}
+			// 시야 구역에 등록
+			curr_sector->Add(obj_id);
+			obj->SetSightArea(curr_sector);
+
+			who->AssignSight(curr_sector->GetSightList());
+		}
+
+		// 내가 소유한 구역만 소유권 내려놓기
+		prev_sector->Release();
+	}
+
+	curr_sector->Release();
+
+	//mySightManager.Update((who->Instance));
 }
 
-bool IOCPFramework::SendSightOf(SessionPtr& who)
+int IOCPFramework::SendSightOf(SessionPtr& who)
 {
-	return false;
+	return 0;
 }
 
 template<typename MY_PACKET, typename ...Ty>

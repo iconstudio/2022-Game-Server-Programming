@@ -4,6 +4,7 @@
 #include "SightSector.hpp"
 #include "GameObject.hpp"
 #include "GameEntity.hpp"
+#include "Framework.hpp"
 
 SightManager::SightManager(IOCPFramework& framework, float w, float h, float sector_w, float sector_h)
 	: myFramework(framework)
@@ -37,54 +38,6 @@ void SightManager::Register(const shared_ptr<GameEntity>& obj)
 
 void SightManager::Update(const shared_ptr<GameEntity>& obj)
 {
-	auto& curr_sector = AtByPosition(obj->GetPosition());
-
-	// 적법한 구역의 소유권 획득
-	curr_sector->Acquire();
-
-	// 다른 메서드라면 소유권 획득이 안된다
-	auto& prev_sector = obj->GetSightArea();
-	if (nullptr == prev_sector || prev_sector->TryAcquire())
-	{
-		if (curr_sector != prev_sector)
-		{
-			// NPC, 특수 개체, 플레이어의 고유 식별자
-			const PID obj_id = obj->myID;
-
-			constexpr int_pair pos_pairs[] = {
-				{ -1, -1 }, { -1, 0 }, { -1, +1 },
-				{  0, -1 }, {  0, 0 }, { +1, +1 },
-				{ +1, -1 }, { +1, 0 }, { +1, +1 }
-			};
-
-			// 주변의 시야 구역 갱신
-			for (int k = 0; k < 9; ++k)
-			{
-				const auto indexes = pos_pairs[k];
-				const auto index_x = indexes.first;
-				const auto index_y = indexes.second;
-
-				//auto& sector = At(index_x, index_y);
-			}
-
-			// 시야 구역 내에 있는 모든 플레이어 훑기
-			// 모든 플레이어의 시야 목록 갱신
-
-			// 이전 시야 구역은 해제
-			if (prev_sector)
-			{
-				prev_sector->Remove(obj_id);
-			}
-			// 시야 구역에 등록
-			curr_sector->Add(obj_id);
-			obj->SetSightArea(curr_sector);
-		}
-
-		// 내가 소유한 구역만 소유권 내려놓기
-		prev_sector->Release();
-	}
-
-	curr_sector->Release();
 }
 
 const mySector& SightManager::At(int x, int y) const
