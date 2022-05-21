@@ -23,5 +23,5 @@ private:
 	std::atomic_flag isOwned;
 
 	std::vector<weak_ptr<GameEntity>> seeingInstances;
-	std::vector<weak_ptr<GameEntity>>::iterator::difference_type seeingLast;
+	std::vector<weak_ptr<GameEntity>>::iterator seeingLast;
 };

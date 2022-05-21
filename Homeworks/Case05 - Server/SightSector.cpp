@@ -1,11 +1,12 @@
 #include "pch.hpp"
 #include "stdafx.hpp"
 #include "SightSector.hpp"
+#include "GameEntity.hpp"
 
 SightSector::SightSector(int x, int y, float w, float h)
 	: index_x(x), index_y(y)
 	, isOwned()
-	, seeingInstances()
+	, seeingInstances(), seeingLast()
 {
 	seeingInstances.reserve(10);
 }
@@ -36,6 +37,13 @@ void SightSector::Add(const shared_ptr<GameEntity>& entity)
 void SightSector::Add(shared_ptr<GameEntity>&& entity)
 {
 	seeingInstances.emplace_back(std::forward<shared_ptr<GameEntity>>(entity));
+
+	// 플레이어 캐릭터는 앞으로 당기기
+	seeingLast = std::partition(seeingInstances.begin()
+		, seeingInstances.end()
+		, [](const shared_ptr<GameEntity>& inst) {
+		return CLIENTS_ORDER_BEGIN <= inst->myID;
+	});
 }
 
 void SightSector::Remove(const shared_ptr<GameEntity>& entity)
