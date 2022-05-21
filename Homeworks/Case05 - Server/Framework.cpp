@@ -386,12 +386,6 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 
 void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 {
-	//for (auto& player : myClients)
-	{
-		// 기존에 있던 모든 플레이어의 목록을 전달
-		//SendPlayerCreate(who, player.first, GetClient(player.second)->Nickname);
-	}
-
 	// 시야 관리에 등록 (잠금 없음),
 	mySightManager.Register(who->Instance);
 	// 시야 목록을 갱신
