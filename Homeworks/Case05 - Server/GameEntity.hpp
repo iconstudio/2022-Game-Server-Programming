@@ -15,5 +15,5 @@ public:
 	virtual void Update(float time_elapsed) = 0;
 
 	PID myID;
-	shared_ptr<SightSector> mySightSector;
+	shared_sight mySightSector;
 };
