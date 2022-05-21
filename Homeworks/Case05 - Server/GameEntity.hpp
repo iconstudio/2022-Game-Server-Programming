@@ -16,7 +16,11 @@ public:
 
 	void SetSightArea(const shared_ptr<SightSector>& sector);
 	void SetSightArea(shared_ptr<SightSector>&& sector);
+	const shared_ptr<SightSector>& GetSightArea() const;
+	shared_ptr<SightSector>& GetSightArea();
 
 	PID myID;
+
+private:
 	shared_ptr<SightSector> mySightSector;
 };

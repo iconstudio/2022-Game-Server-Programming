@@ -28,3 +28,13 @@ void GameEntity::SetSightArea(shared_ptr<SightSector>&& sector)
 {
 	mySightSector = std::forward<shared_ptr<SightSector>>(sector);
 }
+
+const shared_ptr<SightSector>& GameEntity::GetSightArea() const
+{
+	return mySightSector;
+}
+
+shared_ptr<SightSector>& GameEntity::GetSightArea()
+{
+	return mySightSector;
+}
