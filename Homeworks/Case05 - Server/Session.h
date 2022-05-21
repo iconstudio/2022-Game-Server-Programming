@@ -13,8 +13,11 @@ public:
 	void SetStatus(SESSION_STATES state);
 	void SetSocket(SOCKET sock);
 	void SetID(const PID id);
+
 	void AssignSight(const std::vector<PID>& view);
 	void AssignSight(std::vector<PID>&& view);
+	const std::vector<PID>& GetSight() const;
+	std::vector<PID>& GetSight();
 	
 	SESSION_STATES GetStatus() const volatile;
 	SESSION_STATES AcquireStatus() const volatile;
@@ -42,7 +45,6 @@ public:
 	void Disconnect();
 
 	const UINT Index;
-
 	string Nickname;
 	std::shared_ptr<PlayerCharacter> Instance;
 

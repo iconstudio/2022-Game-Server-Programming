@@ -44,12 +44,22 @@ void Session::SetID(const PID id)
 void Session::AssignSight(const std::vector<PID>& view)
 {
 	myViewList.clear();
-	myViewList.assign(view.begin(), view.end());
+	myViewList = (view);
 }
 
 void Session::AssignSight(std::vector<PID>&& view)
 {
 	myViewList = (std::forward<std::vector<PID>>(view));
+}
+
+const std::vector<PID>& Session::GetSight() const
+{
+	return myViewList;
+}
+
+std::vector<PID>& Session::GetSight()
+{
+	return myViewList;
 }
 
 SESSION_STATES Session::GetStatus() const volatile
@@ -197,7 +207,7 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 
 					if (moved)
 					{
-						Framework.SendMoveEntity(Index, px, py);
+						//Framework.SendMoveEntity(Index, px, py);
 					}
 				}
 				else // 잘못된 메시지 받음.

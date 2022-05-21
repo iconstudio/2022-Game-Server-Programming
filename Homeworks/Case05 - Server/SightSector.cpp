@@ -6,9 +6,8 @@
 SightSector::SightSector(int x, int y, float w, float h)
 	: index_x(x), index_y(y)
 	, isOwned()
-	, seeingInstances(), seeingLast()
+	, mySight()
 {
-	seeingInstances.reserve(10);
 }
 
 SightSector::~SightSector()
@@ -31,20 +30,22 @@ bool SightSector::TryAcquire()
 
 void SightSector::Add(const PID id)
 {
-	mySight.insert(id);
+	mySight.push_back(id);
+	std::sort(mySight.begin(), mySight.end());
 }
 
 void SightSector::Remove(const PID id)
 {
-	if (auto it = mySight.find(id); mySight.end() != it)
+	auto it = std::find(mySight.begin(), mySight.end(), id);
+	if (mySight.end() != it)
 	{
-		mySight.unsafe_erase(it);
+		mySight.erase(it);
 	}
 }
 
 std::vector<PID> SightSector::GetSightList() const
 {
-	return std::vector<PID>{ mySight.begin(), mySight.end() };
+	return std::vector<PID>{ mySight };
 }
 
 bool SightSector::operator==(const SightSector& other) const noexcept

@@ -22,5 +22,5 @@ public:
 private:
 	std::atomic_flag isOwned;
 
-	concurrent_set<PID> mySight;
+	std::vector<PID> mySight;
 };
