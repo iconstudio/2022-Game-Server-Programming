@@ -66,6 +66,7 @@ private:
 	/// </summary>
 	/// <param name="who"></param>
 	void UpdateViewOf(SessionPtr& who);
+	bool SendSightOf(SessionPtr& who);
 
 	/// <summary>
 	/// 클라이언트에게 패킷 전송

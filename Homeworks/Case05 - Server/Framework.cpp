@@ -392,7 +392,21 @@ void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 		//SendPlayerCreate(who, player.first, GetClient(player.second)->Nickname);
 	}
 
+	// 시야 관리에 등록 (잠금 없음),
+	mySightManager.Register(who->Instance);
+	// 시야 목록을 갱신
+	UpdateViewOf(who);
 	// 시야 목록을 전달
+}
+
+void IOCPFramework::UpdateViewOf(SessionPtr& who)
+{
+	mySightManager.Update((who->Instance));
+}
+
+bool IOCPFramework::SendSightOf(SessionPtr& who)
+{
+	return false;
 }
 
 template<typename MY_PACKET, typename ...Ty>
