@@ -10,10 +10,10 @@ public:
 	void Release();
 	bool TryAcquire();
 
-	void Add(const shared_ptr<GameEntity>& entity);
-	void Add(shared_ptr<GameEntity>&& entity);
-	void Remove(const shared_ptr<GameEntity>& entity);
-	void Remove(shared_ptr<GameEntity>&& entity);
+	void Add(const PID id);
+	void Remove(const PID id);
+
+	std::vector<PID> GetSightList() const;
 
 	bool operator==(const SightSector& other) const noexcept;
 
@@ -22,6 +22,5 @@ public:
 private:
 	std::atomic_flag isOwned;
 
-	std::vector<weak_ptr<GameEntity>> seeingInstances;
-	std::vector<weak_ptr<GameEntity>>::iterator seeingLast;
+	concurrent_set<PID> mySight;
 };

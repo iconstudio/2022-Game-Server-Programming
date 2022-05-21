@@ -29,28 +29,23 @@ bool SightSector::TryAcquire()
 	return !isOwned.test_and_set(std::memory_order_acquire);
 }
 
-void SightSector::Add(const shared_ptr<GameEntity>& entity)
+void SightSector::Add(const PID id)
 {
-	Add(std::move(shared_ptr<GameEntity>(entity)));
+	mySight.insert(id);
 }
 
-void SightSector::Add(shared_ptr<GameEntity>&& entity)
+void SightSector::Remove(const PID id)
 {
-	seeingInstances.emplace_back(std::forward<shared_ptr<GameEntity>>(entity));
-
-	// 플레이어 캐릭터는 앞으로 당기기
-	seeingLast = std::partition(seeingInstances.begin()
-		, seeingInstances.end()
-		, [](const shared_ptr<GameEntity>& inst) {
-		return CLIENTS_ORDER_BEGIN <= inst->myID;
-	});
+	if (auto it = mySight.find(id); mySight.end() != it)
+	{
+		mySight.unsafe_erase(it);
+	}
 }
 
-void SightSector::Remove(const shared_ptr<GameEntity>& entity)
-{}
-
-void SightSector::Remove(shared_ptr<GameEntity>&& entity)
-{}
+std::vector<PID> SightSector::GetSightList() const
+{
+	return std::vector<PID>{ mySight.begin(), mySight.end() };
+}
 
 bool SightSector::operator==(const SightSector& other) const noexcept
 {
