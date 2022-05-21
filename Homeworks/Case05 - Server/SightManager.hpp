@@ -1,10 +1,12 @@
 #pragma once
 #include "SightSector.hpp"
 
+using mySector = shared_ptr<SightSector>;
+
 class SightManager
 {
 private:
-	using mySights = std::vector<std::vector<shared_sight>>;
+	using mySights = std::vector<std::vector<mySector>>;
 
 public:
 	SightManager(float w, float h, float sector_w, float sector_h);
@@ -13,17 +15,17 @@ public:
 	void Register(const shared_ptr<GameEntity>& obj);
 	void Update(const shared_ptr<GameEntity>& obj);
 
-	const shared_sight At(int x, int y) const;
-	const shared_sight At(const int_pair& coord_index) const;
-	const shared_sight At(int_pair&& coord_index) const;
-	shared_sight At(int x, int y);
-	shared_sight At(const int_pair& coord_index);
-	shared_sight At(int_pair&& coord_index);
+	const mySector& At(int x, int y) const;
+	const mySector& At(const int_pair& coord_index) const;
+	const mySector& At(int_pair&& coord_index) const;
+	mySector& At(int x, int y);
+	mySector& At(const int_pair& coord_index);
+	mySector& At(int_pair&& coord_index);
 
-	const shared_sight AtByPosition(float x, float y) const;
-	const shared_sight AtByPosition(const XMFLOAT3& position) const;
-	shared_sight AtByPosition(float x, float y);
-	shared_sight AtByPosition(const XMFLOAT3& position);
+	const mySector& AtByPosition(float x, float y) const;
+	const mySector& AtByPosition(const XMFLOAT3& position) const;
+	mySector& AtByPosition(float x, float y);
+	mySector& AtByPosition(const XMFLOAT3& position);
 
 	const float sizeWorldH;
 	const float sizeWorldV;

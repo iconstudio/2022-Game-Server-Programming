@@ -22,101 +22,111 @@ SightManager::~SightManager()
 
 void SightManager::Register(const shared_ptr<GameEntity>& obj)
 {
-	AtByPosition(obj->GetPosition()).load()->Add(obj);
+	auto& sector = AtByPosition(obj->GetPosition());
+
+	// 적법한 구역의 소유권 획득
+	sector->Acquire();
+
+	obj->SetSightArea(sector);
+	sector->Add(obj);
+
+	sector->Release();
 }
 
 void SightManager::Update(const shared_ptr<GameEntity>& obj)
 {
-	auto curr_sector = AtByPosition(obj->GetPosition());
-	auto curr = curr_sector.load(std::memory_order_acquire);
+	auto& curr_sector = AtByPosition(obj->GetPosition());
+
+	// 적법한 구역의 소유권 획득
+	curr_sector->Acquire();
 
 	auto& prev_sector = obj->mySightSector;
-	auto prev = prev_sector.load(std::memory_order_acquire);
-
-	if (prev != curr)
+	if (prev_sector->TryAcquire())
 	{
-		prev->Remove(obj);
-		curr->Add(obj);
-		prev_sector.store(curr, std::memory_order_release);
-	}
-	else
-	{
-		prev_sector.store(prev, std::memory_order_release);
+		if (curr_sector != prev_sector)
+		{
+			prev_sector->Remove(obj);
+			curr_sector->Add(obj);
+			obj->SetSightArea(curr_sector);
+		}
+
+		// 내가 소유한 구역만 소유권 내려놓기
+		prev_sector->Release();
 	}
 
-	curr_sector.store(curr, std::memory_order_release);
+	curr_sector->Release();
 }
 
-const shared_sight SightManager::At(int x, int y) const
+const mySector& SightManager::At(int x, int y) const
 {
-	return (mySectors.at(y).at(x).load(std::memory_order_relaxed));
+	return (mySectors.at(y).at(x));
 }
 
-const shared_sight SightManager::At(const int_pair& coord_index) const
+const mySector& SightManager::At(const int_pair& coord_index) const
 {
 	return At(std::move(int_pair(coord_index)));
 }
 
-const shared_sight SightManager::At(int_pair&& coord_index) const
+const mySector& SightManager::At(int_pair&& coord_index) const
 {
 	const auto&& coords = std::forward<int_pair>(coord_index);
 	return At(coords.first, coords.second);
 }
 
-shared_sight SightManager::At(int x, int y)
+mySector& SightManager::At(int x, int y)
 {
-	return (mySectors.at(y).at(x).load(std::memory_order_relaxed));
+	return (mySectors.at(y).at(x));
 }
 
-shared_sight SightManager::At(const int_pair& coord_index)
+mySector& SightManager::At(const int_pair& coord_index)
 {
 	return At(std::move(int_pair(coord_index)));
 }
 
-shared_sight SightManager::At(int_pair&& coord_index)
+mySector& SightManager::At(int_pair&& coord_index)
 {
 	const auto&& coords = std::forward<int_pair>(coord_index);
 	return At(coords.first, coords.second);
 }
 
-const shared_sight SightManager::AtByPosition(float x, float y) const
+const mySector& SightManager::AtByPosition(float x, float y) const
 {
 	return At(PickCoords(x, y));
 }
 
-const shared_sight SightManager::AtByPosition(const XMFLOAT3& position) const
+const mySector& SightManager::AtByPosition(const XMFLOAT3& position) const
 {
 	return At(PickCoords(position.x, position.y));
 }
 
-shared_sight SightManager::AtByPosition(float x, float y)
+mySector& SightManager::AtByPosition(float x, float y)
 {
 	return At(PickCoords(x, y));
 }
 
-shared_sight SightManager::AtByPosition(const XMFLOAT3& position)
+mySector& SightManager::AtByPosition(const XMFLOAT3& position)
 {
 	return At(PickCoords(position.x, position.y));
 }
 
 SightManager::mySights SightManager::BuildSectors(size_t count_h, size_t count_v)
 {
-	std::vector<std::vector<shared_sight>> result(count_v);
+	std::vector<std::vector<mySector>> result{};
+	result.reserve(count_v);
 
 	for (int i = 0; i < count_v; ++i)
 	{
-		std::vector<shared_sight> pusher(count_h);
+		std::vector<mySector> pusher{};
+		pusher.reserve(count_h);
 
 		for (int j = 0; j < count_h; ++j)
 		{
 			auto ptr = make_shared<SightSector>(j, i, sizeSectorH * i, sizeSectorV * j);
 			
-			//shared_sight sight{};
-			//sight.store(ptr, std::memory_order_relaxed);
-
-			//pusher.push_back(sight);
+			pusher.push_back(ptr);
 		}
 
+		//result.assign(pusher.begin(), pusher.end());
 		result.push_back(pusher);
 	}
 
