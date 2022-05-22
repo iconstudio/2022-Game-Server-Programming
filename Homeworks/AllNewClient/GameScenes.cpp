@@ -65,6 +65,10 @@ bool SceneMain::OnNetwork(const Packet& packet)
 		Complete();
 		return true;
 	}
+	else if (PACKET_TYPES::CS_KEY == packet.Type)
+	{
+		return true;
+	}
 
 	return false;
 }
@@ -182,6 +186,10 @@ bool SceneLoading::OnNetwork(const Packet& packet)
 		Complete();
 		return false; // 처리는 안 하지만 종료는 함.
 	}
+	else if (PACKET_TYPES::CS_KEY == packet.Type)
+	{
+		return true;
+	}
 
 	return false;
 }
@@ -201,7 +209,27 @@ void SceneGame::Start()
 {}
 
 void SceneGame::Update(float time_elapsed)
-{}
+{
+	if (0 != Orientation)
+	{
+		if (Orientation & 0x04)
+		{
+			myFramework.myNetwork.SendKeyMsg(VK_LEFT);
+		}
+		if (Orientation & 0x08)
+		{
+			myFramework.myNetwork.SendKeyMsg(VK_RIGHT);
+		}
+		if (Orientation & 0x01)
+		{
+			myFramework.myNetwork.SendKeyMsg(VK_UP);
+		}
+		if (Orientation & 0x02)
+		{
+			myFramework.myNetwork.SendKeyMsg(VK_DOWN);
+		}
+	}
+}
 
 void SceneGame::Reset()
 {
@@ -230,6 +258,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	const auto& pid = packet.playerID;
 	const auto& packet_type = packet.Type;
 	const auto& packet_sz = packet.Size;
+	const auto& handle = myFramework.GetHandle();
 
 	if (PACKET_TYPES::SC_SIGNUP == packet_type)
 	{
@@ -239,22 +268,6 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	{
 		auto ticket = const_cast<Packet*>(&packet);
 		const auto rp = static_cast<SCPacketCreatePlayer*>(ticket);
-
-		if (PID(-1) != pid && pid == myFramework.GetMyID())
-		{
-			// 내 캐릭터는 이때 생성한다.
-			myPlayerCharacter = CreateInstance<PlayerCharacter>();
-			myPlayerCharacter->myPosition.x = 30.0f;
-			myPlayerCharacter->myPosition.y = 30.0f;
-			myPlayerCharacter->myID = pid;
-
-			myLocalInstances.push_back(myPlayerCharacter);
-			InvalidateRect(NULL, NULL, TRUE);
-		}
-		else
-		{
-			// 다른 플레이어의 캐릭터는 이때 생성한다.
-		}
 
 		return true;
 	}
@@ -270,7 +283,6 @@ bool SceneGame::OnNetwork(const Packet& packet)
 				inst->myPosition.x = rp->x;
 				inst->myPosition.y = rp->y;
 
-				InvalidateRect(NULL, NULL, TRUE);
 				return true;
 			}
 		}
@@ -282,7 +294,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		inst->myID = pid;
 
 		myLocalInstances.push_back(inst);
-		InvalidateRect(NULL, NULL, TRUE);
+		InvalidateRect(handle, NULL, TRUE);
 
 		return true;
 	}
@@ -298,8 +310,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		if (myLocalInstances.end() != rit)
 		{
 			myLocalInstances.erase(rit);
-
-			InvalidateRect(NULL, NULL, TRUE);
+			InvalidateRect(handle, NULL, TRUE);
 		}
 
 		return true;
@@ -319,13 +330,16 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		{
 			auto& inst = *mit;
 			inst->myPosition = XMFLOAT3(rp->x, rp->y, 0.00f);
-
-			InvalidateRect(NULL, NULL, TRUE);
+			InvalidateRect(handle, NULL, TRUE);
 		}
 
 		return true;
 	}
 	else if (PACKET_TYPES::SC_SIGNOUT == packet_type)
+	{
+		return true;
+	}
+	else if (PACKET_TYPES::CS_KEY == packet.Type)
 	{
 		return true;
 	}
@@ -338,28 +352,54 @@ void SceneGame::OnKeyDown(WPARAM key, LPARAM states)
 	switch (key)
 	{
 		case VK_LEFT:
+		{
+			Orientation |= 0x04;
+		}
+		break;
+
 		case VK_RIGHT:
+		{
+			Orientation |= 0x08;
+		}
+		break;
+
 		case VK_UP:
+		{
+			Orientation |= 0x01;
+		}
+		break;
+
 		case VK_DOWN:
 		{
-			myFramework.myNetwork.SendKeyMsg(key);
+			Orientation |= 0x02;
 		}
 		break;
 	}
 }
 
-template<>
-GameEntity* Scene::CreateInstance<GameEntity, GameEntity, true>()
+void SceneGame::OnKeyUp(WPARAM key, LPARAM states)
 {
-	auto ptr = new GameEntity();
-	AddInstance(ptr);
-	return ptr;
-}
-
-template<>
-PlayerCharacter* Scene::CreateInstance<PlayerCharacter, PlayerCharacter, true>()
-{
-	auto ptr = new PlayerCharacter();
-	AddInstance(ptr);
-	return ptr;
+	switch (key)
+	{
+		case VK_LEFT:
+		{
+			Orientation &= 0xff & ~0x04;
+		}
+		break;
+		case VK_RIGHT:
+		{
+			Orientation &= 0xff & ~0x08;
+		}
+		break;
+		case VK_UP:
+		{
+			Orientation &= 0xff & ~0x01;
+		}
+		break;
+		case VK_DOWN:
+		{
+			Orientation &= 0xff & ~0x02;
+		}
+		break;
+	}
 }
