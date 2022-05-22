@@ -172,22 +172,22 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 
 				case PACKET_TYPES::SC_APPEAR_CHARACTER:
 				{
-					//auto rp = reinterpret_cast<SCPacketAppearCharacter*>(recvCBuffer);
-					//result = new SCPacketAppearCharacter(*rp);
+					auto rp = reinterpret_cast<SCPacketAppearCharacter*>(recvCBuffer);
+					result = new SCPacketAppearCharacter(*rp);
 				}
 				break;
 
 				case PACKET_TYPES::SC_DISAPPEAR_CHARACTER:
 				{
-					//auto rp = reinterpret_cast<SCPacketDisppearCharacter*>(recvCBuffer);
-					//result = new SCPacketDisppearCharacter(*rp);
+					auto rp = reinterpret_cast<SCPacketDisppearCharacter*>(recvCBuffer);
+					result = new SCPacketDisppearCharacter(*rp);
 				}
 				break;
 
 				case PACKET_TYPES::SC_MOVE_CHARACTER:
 				{
-					//auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
-					//result = new SCPacketMoveCharacter(*rp);
+					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
+					result = new SCPacketMoveCharacter(*rp);
 				}
 				break;
 			}
