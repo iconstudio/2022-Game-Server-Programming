@@ -289,8 +289,9 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	else if (PACKET_TYPES::SC_DISAPPEAR_CHARACTER == packet_type)
 	{
 		// 다른 플레이어의 캐릭터 삭제
-		auto rit = std::remove_if(myLocalInstances.begin(), myLocalInstances.end(),
-			[pid](const GameEntity* entity) -> bool {
+		auto rit = std::find_if(myLocalInstances.begin()
+			, myLocalInstances.end()
+			, [pid](const GameEntity* entity) -> bool {
 			return (entity->myID == pid);
 		});
 
@@ -307,6 +308,20 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	{
 		auto ticket = const_cast<Packet*>(&packet);
 		const auto rp = static_cast<SCPacketMoveCharacter*>(ticket);
+
+		auto mit = std::find_if(myLocalInstances.begin()
+			, myLocalInstances.end()
+			, [pid](const GameEntity* entity) -> bool {
+			return (entity->myID == pid);
+		});
+
+		if (myLocalInstances.end() != mit)
+		{
+			auto& inst = *mit;
+			inst->myPosition = XMFLOAT3(rp->x, rp->y, 0.00f);
+
+			InvalidateRect(NULL, NULL, TRUE);
+		}
 
 		return true;
 	}
