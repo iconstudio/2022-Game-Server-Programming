@@ -27,7 +27,7 @@ bool PlayerCharacter::TryMoveLT()
 {
 	if (8.0f < myPosition.x)
 	{
-		myPosition.x -= 0.5f;
+		myPosition.x -= 5.0f;
 		return true;
 	}
 	else if (myPosition.x != 8.0f)
@@ -57,7 +57,7 @@ bool PlayerCharacter::TryMoveUP()
 {
 	if (8.0f < myPosition.y)
 	{
-		myPosition.y -= 0.5f;
+		myPosition.y -= 5.0f;
 		return true;
 	}
 	else if (myPosition.y != 8.0f)
