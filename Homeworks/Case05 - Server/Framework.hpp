@@ -64,11 +64,12 @@ private:
 	/// <param name="who"></param>
 	void InitializeWorldFor(SessionPtr& who);
 	/// <summary>
-	/// 특정 개체의 시야 목록 갱신
+	/// 특정 개체가 속한 시야 목록 갱신
 	/// </summary>
-	void UpdateViewOf(const shared_ptr<GameEntity>& inst);
+	int_pair UpdateSightOf(const shared_ptr<GameEntity>& inst);
+	void RemoveSightOf(const shared_ptr<GameEntity>& inst);
 	/// <summary>
-	/// 특정 플레이어 주변의 시야 목록 갱신
+	/// 특정 플레이어의 시야 목록 갱신
 	/// </summary>
 	/// <param name="who"></param>
 	void UpdateViewOf(SessionPtr& who);
@@ -77,8 +78,6 @@ private:
 	/// </summary>
 	/// <param name="who"></param>
 	int SendSightOf(SessionPtr& who);
-
-	void NotifyEntity(const shared_ptr<GameEntity>& inst);
 
 	/// <summary>
 	/// 클라이언트에게 패킷 전송
@@ -156,7 +155,8 @@ private:
 	/// <summary>
 	/// 플레이어의 ID -> clientsPool의 번호 (CLIETNS_ORDER_BEGIN부터 시작)
 	/// </summary>
-	concurrent_map<PID, UINT> myClients;
+	//concurrent_map<PID, UINT> myClients;
+	std::unordered_map<PID, UINT> myClients;
 	atomic<UINT> numberClients;
 	atomic<PID> orderClientIDs;
 	std::timed_mutex mutexClient;
