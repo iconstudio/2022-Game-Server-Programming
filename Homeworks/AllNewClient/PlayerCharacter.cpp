@@ -32,7 +32,7 @@ void PlayerCharacter::Render(HDC surface, float ax, float ay) const
 	const size_t sz_id = 32;
 	WCHAR text_id[sz_id];
 	ZeroMemory(text_id, sizeof(text_id));
-	wsprintf(text_id, L"ID: %lu", myID);
+	wsprintf(text_id, L"ID: %lu", UINT(myID));
 
 	TextOut(surface, dx, dy, text_id, lstrlen(text_id));
 	SetTextAlign(surface, old_align);

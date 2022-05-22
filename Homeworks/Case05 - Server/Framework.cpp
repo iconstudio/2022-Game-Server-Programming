@@ -307,10 +307,18 @@ void IOCPFramework::Disconnect(const PID id)
 		{
 			// 서버에서 해당 클라이언트를 삭제
 			DeregisterPlayer(id);
+
+			// 시야 목록에서 해당 클라이언트의 캐릭터 삭제
+			const auto& inst = session->Instance;
+			if (inst)
+			{
+				RemoveSightOf(inst);
+			}
 			// Broadcast: 클라이언트에게 접속 종료를 통지
 			for (auto& player : myClients)
 			{
-				SendSignOut(GetClient(player.second), id);
+				auto other = GetClient(player.second);
+				SendSignOut(other, id);
 			}
 			// 원래 클라이언트가 있던 세션 청소
 			session->Cleanup();
@@ -337,7 +345,8 @@ void IOCPFramework::RegisterPlayer(const PID id, const UINT place)
 void IOCPFramework::DeregisterPlayer(const PID rid)
 {
 	const auto value = AcquireClientsNumber();
-	myClients.unsafe_erase(myClients.find(rid));
+	//myClients.unsafe_erase(myClients.find(rid));
+	myClients.erase(rid);
 	ReleaseClientsNumber(value - 1);
 }
 
@@ -373,6 +382,7 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 			case OVERLAP_OPS::RECV:
 			{
 				client->ProceedReceived(exoverlap, bytes);
+				UpdateViewOf(client);
 			}
 			break;
 
@@ -387,12 +397,97 @@ void IOCPFramework::ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD 
 
 void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 {
-	auto viewlist_prev = who->GetSight();
-
 	// 시야 목록을 갱신 (잠금 없음),
 	UpdateViewOf(who);
+}
 
-	auto viewlist_curr = who->GetSight();
+int_pair IOCPFramework::UpdateSightOf(const shared_ptr<GameEntity>& inst)
+{
+	const auto& pos = inst->GetPosition();
+
+	auto curr_coords = mySightManager.PickCoords(pos.x, pos.y);
+	auto& curr_sector = mySightManager.At(curr_coords);
+
+	// 적법한 구역의 소유권 획득
+	curr_sector->Acquire();
+
+	// 다른 메서드라면 소유권 획득이 안된다
+	auto& prev_sector = inst->GetSightArea();
+	if (nullptr == prev_sector || prev_sector->TryAcquire())
+	{
+		if (curr_sector != prev_sector)
+		{
+			// NPC, 특수 개체, 플레이어의 고유 식별자
+			const PID obj_id = inst->myID;
+
+			// 이전 시야 구역은 해제
+			if (prev_sector)
+			{
+				prev_sector->Remove(obj_id);
+			}
+			// 시야 구역에 등록
+			curr_sector->Add(obj_id);
+			inst->SetSightArea(curr_sector);
+		}
+
+		// 내가 소유한 구역만 소유권 내려놓기
+		prev_sector->Release();
+	}
+
+	curr_sector->Release();
+
+	return curr_coords;
+}
+
+void IOCPFramework::RemoveSightOf(const shared_ptr<GameEntity>& inst)
+{
+	const auto& pos = inst->GetPosition();
+	auto curr_coords = mySightManager.PickCoords(pos.x, pos.y);
+	auto& curr_sector = mySightManager.At(curr_coords);
+
+	curr_sector->Acquire();
+	curr_sector->Remove(inst->myID);
+	curr_sector->Release();
+}
+
+void IOCPFramework::UpdateViewOf(SessionPtr& who)
+{
+	auto viewlist_prev = who->GetSight();
+
+	// NPC, 특수 개체, 플레이어의 고유 식별자
+	const PID obj_id = who->AcquireID();
+
+	const auto& character = who->Instance;
+	const auto curr_coords = UpdateSightOf(character);
+	const auto& curr_sector = mySightManager.At(curr_coords);
+
+	// 속한 구역의 시야 목록 구하기
+	curr_sector->Acquire();
+
+	// 주변 9구역의 개체를 시야 목록에 등록
+	constexpr int_pair pos_pairs[] = {
+		{ -1, -1 }, { -1, 0 }, { -1, +1 },
+		{  0, -1 }, {  0, 0 }, { +1, +1 },
+		{ +1, -1 }, { +1, 0 }, { +1, +1 }
+	};
+
+	// 주변의 시야 구역 열거
+	for (int k = 0; k < 9; ++k)
+	{
+		const auto indexes = pos_pairs[k];
+		const auto inter = curr_coords + indexes;
+		const auto index_x = indexes.first;
+		const auto index_y = indexes.second;
+
+		//auto& sector = At(index_x, index_y);
+
+		// 시야 구역 내에 있는 모든 플레이어 훑기
+		// 
+	}
+
+	auto viewlist_curr = curr_sector->GetSightList();
+	who->AssignSight(viewlist_curr);
+	curr_sector->Release();
 
 	// 차이점을 전송
 	// * 현재 없는 개체는 Disappear
@@ -431,76 +526,8 @@ void IOCPFramework::InitializeWorldFor(SessionPtr& who)
 
 		SendDisppearEntity(who, pid);
 	}
-}
 
-void IOCPFramework::UpdateViewOf(const shared_ptr<GameEntity>& inst)
-{
-}
-
-void IOCPFramework::UpdateViewOf(SessionPtr& who)
-{
-	auto& obj = who->Instance;
-	const auto& pos = obj->GetPosition();
-
-	auto curr_coords = mySightManager.PickCoords(pos.x, pos.y);
-	auto& curr_sector = mySightManager.At(curr_coords);
-
-	// 적법한 구역의 소유권 획득
-	curr_sector->Acquire();
-
-	// 다른 메서드라면 소유권 획득이 안된다
-	auto& prev_sector = obj->GetSightArea();
-	if (nullptr == prev_sector || prev_sector->TryAcquire())
-	{
-		if (curr_sector != prev_sector)
-		{
-			// NPC, 특수 개체, 플레이어의 고유 식별자
-			const PID obj_id = obj->myID;
-
-			// 주변 9구역의 개체를 시야 목록에 등록
-			constexpr int_pair pos_pairs[] = {
-				{ -1, -1 }, { -1, 0 }, { -1, +1 },
-				{  0, -1 }, {  0, 0 }, { +1, +1 },
-				{ +1, -1 }, { +1, 0 }, { +1, +1 }
-			};
-
-			// 주변의 시야 구역 열거
-			for (int k = 0; k < 9; ++k)
-			{
-				const auto indexes = pos_pairs[k];
-				const auto index_x = indexes.first;
-				const auto index_y = indexes.second;
-
-				//auto& sector = At(index_x, index_y);
-
-				// 시야 구역 내에 있는 모든 플레이어 훑기
-				// 
-			}
-
-			// 이전 시야 구역은 해제
-			if (prev_sector)
-			{
-				prev_sector->Remove(obj_id);
-			}
-			// 시야 구역에 등록
-			curr_sector->Add(obj_id);
-			obj->SetSightArea(curr_sector);
-
-			who->AssignSight(curr_sector->GetSightList());
-		}
-
-		// 내가 소유한 구역만 소유권 내려놓기
-		prev_sector->Release();
-	}
-
-	curr_sector->Release();
-
-	//mySightManager.Update((who->Instance));
-}
-
-int IOCPFramework::SendSightOf(SessionPtr& who)
-{
-	return 0;
+	who->ReleaseID(obj_id);
 }
 
 template<typename MY_PACKET, typename ...Ty>
@@ -520,20 +547,15 @@ std::pair<LPWSABUF, Asynchron*> IOCPFramework::CreateTicket(Ty&&... args)
 	return std::make_pair(wbuffer, overlap);
 }
 
-int IOCPFramework::SendSignUp(const SessionPtr& target, const PID id)
+int IOCPFramework::SendSignUp(SessionPtr& target, const PID id)
 {
 	std::cout << target->GetID() << " → SendSignUp(" << id << ")\n";
 
-	const auto ticket = CreateTicket<SCPacketSignUp>(id);
+	const auto ticket = CreateTicket<SCPacketSignUp>(id, 0, GetClientsNumber());
 	return target->Send(ticket.first, 1, ticket.second);
 }
 
-int IOCPFramework::SendPlayerCreate(const SessionPtr& target, const PID who, char* nickname)
-{
-	return SendPlayerCreate(SessionPtr(target), who, nickname);
-}
-
-int IOCPFramework::SendPlayerCreate(SessionPtr&& target, const PID who, char* nickname)
+int IOCPFramework::SendPlayerCreate(SessionPtr& target, const PID who, char* nickname)
 {
 	std::cout << target->GetID() << " → SendPlayerCreate(" << who << ")\n";
 
@@ -541,12 +563,7 @@ int IOCPFramework::SendPlayerCreate(SessionPtr&& target, const PID who, char* ni
 	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);
 }
 
-int IOCPFramework::SendSignOut(const SessionPtr& target, const PID who)
-{
-	return SendSignOut(SessionPtr(target), who);
-}
-
-int IOCPFramework::SendSignOut(SessionPtr&& target, const PID who)
+int IOCPFramework::SendSignOut(SessionPtr& target, const PID who)
 {
 	std::cout << target->GetID() << " → SendSignOut(" << who << ")\n";
 
@@ -554,12 +571,7 @@ int IOCPFramework::SendSignOut(SessionPtr&& target, const PID who)
 	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);
 }
 
-int IOCPFramework::SendAppearEntity(const SessionPtr& target, PID cid, int type, float cx, float cy)
-{
-	return SendAppearEntity(SessionPtr(target), cid, type, cx, cy);
-}
-
-int IOCPFramework::SendAppearEntity(SessionPtr&& target, PID cid, int type, float cx, float cy)
+int IOCPFramework::SendAppearEntity(SessionPtr& target, PID cid, int type, float cx, float cy)
 {
 	std::cout << target->GetID() << " → SendAppearEntity(" << cid << ")\n";
 
@@ -567,12 +579,7 @@ int IOCPFramework::SendAppearEntity(SessionPtr&& target, PID cid, int type, floa
 	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);
 }
 
-int IOCPFramework::SendDisppearEntity(const SessionPtr& target, PID cid)
-{
-	return SendDisppearEntity(SessionPtr(target), cid);
-}
-
-int IOCPFramework::SendDisppearEntity(SessionPtr&& target, PID cid)
+int IOCPFramework::SendDisppearEntity(SessionPtr& target, PID cid)
 {
 	std::cout << target->GetID() << " → SendDisppearEntity(" << cid << ")\n";
 
@@ -580,12 +587,7 @@ int IOCPFramework::SendDisppearEntity(SessionPtr&& target, PID cid)
 	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);
 }
 
-int IOCPFramework::SendMoveEntity(const SessionPtr& target, PID cid, float nx, float ny)
-{
-	return SendMoveEntity(SessionPtr(target), cid, nx, ny);
-}
-
-int IOCPFramework::SendMoveEntity(SessionPtr&& target, PID cid, float nx, float ny)
+int IOCPFramework::SendMoveEntity(SessionPtr& target, PID cid, float nx, float ny)
 {
 	std::cout << target->GetID() << " → SendMoveEntity(" << cid << ")\n";
 

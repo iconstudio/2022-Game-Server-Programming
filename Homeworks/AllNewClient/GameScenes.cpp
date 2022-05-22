@@ -210,25 +210,6 @@ void SceneGame::Start()
 
 void SceneGame::Update(float time_elapsed)
 {
-	if (0 != Orientation)
-	{
-		if (Orientation & 0x04)
-		{
-			myFramework.myNetwork.SendKeyMsg(VK_LEFT);
-		}
-		if (Orientation & 0x08)
-		{
-			myFramework.myNetwork.SendKeyMsg(VK_RIGHT);
-		}
-		if (Orientation & 0x01)
-		{
-			myFramework.myNetwork.SendKeyMsg(VK_UP);
-		}
-		if (Orientation & 0x02)
-		{
-			myFramework.myNetwork.SendKeyMsg(VK_DOWN);
-		}
-	}
 }
 
 void SceneGame::Reset()
@@ -352,26 +333,11 @@ void SceneGame::OnKeyDown(WPARAM key, LPARAM states)
 	switch (key)
 	{
 		case VK_LEFT:
-		{
-			Orientation |= 0x04;
-		}
-		break;
-
 		case VK_RIGHT:
-		{
-			Orientation |= 0x08;
-		}
-		break;
-
 		case VK_UP:
-		{
-			Orientation |= 0x01;
-		}
-		break;
-
 		case VK_DOWN:
 		{
-			Orientation |= 0x02;
+			myFramework.myNetwork.SendKeyMsg(key);
 		}
 		break;
 	}
@@ -379,27 +345,4 @@ void SceneGame::OnKeyDown(WPARAM key, LPARAM states)
 
 void SceneGame::OnKeyUp(WPARAM key, LPARAM states)
 {
-	switch (key)
-	{
-		case VK_LEFT:
-		{
-			Orientation &= 0xff & ~0x04;
-		}
-		break;
-		case VK_RIGHT:
-		{
-			Orientation &= 0xff & ~0x08;
-		}
-		break;
-		case VK_UP:
-		{
-			Orientation &= 0xff & ~0x01;
-		}
-		break;
-		case VK_DOWN:
-		{
-			Orientation &= 0xff & ~0x02;
-		}
-		break;
-	}
 }

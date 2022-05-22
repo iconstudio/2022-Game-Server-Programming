@@ -37,6 +37,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE hInstance,
 		return FALSE;
 	}
 
+	myFramework.SetHandle(myWindow.GetHandle());
+
 	MSG msg{};
 	ZeroMemory(&msg, sizeof(msg));
 
@@ -72,10 +74,8 @@ void CallbackRecv(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags
 		}
 	}
 
-	if (const auto& result = myNetwork.OnReceive(bytes); result)
-	{
-		myFramework.OnNetwork(*result);
-	}
+	ClearOverlap(overlap);
+	myFramework.OnNetwork(myNetwork.OnReceive(bytes));
 }
 
 void CallbackSend(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags)
@@ -89,10 +89,8 @@ void CallbackSend(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags
 		}
 	}
 
-	if (const auto& result = myNetwork.OnSend(overlap, bytes); result)
-	{
-		myFramework.OnNetwork(*result);
-	}
+	ClearOverlap(overlap);
+	myFramework.OnNetwork(myNetwork.OnSend(overlap, bytes));
 }
 
 LRESULT myProcedure(HWND hwnd, UINT msg, WPARAM wparam, LPARAM lparam)

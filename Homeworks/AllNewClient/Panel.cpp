@@ -50,12 +50,17 @@ bool Panel::Initialize(HINSTANCE handle, WNDPROC procedure, LPCWSTR title, LPCWS
 	return true;
 }
 
-inline size_t Panel::GetWidth() const
+HWND Panel::GetHandle() const
+{
+	return hwindow;
+}
+
+size_t Panel::GetWidth() const
 {
 	return width;
 }
 
-inline size_t Panel::GetHeight() const
+size_t Panel::GetHeight() const
 {
 	return height;
 }

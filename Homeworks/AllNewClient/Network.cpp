@@ -13,6 +13,8 @@ Network::Network(const ULONG max_clients)
 	, recvOverlap(ASYNC_OPERATIONS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 {
 	myProfile.myNickname = "Nickname";
+
+	ZeroMemory(recvCBuffer, BUFFSZ);
 }
 
 Network::~Network()
@@ -55,9 +57,6 @@ void Network::Start(const char* ip)
 			return;
 		}
 	}
-
-	mySemaphore = true;
-	mySemaphore.notify_one();
 
 	result = SendSignInMsg();
 	if (SOCKET_ERROR == result)
@@ -107,19 +106,27 @@ bool Network::IsNonPlayer(PID id) const
 	return id < PLAYERS_ID_BEGIN;
 }
 
-std::optional<Packet*> Network::OnReceive(DWORD bytes)
+std::vector<Packet*> Network::OnReceive(DWORD bytes)
 {
-	std::optional<Packet*> result{};
+	std::vector<Packet*> result{};
+	auto& wbuffer = recvBuffer;
+	auto& cbuffer = wbuffer.buf;
 
 	recvBytes += bytes;
 
 	constexpr auto sz_min = sizeof(Packet);
 	while (sz_min <= recvBytes) // while
 	{
-		auto packet = reinterpret_cast<Packet*>(recvCBuffer);
+		auto packet = reinterpret_cast<Packet*>(cbuffer);
 		auto sz_want = packet->Size;
 
-		if (sz_want <= recvBytes)
+		if (recvBytes < sz_want)
+		{
+			volatile auto lack = sz_want - recvBytes;
+
+			break;
+		}
+
 		{
 			const auto type = packet->Type;
 			const auto pid = packet->playerID;
@@ -128,8 +135,8 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 			{
 				case PACKET_TYPES::SC_SIGNUP:
 				{
-					auto rp = reinterpret_cast<SCPacketSignUp*>(recvCBuffer);
-					result = new SCPacketSignUp(*rp);
+					auto rp = reinterpret_cast<SCPacketSignUp*>(cbuffer);
+					result.push_back(new SCPacketSignUp(*rp));
 
 					if (myProfile.myID == PID(-1))
 					{
@@ -138,16 +145,13 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 
 					// 자신의 세션 등록
 					RegisterPlayer(pid);
-
-					// 시작
-					Update();
 				}
 				break;
 
 				case PACKET_TYPES::SC_SIGNOUT:
 				{
-					auto rp = reinterpret_cast<SCPacketSignOut*>(recvCBuffer);
-					result = new SCPacketSignOut(*rp);
+					auto rp = reinterpret_cast<SCPacketSignOut*>(cbuffer);
+					result.push_back(new SCPacketSignOut(*rp));
 
 					if (PID(-1) != pid && pid == myProfile.myID)
 					{
@@ -162,8 +166,8 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 
 				case PACKET_TYPES::SC_CREATE_PLAYER:
 				{
-					auto rp = reinterpret_cast<SCPacketCreatePlayer*>(recvCBuffer);
-					result = new SCPacketCreatePlayer(*rp);
+					auto rp = reinterpret_cast<SCPacketCreatePlayer*>(cbuffer);
+					result.push_back(new SCPacketCreatePlayer(*rp));
 
 					// 자신 또는 다른 플레이어의 세션 등록
 					RegisterPlayer(pid);
@@ -172,36 +176,34 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 
 				case PACKET_TYPES::SC_APPEAR_CHARACTER:
 				{
-					auto rp = reinterpret_cast<SCPacketAppearCharacter*>(recvCBuffer);
-					result = new SCPacketAppearCharacter(*rp);
+					auto rp = reinterpret_cast<SCPacketAppearCharacter*>(cbuffer);
+					result.push_back(new SCPacketAppearCharacter(*rp));
 				}
 				break;
 
 				case PACKET_TYPES::SC_DISAPPEAR_CHARACTER:
 				{
-					auto rp = reinterpret_cast<SCPacketDisppearCharacter*>(recvCBuffer);
-					result = new SCPacketDisppearCharacter(*rp);
+					auto rp = reinterpret_cast<SCPacketDisppearCharacter*>(cbuffer);
+					result.push_back(new SCPacketDisppearCharacter(*rp));
 				}
 				break;
 
 				case PACKET_TYPES::SC_MOVE_CHARACTER:
 				{
-					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(recvCBuffer);
-					result = new SCPacketMoveCharacter(*rp);
+					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(cbuffer);
+					result.push_back(new SCPacketMoveCharacter(*rp));
 				}
 				break;
 			}
 
-			MoveMemory(recvCBuffer, recvCBuffer + recvBytes, BUFFSZ - recvBytes);
 			recvBytes -= sz_want;
-		}
-		else
-		{
-			break;
+			if (0 < recvBytes)
+			{
+				MoveStream(cbuffer, sz_want, BUFSIZ);
+			}
 		}
 	}
 
-	ClearOverlap(&recvOverlap);
 	if (SOCKET_ERROR == Receive(recvBytes))
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
@@ -213,11 +215,9 @@ std::optional<Packet*> Network::OnReceive(DWORD bytes)
 	return result;
 }
 
-std::optional<Packet*> Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
+std::vector<Packet*> Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
 {
-	//unique_barrier flag(mySemaphore, true);
-
-	std::optional<Packet*> result{};
+	std::vector<Packet*> result{};
 	const auto my_async = static_cast<Asynchron*>(asynchron);
 
 	// WSABUF의 버퍼와 sendCBuffer가 다름!
@@ -229,7 +229,7 @@ std::optional<Packet*> Network::OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes)
 		const auto packet = reinterpret_cast<Packet*>(my_async->sendBuffer->buf);
 		if (packet && my_async->sendSzWant <= my_async->sendSize)
 		{
-			result = packet;
+			result.push_back(packet);
 		}
 	}
 
@@ -245,7 +245,7 @@ int Network::Receive(DWORD begin_bytes)
 	return WSARecv(mySocket, &recvBuffer, 1, 0, &flags, &recvOverlap, CallbackRecv);
 }
 
-int Network::Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED asynchron)
+int Network::Send(LPWSABUF datas, UINT count, Asynchron* asynchron)
 {
 	if (!datas || !asynchron) return 0;
 
@@ -263,7 +263,13 @@ int Network::SendPacket(Packet* packet)
 	auto asynchron = new Asynchron(ASYNC_OPERATIONS::SEND, packet->Type);
 	asynchron->SetSendBuffer(sendBuffer);
 
-	return Send(sendBuffer, 1, static_cast<WSAOVERLAPPED*>(asynchron));
+	return Send(sendBuffer, 1, asynchron);
+}
+
+void Network::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
+{
+	MoveMemory(buffer, (buffer + position), max_size - position);
+	ZeroMemory(buffer + max_size - position, position);
 }
 
 inline SOCKET Network::CreateSocket() const

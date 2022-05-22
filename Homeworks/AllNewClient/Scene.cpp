@@ -156,3 +156,19 @@ Op* Scene::CreateInstance()
 	AddInstance(ptr);
 	return ptr;
 }
+
+template<>
+GameEntity* Scene::CreateInstance<GameEntity, GameEntity, true>()
+{
+	auto ptr = new GameEntity();
+	AddInstance(ptr);
+	return ptr;
+}
+
+template<>
+PlayerCharacter* Scene::CreateInstance<PlayerCharacter, PlayerCharacter, true>()
+{
+	auto ptr = new PlayerCharacter();
+	AddInstance(ptr);
+	return ptr;
+}

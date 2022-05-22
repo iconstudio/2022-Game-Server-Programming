@@ -44,8 +44,8 @@ public:
 	bool IsPlayer(PID id) const;
 	bool IsNonPlayer(PID id) const;
 
-	std::optional<Packet*> OnReceive(DWORD bytes);
-	std::optional<Packet*> OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes);
+	std::vector<Packet*> OnReceive(DWORD bytes);
+	std::vector<Packet*> OnSend(LPWSAOVERLAPPED asynchron, DWORD bytes);
 
 	NETWORK_STATES myStatus;
 	struct
@@ -56,8 +56,9 @@ public:
 
 private:
 	int Receive(DWORD begin_bytes = 0);
-	int Send(LPWSABUF datas, UINT count, LPWSAOVERLAPPED asynchron);
+	int Send(LPWSABUF datas, UINT count, Asynchron* asynchron);
 	int SendPacket(Packet* packet);
+	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
 
 	inline SOCKET CreateSocket() const;
 

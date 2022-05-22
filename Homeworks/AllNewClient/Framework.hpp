@@ -7,6 +7,8 @@ public:
 	Framework(Network& network);
 	~Framework();
 
+	void SetHandle(HWND window);
+	HWND GetHandle() const;
 	void AddRoom(Scene* scene);
 	bool JumpToNextScene();
 	bool JumpToPrevScene();
@@ -25,7 +27,7 @@ public:
 	void Pause();
 	void Resume();
 
-	void OnNetwork(Packet* packet);
+	void OnNetwork(std::vector<Packet*>&& packet);
 	void OnMouse(UINT type, WPARAM button, LPARAM cursor);
 	void OnKeyboard(UINT type, WPARAM key, LPARAM states);
 	void OnWindow(WPARAM aevent, LPARAM params);
@@ -37,14 +39,14 @@ private:
 	void Register(shared_ptr<Scene>&& scene);
 
 	void AddTask(Packet* packet);
-	shared_ptr<Packet> GetLastTask() const;
+	Packet* GetLastTask() const;
 	void PopTask();
 
 	shared_ptr<Scene> Push(Scene* scene);
 	shared_ptr<Scene> Pop();
 	shared_ptr<Scene> GetScene(const char* name) const;
 
-	std::queue<shared_ptr<Packet>> myTasks;
+	std::vector<unique_ptr<Packet>> myTasks;
 
 	std::unordered_map<string, shared_ptr<Scene>> myScenes;
 	std::vector<shared_ptr<Scene>> myPipeline;
@@ -53,6 +55,7 @@ private:
 
 	bool isPaused;
 
+	HWND appHandle;
 	HDC appSurface;
 	PAINTSTRUCT appPainter;
 };

@@ -7,16 +7,27 @@
 
 Framework::Framework(Network& network)
 	: myScenes(), myPipeline(), myState(nullptr)
-	, myNetwork(network), myTasks()
+	, appHandle(NULL), myNetwork(network), myTasks()
 	, isPaused(false)
 	, appSurface(NULL), appPainter()
 {
+	myTasks.reserve(1000);
 	myScenes.reserve(10);
 	myPipeline.reserve(10);
 }
 
 Framework::~Framework()
 {}
+
+void Framework::SetHandle(HWND window)
+{
+	appHandle = window;
+}
+
+HWND Framework::GetHandle() const
+{
+	return appHandle;
+}
 
 void Framework::AddRoom(Scene* scene)
 {
@@ -106,8 +117,6 @@ void Framework::Start()
 
 void Framework::Update(float elapsed_time)
 {
-	auto packet = GetLastTask();
-
 	if (myState)
 	{
 		myState->Update(elapsed_time);
@@ -117,6 +126,7 @@ void Framework::Update(float elapsed_time)
 			JumpToNextScene();
 		}
 
+		auto packet = GetLastTask();
 		if (packet && myState->OnNetwork(*packet))
 		{
 			PopTask();
@@ -145,9 +155,12 @@ void Framework::Render(HDC surface)
 	}
 }
 
-void Framework::OnNetwork(Packet* packet)
+void Framework::OnNetwork(std::vector<Packet*>&& packets)
 {
-	AddTask(packet);
+	for (auto& packet : packets)
+	{
+		AddTask(std::forward<Packet*>(packet));
+	}
 }
 
 void Framework::OnMouse(UINT type, WPARAM button, LPARAM cursor)
@@ -214,20 +227,20 @@ void Framework::Register(shared_ptr<Scene>&& scene)
 
 void Framework::AddTask(Packet* packet)
 {
-	myTasks.push(shared_ptr<Packet>(packet));
+	myTasks.insert(myTasks.begin(), unique_ptr<Packet>(packet));
 }
 
-shared_ptr<Packet> Framework::GetLastTask() const
+Packet* Framework::GetLastTask() const
 {
 	if (0 < myTasks.size())
-		return myTasks.front();
+		return myTasks.back().get();
 	else
 		return nullptr;
 }
 
 void Framework::PopTask()
 {
-	myTasks.pop();
+	myTasks.pop_back();
 }
 
 shared_ptr<Scene> Framework::Push(Scene* scene)

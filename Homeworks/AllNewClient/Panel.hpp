@@ -9,8 +9,9 @@ public:
 	~Panel();
 
 	bool Initialize(HINSTANCE handle, WNDPROC procedure, LPCWSTR title, LPCWSTR id, INT cmd_show);
-	inline size_t GetWidth() const;
-	inline size_t GetHeight() const;
+	HWND GetHandle() const;
+	size_t GetWidth() const;
+	size_t GetHeight() const;
 
 	const size_t width, height;
 
