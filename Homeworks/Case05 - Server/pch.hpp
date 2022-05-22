@@ -38,6 +38,7 @@ using std::array;
 using std::shared_ptr;
 using std::unique_ptr;
 using std::weak_ptr;
+using std::optional;
 using std::atomic;
 using std::atomic_bool;
 using std::atomic_int;
@@ -49,6 +50,34 @@ using int_pair = std::pair<int, int>;
 using float_pair = std::pair<float, float>;
 using Clock = std::chrono::system_clock::time_point;
 using Duration = std::chrono::system_clock::duration;
+
+template<typename Ty1, typename Ty2>
+	requires std::is_arithmetic_v<Ty1>&& std::is_arithmetic_v<Ty2>
+constexpr std::pair<Ty1, Ty2> operator+(std::pair<Ty1, Ty2>&& lhs
+	, std::pair<Ty1, Ty2>&& rhs)
+{
+	return std::make_pair<Ty1, Ty2>(
+		std::forward<Ty1>(lhs.first) + std::forward<Ty1>(rhs.first)
+		, std::forward<Ty2>(lhs.second) + std::forward<Ty2>(rhs.second));
+}
+
+template<typename Ty1, typename Ty2>
+	requires std::is_arithmetic_v<Ty1>&& std::is_arithmetic_v<Ty2>
+constexpr std::pair<Ty1, Ty2> operator+(const std::pair<Ty1, Ty2>& lhs
+	, const std::pair<Ty1, Ty2>& rhs)
+{
+	return std::make_pair<Ty1, Ty2>(lhs.first + rhs.first, lhs.second + rhs.second);
+}
+
+template<typename Ty>
+	requires std::is_arithmetic_v<Ty>
+constexpr std::pair<Ty, Ty> operator+(std::pair<Ty, Ty>&& lhs
+	, std::pair<Ty, Ty>&& rhs)
+{
+	return std::make_pair<Ty, Ty>(
+		std::forward<Ty>(lhs.first) + std::forward<Ty>(rhs.first)
+		, std::forward<Ty>(lhs.second) + std::forward<Ty>(rhs.second));
+}
 
 template<typename Type>
 using concurrent_vector = Concurrency::concurrent_vector<Type>;
