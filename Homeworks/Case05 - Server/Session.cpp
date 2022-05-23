@@ -43,12 +43,12 @@ void Session::SetID(const PID id)
 	ID.store(id, std::memory_order_relaxed);
 }
 
-inline void Session::AddSight(const PID id)
+void Session::AddSight(const PID id)
 {
 	myViewList.insert(id);
 }
 
-inline void Session::RemoveSight(const PID id)
+void Session::RemoveSight(const PID id)
 {
 	myViewList.unsafe_erase(id);
 }
@@ -120,13 +120,13 @@ void Session::ReleaseID(PID id)
 
 void Session::Cleanup()
 {
+	SetID(-1);
+	SetStatus(SESSION_STATES::NONE);
+	SetSocket(NULL);
+
 	closesocket(Socket.load(std::memory_order_seq_cst));
 
 	Instance.reset();
-
-	SetStatus(SESSION_STATES::NONE);
-	SetSocket(NULL);
-	SetID(-1);
 }
 
 void Session::Disconnect()
@@ -136,17 +136,17 @@ void Session::Disconnect()
 
 bool Session::IsConnected() const volatile
 {
-	return SESSION_STATES::CONNECTED == Status.load(std::memory_order_relaxed);
+	return false;
 }
 
 bool Session::IsDisconnected() const volatile
 {
-	return SESSION_STATES::NONE == Status.load(std::memory_order_relaxed);
+	return true;
 }
 
 bool Session::IsAccepted() const volatile
 {
-	return SESSION_STATES::ACCEPTED == Status.load(std::memory_order_relaxed);
+	return false;
 }
 
 bool Session::IsPlayer() const volatile

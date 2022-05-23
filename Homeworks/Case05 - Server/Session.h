@@ -8,14 +8,14 @@ class Session
 {
 public:
 	Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework);
-	~Session();
+	virtual ~Session();
 
 	void SetStatus(SESSION_STATES state);
 	void SetSocket(SOCKET sock);
 	void SetID(const PID id);
 
-	inline void AddSight(const PID id);
-	inline void RemoveSight(const PID id);
+	void AddSight(const PID id);
+	void RemoveSight(const PID id);
 
 	void AssignSight(const concurrent_set<PID>& view);
 	void AssignSight(const std::vector<PID>& view);
@@ -33,9 +33,9 @@ public:
 	void ReleaseStatus(SESSION_STATES state);
 	void ReleaseID(PID id);
 
-	bool IsConnected() const volatile;
-	bool IsDisconnected() const volatile;
-	bool IsAccepted() const volatile;
+	virtual bool IsConnected() const volatile;
+	virtual bool IsDisconnected() const volatile;
+	virtual bool IsAccepted() const volatile;
 	virtual bool IsPlayer() const volatile;
 	virtual bool IsNonPlayer() const volatile;
 
@@ -60,7 +60,7 @@ public:
 	string Nickname;
 	std::shared_ptr<PlayerCharacter> Instance;
 
-private:
+protected:
 	void SetRecvBuffer(const WSABUF& buffer);
 	void SetRecvBuffer(LPWSABUF buffer);
 	void SetRecvBuffer(CHAR* cbuffer, DWORD size);
