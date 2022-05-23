@@ -3,6 +3,7 @@
 #include "Framework.hpp"
 #include "Asynchron.hpp"
 #include "Session.h"
+#include "PlayingSession.hpp"
 #include "Commons.hpp"
 #include "SightManager.hpp"
 #include "SightSector.hpp"
@@ -12,7 +13,7 @@ constexpr USHORT PORT = 6000;
 IOCPFramework::IOCPFramework()
 	: acceptOverlap(), acceptBytes(0), acceptCBuffer()
 	, serverKey(100)
-	, clientsPool(), orderClientIDs(CLIENTS_ORDER_BEGIN), numberClients(0), mutexClient()
+	, clientsPool(), orderClientIDs(CLIENTS_ID_BEGIN), numberClients(0), mutexClient()
 	, threadWorkers(THREADS_COUNT)
 	, mySightManager(*this, WORLD_W, WORLD_H, SIGHT_W, SIGHT_H)
 {
@@ -22,11 +23,23 @@ IOCPFramework::IOCPFramework()
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
 
-	for (int i = 0; i < PLAYERS_MAX_NUMBER; ++i)
+	// 앞쪽은 비플레이어 세션
+	for (int i = 0; i < NPC_MAX_NUMBER; ++i)
 	{
 		auto& empty = clientsPool.at(i);
 		empty = std::make_shared<Session>(i, -1, NULL, *this);
 	}
+	
+	// 뒤쪽은 플레이어 세션 (PLAYERS_MAX_NUMBER)
+	for (int j = NPC_MAX_NUMBER; j < ENTITIES_MAX_NUMBER; ++j)
+	{
+		auto& empty = clientsPool.at(j);
+		
+		auto player = std::make_shared<PlayingSession>(j, -1, NULL, *this);
+		empty = std::static_pointer_cast<Session>(player);
+	}
+
+	acceptBeginPlace = clientsPool.cbegin() + CLIENTS_ORDER_BEGIN;
 }
 
 IOCPFramework::~IOCPFramework()
@@ -188,13 +201,13 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	// NPC, 특수 개체, 플레이어의 고유 식별자
 	const PID my_id = session->AcquireID();
 
-	// 0. 자기 캐릭터가 속한 구역을 갱신한다.
 	// 예전 시야
 	std::vector<PID> viewlist_prev = session->GetLocalSight();
 
 	const auto& character = session->Instance;
 	const auto& my_pos = character->GetPosition();
 
+	// 0. 자기 캐릭터가 속한 구역을 갱신한다.
 	auto curr_coords = mySightManager.PickCoords(my_pos.x, my_pos.y);
 	auto& curr_sector = mySightManager.At(curr_coords);
 
@@ -665,7 +678,7 @@ PID IOCPFramework::AcquireNewbieID() const volatile
 
 shared_ptr<Session> IOCPFramework::FindPlaceForNewbie() const
 {
-	auto it = std::find_if(clientsPool.cbegin(), clientsPool.cend()
+	auto it = std::find_if(acceptBeginPlace, clientsPool.cend()
 		, [&](const shared_atomic<Session>& session) {
 		return (session.load(std::memory_order_relaxed)->IsDisconnected());
 	});

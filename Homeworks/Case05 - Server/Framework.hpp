@@ -141,6 +141,7 @@ private:
 	DWORD acceptBytes;
 	char acceptCBuffer[BUFSIZ];
 	atomic<SOCKET> acceptNewbie;
+	std::array<shared_atomic<Session>, ENTITIES_MAX_NUMBER>::const_iterator acceptBeginPlace;
 
 	/// <summary>
 	/// NPC, 특수 객체, 플레이어를 저장하는 저장소

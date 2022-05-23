@@ -22,9 +22,10 @@ void ErrorDisplay(const char* title);
 constexpr UINT PLAYERS_MAX_NUMBER = 10000;
 constexpr UINT NPC_MAX_NUMBER = 10000;
 constexpr UINT ENTITIES_MAX_NUMBER = PLAYERS_MAX_NUMBER + NPC_MAX_NUMBER;
+constexpr UINT CLIENTS_ORDER_BEGIN = NPC_MAX_NUMBER;
 
-constexpr PID NPC_ORDER_BEGIN = 0;
-constexpr PID CLIENTS_ORDER_BEGIN = PID(NPC_MAX_NUMBER);
+constexpr PID NPC_ID_BEGIN = 0;
+constexpr PID CLIENTS_ID_BEGIN = PID(NPC_MAX_NUMBER);
 
 constexpr float CELL_SIZE = 32.0f;
 constexpr float CELL_W = CELL_SIZE;
