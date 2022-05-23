@@ -43,10 +43,25 @@ void Session::SetID(const PID id)
 	ID.store(id, std::memory_order_relaxed);
 }
 
+inline void Session::AddSight(const PID id)
+{
+	myViewList.insert(id);
+}
+
+inline void Session::RemoveSight(const PID id)
+{
+	myViewList.unsafe_erase(id);
+}
+
+void Session::AssignSight(const concurrent_set<PID>& view)
+{
+	myViewList.clear();
+	myViewList = (view);
+}
+
 void Session::AssignSight(const std::vector<PID>& view)
 {
 	myViewList.clear();
-	//myViewList = (view);
 	std::for_each(view.begin(), view.end(), [&](const PID id) {
 		myViewList.insert(id);
 	});
@@ -68,11 +83,10 @@ concurrent_set<PID>& Session::GetSight()
 	return myViewList;
 }
 
-inline void Session::AddSight(const PID id) volatile
-{}
-
-inline void Session::RemoveSight(const PID id) volatile
-{}
+std::vector<PID> Session::GetLocalSight() const
+{
+	return std::vector<PID>(myViewList.cbegin(), myViewList.cend());
+}
 
 SESSION_STATES Session::GetStatus() const volatile
 {

@@ -14,12 +14,16 @@ public:
 	void SetSocket(SOCKET sock);
 	void SetID(const PID id);
 
+	inline void AddSight(const PID id);
+	inline void RemoveSight(const PID id);
+
+	void AssignSight(const concurrent_set<PID>& view);
 	void AssignSight(const std::vector<PID>& view);
 	void AssignSight(std::vector<PID>&& view);
+
 	const concurrent_set<PID>& GetSight() const;
 	concurrent_set<PID>& GetSight();
-	inline void AddSight(const PID id) volatile;
-	inline void RemoveSight(const PID id) volatile;
+	std::vector<PID> GetLocalSight() const;
 	
 	SESSION_STATES GetStatus() const volatile;
 	SESSION_STATES AcquireStatus() const volatile;
