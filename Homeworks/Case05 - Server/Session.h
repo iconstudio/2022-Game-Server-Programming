@@ -16,8 +16,10 @@ public:
 
 	void AssignSight(const std::vector<PID>& view);
 	void AssignSight(std::vector<PID>&& view);
-	const std::vector<PID>& GetSight() const;
-	std::vector<PID>& GetSight();
+	const concurrent_set<PID>& GetSight() const;
+	concurrent_set<PID>& GetSight();
+	inline void AddSight(const PID id) volatile;
+	inline void RemoveSight(const PID id) volatile;
 	
 	SESSION_STATES GetStatus() const volatile;
 	SESSION_STATES AcquireStatus() const volatile;
@@ -76,7 +78,7 @@ private:
 	// 家加等 矫具 备开
 	shared_ptr<SightSector> mySightSector;
 	// 矫具 格废 (侥喊磊父 历厘)
-	std::vector<PID> myViewList;
+	concurrent_set<PID> myViewList;
 };
 
 enum class SESSION_STATES
