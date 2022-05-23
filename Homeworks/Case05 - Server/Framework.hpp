@@ -8,6 +8,7 @@ const UINT THREADS_COUNT = 6;
 using SessionPtr = shared_ptr<Session>;
 
 void IOCPWorker();
+void TimerWorker();
 
 class IOCPFramework
 {
@@ -19,7 +20,9 @@ public:
 	void Start();
 	void Update(float time_elapsed);
 	void Communicate();
+
 	friend void IOCPWorker();
+	friend void TimerWorker();
 
 	/// <summary>
 	/// 특정 플레이어의 시야 목록 갱신
