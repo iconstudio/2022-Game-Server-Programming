@@ -160,6 +160,7 @@
     <ClCompile Include="GameEvent.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="PlayingSession.cpp" />
     <ClCompile Include="Server.cpp" />
     <ClCompile Include="Framework.cpp" />
     <ClCompile Include="Asynchron.cpp" />
@@ -185,6 +186,7 @@
     <ClInclude Include="Packet.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="PlayerCharacter.hpp" />
+    <ClInclude Include="PlayingSession.hpp" />
     <ClInclude Include="Session.h" />
     <ClInclude Include="SightManager.hpp" />
     <ClInclude Include="SightSector.hpp" />
