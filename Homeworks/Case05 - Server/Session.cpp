@@ -123,6 +123,8 @@ void Session::Cleanup()
 	SetID(-1);
 	SetStatus(SESSION_STATES::NONE);
 	SetSocket(NULL);
+	mySightSector = nullptr;
+	myViewList.clear();
 
 	closesocket(Socket.load(std::memory_order_seq_cst));
 
