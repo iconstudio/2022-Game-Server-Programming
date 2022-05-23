@@ -30,6 +30,8 @@ public:
 	bool IsConnected() const volatile;
 	bool IsDisconnected() const volatile;
 	bool IsAccepted() const volatile;
+	virtual bool IsPlayer() const volatile;
+	virtual bool IsNonPlayer() const volatile;
 
 	void ProceedReceived(Asynchron* overlap, DWORD byte);
 	void ProceedSent(Asynchron* overlap, DWORD byte);
@@ -39,6 +41,10 @@ public:
 	int RecvStream(DWORD size, DWORD begin_bytes);
 	int RecvStream(DWORD begin_bytes = 0);
 
+	void SetSightArea(const shared_ptr<SightSector>& sector);
+	void SetSightArea(shared_ptr<SightSector>&& sector);
+	const shared_ptr<SightSector>& GetSightArea() const;
+	shared_ptr<SightSector>& GetSightArea();
 	bool TryMove(WPARAM input);
 
 	void Cleanup();
@@ -67,6 +73,8 @@ private:
 
 	IOCPFramework& Framework;
 
+	// 家加等 矫具 备开
+	shared_ptr<SightSector> mySightSector;
 	// 矫具 格废 (侥喊磊父 历厘)
 	std::vector<PID> myViewList;
 };

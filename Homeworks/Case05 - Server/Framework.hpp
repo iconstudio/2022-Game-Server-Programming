@@ -21,6 +21,8 @@ public:
 	void Communicate();
 	friend void IOCPWorker();
 
+	void UpdateSightOf(const UINT index);
+
 	SessionPtr GetClient(const UINT index) const;
 	SessionPtr GetClientByID(const PID id) const;
 	SessionPtr GetClient(const PID) const = delete;
@@ -62,45 +64,44 @@ private:
 	/// 클라이언트의 첫 초기화를 위한 정보 전송
 	/// </summary>
 	/// <param name="who"></param>
-	void InitializeWorldFor(SessionPtr& who);
+	void InitializeWorldFor(const UINT index, SessionPtr& who);
 	/// <summary>
 	/// 특정 개체가 속한 시야 목록 갱신
 	/// </summary>
-	int_pair UpdateSightOf(const shared_ptr<GameEntity>& inst);
-	void RemoveSightOf(const shared_ptr<GameEntity>& inst);
+
+	void RemoveSightOf(const shared_ptr<GameEntity>& inst) const;
 	/// <summary>
 	/// 특정 플레이어의 시야 목록 갱신
 	/// 특정 플레이어의 현재 시야 목록과 바뀐 시야 목록을 비교해서 전송
 	/// </summary>
 	/// <param name="who"></param>
-	void UpdateViewOf(SessionPtr& who);
 
 	/// <summary>
 	/// 클라이언트에게 패킷 전송
 	/// </summary>
 	template<typename MY_PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, MY_PACKET>
-	std::pair<LPWSABUF, Asynchron*> CreateTicket(Ty&&... args);
+	std::pair<LPWSABUF, Asynchron*> CreateTicket(Ty&&... args) const;
 	/// <summary>
 	/// 새로 들어온 클라이언트에 식별자 부여
 	/// </summary>
 	/// <param name="target">새로 접속한 플레이어 세션</param>
 	/// <param name="id"></param>
 	/// <returns></returns>
-	int SendSignUp(SessionPtr& target, const PID id);
+	int SendSignUp(SessionPtr& target, const PID id) const;
 	/// <summary>
 	/// 클라이언트에게 새로운 접속을 알리고, 로컬 플레이어 세션을 생성하도록 명령한다.
 	/// </summary>
 	/// <param name="target">클라이언트의 세션</param>
 	/// <param name="who">새로 접속한 플레이어의 세션</param>
 	/// <param name="nickname">새로 접속한 플레이어의 별명</param>
-	int SendPlayerCreate(SessionPtr& target, const PID who, char* nickname);
+	int SendPlayerCreate(SessionPtr& target, const PID who, char* nickname) const;
 	/// <summary>
 	/// 클라이언트의 접속을 종료시키고, 다른 클라이언트에 알린다.
 	/// </summary>
 	/// <param name="target">클라이언트의 세션</param>
 	/// <param name="who">나가는 플레이어의 세션</param>
-	int SendSignOut(SessionPtr& target, const PID who);
+	int SendSignOut(SessionPtr& target, const PID who) const;
 	/// <summary>
 	/// 시야 내에 개체가 들어왔음을 알린다.
 	/// </summary>
@@ -109,13 +110,13 @@ private:
 	/// <param name="type">종류</param>
 	/// <param name="cx"></param>
 	/// <param name="cy"></param>
-	int SendAppearEntity(SessionPtr& target, PID cid, int type, float cx, float cy);
+	int SendAppearEntity(SessionPtr& target, PID cid, int type, float cx, float cy) const;
 	/// <summary>
 	/// 시야 내에서 개체가 사라졌음을 알린다.
 	/// </summary>
 	/// <param name="target">클라이언트의 세션</param>
 	/// <param name="cid">NPC, 특수 객체, 플레이어의 고유 식별자</param>
-	int SendDisppearEntity(SessionPtr& target, PID cid);
+	int SendDisppearEntity(SessionPtr& target, PID cid) const;
 	/// <summary>
 	/// 개체의 이동을 알린다. (플레이어 자신도 포함)
 	/// </summary>
@@ -123,7 +124,7 @@ private:
 	/// <param name="cid">NPC, 특수 객체, 플레이어의 고유 식별자</param>
 	/// <param name="nx"></param>
 	/// <param name="ny"></param>
-	int SendMoveEntity(SessionPtr& target, PID cid, float nx, float ny);
+	int SendMoveEntity(SessionPtr& target, PID cid, float nx, float ny) const;
 
 	bool IsClientsBound(const UINT index) const;
 

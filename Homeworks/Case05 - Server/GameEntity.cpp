@@ -13,28 +13,7 @@ GameEntity::GameEntity(PID id, const XMFLOAT3& pos)
 GameEntity::GameEntity(PID id, XMFLOAT3&& pos)
 	: GameObject(std::forward<XMFLOAT3>(pos))
 	, myID(id)
-	, mySightSector(nullptr)
 {}
 
 GameEntity::~GameEntity()
 {}
-
-void GameEntity::SetSightArea(const shared_ptr<SightSector>& sector)
-{
-	mySightSector = sector;
-}
-
-void GameEntity::SetSightArea(shared_ptr<SightSector>&& sector)
-{
-	mySightSector = std::forward<shared_ptr<SightSector>>(sector);
-}
-
-const shared_ptr<SightSector>& GameEntity::GetSightArea() const
-{
-	return mySightSector;
-}
-
-shared_ptr<SightSector>& GameEntity::GetSightArea()
-{
-	return mySightSector;
-}

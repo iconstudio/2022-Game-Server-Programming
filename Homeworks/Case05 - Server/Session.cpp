@@ -6,13 +6,15 @@
 #include "Packet.hpp"
 #include "Commons.hpp"
 #include "Framework.hpp"
+#include "SightSector.hpp"
 
 Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
 	: Index(index), ID(id), Nickname(), Socket(sock)
 	, Framework(framework)
 	, Status(SESSION_STATES::NONE)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
-	, Instance(nullptr), myViewList()
+	, Instance(nullptr)
+	, mySightSector(nullptr), myViewList()
 {
 	ClearOverlap(&recvOverlap);
 
@@ -123,6 +125,16 @@ bool Session::IsAccepted() const volatile
 	return SESSION_STATES::ACCEPTED == Status.load(std::memory_order_relaxed);
 }
 
+bool Session::IsPlayer() const volatile
+{
+	return true;
+}
+
+bool Session::IsNonPlayer() const volatile
+{
+	return false;
+}
+
 void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 {
 	std::cout << "ProceedReceived (" << ID << ")" << "\n";
@@ -207,6 +219,7 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 
 					if (moved)
 					{
+						Framework.UpdateSightOf(Index);
 						//Framework.SendMoveEntity(Index, px, py);
 					}
 				}
@@ -320,6 +333,26 @@ void Session::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
 {
 	MoveMemory(buffer, (buffer + position), max_size - position);
 	ZeroMemory(buffer + max_size - position, position);
+}
+
+void Session::SetSightArea(const shared_ptr<SightSector>& sector)
+{
+	mySightSector = sector;
+}
+
+void Session::SetSightArea(shared_ptr<SightSector>&& sector)
+{
+	mySightSector = std::forward<shared_ptr<SightSector>>(sector);
+}
+
+const shared_ptr<SightSector>& Session::GetSightArea() const
+{
+	return mySightSector;
+}
+
+shared_ptr<SightSector>& Session::GetSightArea()
+{
+	return mySightSector;
 }
 
 bool Session::TryMove(WPARAM input)
