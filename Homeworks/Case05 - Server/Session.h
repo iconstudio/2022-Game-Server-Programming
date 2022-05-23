@@ -7,7 +7,7 @@
 class Session
 {
 public:
-	Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework);
+	Session(UINT index, PID id, IOCPFramework& framework);
 	virtual ~Session();
 
 	void SetStatus(SESSION_STATES state);

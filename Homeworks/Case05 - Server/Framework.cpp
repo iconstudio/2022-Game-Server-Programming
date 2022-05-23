@@ -27,7 +27,7 @@ IOCPFramework::IOCPFramework()
 	for (int i = 0; i < NPC_MAX_NUMBER; ++i)
 	{
 		auto& empty = clientsPool.at(i);
-		empty = std::make_shared<Session>(i, -1, NULL, *this);
+		empty = std::make_shared<Session>(i, -1, *this);
 	}
 	
 	// 뒤쪽은 플레이어 세션 (PLAYERS_MAX_NUMBER)
@@ -35,7 +35,7 @@ IOCPFramework::IOCPFramework()
 	{
 		auto& empty = clientsPool.at(j);
 		
-		auto player = std::make_shared<PlayingSession>(j, -1, NULL, *this);
+		auto player = std::make_shared<PlayingSession>(j, -1, *this);
 		empty = std::static_pointer_cast<Session>(player);
 	}
 

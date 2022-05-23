@@ -8,8 +8,8 @@
 #include "Framework.hpp"
 #include "SightSector.hpp"
 
-Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
-	: Index(index), ID(id), Nickname(), Socket(sock)
+Session::Session(UINT index, PID id, IOCPFramework& framework)
+	: Index(index), ID(id), Nickname(), Socket(NULL)
 	, Framework(framework)
 	, Status(SESSION_STATES::NONE)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)

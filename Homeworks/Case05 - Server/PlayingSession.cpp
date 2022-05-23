@@ -1,8 +1,8 @@
 #include "pch.hpp"
 #include "PlayingSession.hpp"
 
-PlayingSession::PlayingSession(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
-	: Session(index, id, sock, framework)
+PlayingSession::PlayingSession(UINT index, PID id, IOCPFramework& framework)
+	: Session(index, id, framework)
 {
 
 }

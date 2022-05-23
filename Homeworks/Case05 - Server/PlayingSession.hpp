@@ -4,7 +4,7 @@
 class PlayingSession : public Session
 {
 public:
-	PlayingSession(UINT index, PID id, SOCKET sock, IOCPFramework& framework);
+	PlayingSession(UINT index, PID id, IOCPFramework& framework);
 	virtual ~PlayingSession();
 
 	bool IsConnected() const volatile;
