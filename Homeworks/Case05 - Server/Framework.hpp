@@ -21,6 +21,10 @@ public:
 	void Communicate();
 	friend void IOCPWorker();
 
+	/// <summary>
+	/// 특정 플레이어의 시야 목록 갱신
+	/// 특정 플레이어의 현재 시야 목록과 바뀐 시야 목록을 비교해서 전송
+	/// </summary>
 	void UpdateSightOf(const UINT index);
 
 	SessionPtr GetClient(const UINT index) const;
@@ -70,14 +74,9 @@ private:
 	/// </summary>
 
 	void RemoveSightOf(const shared_ptr<GameEntity>& inst) const;
-	/// <summary>
-	/// 특정 플레이어의 시야 목록 갱신
-	/// 특정 플레이어의 현재 시야 목록과 바뀐 시야 목록을 비교해서 전송
-	/// </summary>
-	/// <param name="who"></param>
 
 	/// <summary>
-	/// 클라이언트에게 패킷 전송
+	/// 패킷 생성
 	/// </summary>
 	template<typename MY_PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, MY_PACKET>

@@ -188,8 +188,9 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	// NPC, 특수 개체, 플레이어의 고유 식별자
 	const PID my_id = session->AcquireID();
 
+	// 0. 자기 캐릭터가 속한 구역을 갱신한다.
 	// 예전 시야
-	std::vector<PID> viewlist_prev = session->GetSight();
+	std::vector<PID> viewlist_prev = session->GetLocalSight();
 
 	const auto& character = session->Instance;
 	const auto& my_pos = character->GetPosition();
@@ -220,7 +221,12 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 		prev_sector->Release();
 	}
 
-	// 근처 구역의 시야 목록 구하기
+	// 1. 자기가 속한 구역의 목록을 얻는다.
+	std::vector<PID> viewlist_curr = curr_sector->GetSightList();
+	curr_sector->Release();
+
+	// 2. 시야 사각형에 닿는 구역들을 찾는다.
+	 
 	constexpr int sgh_w = SIGHT_CELLS_RAD_H;
 	constexpr int sgh_h = SIGHT_CELLS_RAD_V;
 
@@ -254,12 +260,12 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 		// 
 	}
 
-	std::vector<PID> viewlist_curr = curr_sector->GetSightList();
-	curr_sector->Release();
+	// 3. 각 구역의 시야 목록을 더한다.
 
+	// 4. 새로운 시야 목록 할당
 	session->AssignSight(viewlist_curr);
 
-	// 차이점을 전송
+	// 5. 시야 목록의 차이점을 전송
 	// * 현재 없는 개체는 Disappear
 	// * 현재 있는 개체는, 과거에도 있으면 Move, 없으면 Appear
 	PID cid, pid;
@@ -284,6 +290,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 			// 상대도 개체 등록
 			if (ot_is_player)
 			{
+				other->AddSight(my_id);
 				SendAppearEntity(other, my_id, 0, my_pos.x, my_pos.y);
 			}
 		}
@@ -312,6 +319,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 		SendDisppearEntity(session, pid);
 		if (ot_is_player)
 		{
+			other->RemoveSight(my_id);
 			SendDisppearEntity(other, my_id);
 		}
 	}
@@ -448,6 +456,9 @@ void IOCPFramework::Disconnect(const PID id)
 		{
 			// 서버에서 해당 클라이언트를 삭제
 			DeregisterPlayer(id);
+
+			// 세션이 갖고 있는 시야 목록의 플레이어들에게서 캐릭터 삭제
+
 
 			// 시야 목록에서 해당 클라이언트의 캐릭터 삭제
 			const auto& inst = session->Instance;
