@@ -283,12 +283,18 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	// * 현재 있는 개체는, 과거에도 있으면 Move, 없으면 Appear
 	PID cid, pid;
 
-	for (auto cit = viewlist_curr.cbegin(); viewlist_curr.cend() != cit;
-		++cit)
+	for (auto cit = viewlist_curr.cbegin(); viewlist_curr.cend() != cit;)
 	{
 		cid = *cit;
+		
+		auto other = AcquireClientByID(cid);
+		if (!other)
+		{
+			//cit = viewlist_curr.erase(cit);
+			cit++;
+			continue;
+		}
 
-		auto other = GetClientByID(cid);
 		const bool ot_is_player = other != session && other->IsPlayer();
 		const auto& ot_inst = other->Instance;
 		const auto& ot_pos = ot_inst->GetPosition();
@@ -318,6 +324,9 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 
 			viewlist_prev.erase(pit);
 		}
+
+		ReleaseClient(other->Index, other);
+		cit++;
 	}
 
 	// Disappear
@@ -397,8 +406,8 @@ void IOCPFramework::ProceedAccept()
 			}
 			else
 			{
-				session->SetSocket(newbie);
 				session->SetID(key);
+				session->SetSocket(newbie);
 				session->SetStatus(SESSION_STATES::CONNECTED);
 
 				RegisterPlayer(key, session->Index);
