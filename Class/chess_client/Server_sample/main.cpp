@@ -15,13 +15,23 @@
 
 #pragma comment(lib, "WS2_32.lib")
 #pragma comment(lib, "MSWSock.lib")
+#pragma comment(lib, "lua54.lib")
 using namespace std;
+
+extern "C" {
+#include "lua.h"
+#include "lauxlib.h"
+#include "lualib.h"
+}
 
 constexpr int SIGHT = 20;
 constexpr int PLAYERS_ID_BEGIN = 10000;
 constexpr int NPC_NUMBER = 10000;
 
-enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND };
+enum COMP_TYPE
+{
+	OP_ACCEPT, OP_RECV, OP_SEND, COMP_NPC_MOVE
+};
 enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME };
 enum ENTITY_TYPE { NONE, PLAYER, NPC };
 enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK };
@@ -33,6 +43,8 @@ public:
 	WSABUF _wsabuf;
 	char _send_buf[BUF_SIZE];
 	COMP_TYPE _comp_type;
+	int caller = -1;
+
 	OVER_EXP()
 	{
 		_wsabuf.len = BUF_SIZE;
@@ -72,10 +84,46 @@ void add_timer(int entity_id, int ms, EVENT_TYPE type, int target_id)
 class NPC
 {
 public:
+	atomic_int _id = 0;
 	short	x, y;
 	char	_name[NAME_SIZE];
 	int		_prev_remain;
 
+	SOCKET _socket;
+	lua_State* lua;
+
+	void SendChatMsg(const WCHAR* chat, const size_t length)
+	{
+		SC_CHAT_PACKET p{};
+		p.id = _id;
+		p.size = sizeof(SC_LOGIN_INFO_PACKET);
+		p.type = SC_LOGIN_INFO;
+
+		if (p.caption) delete p.caption;
+		p.caption = new WCHAR[length];
+		lstrcpyn(p.caption, chat, length);
+
+		do_send(&p);
+	}
+
+	void do_recv()
+	{
+		DWORD recv_flag = 0;
+		memset(&_recv_over._over, 0, sizeof(_recv_over._over));
+		_recv_over._wsabuf.len = BUF_SIZE - _prev_remain;
+		_recv_over._wsabuf.buf = _recv_over._send_buf + _prev_remain;
+		WSARecv(_socket, &_recv_over._wsabuf, 1, 0, &recv_flag,
+			&_recv_over._over, 0);
+	}
+
+	void do_send(void* packet)
+	{
+		OVER_EXP* sdata = new OVER_EXP{ reinterpret_cast<char*>(packet) };
+		WSASend(_socket, &sdata->_wsabuf, 1, 0, 0, &sdata->_over, 0);
+	}
+
+protected:
+	OVER_EXP _recv_over;
 };
 
 class SESSION : public NPC
@@ -98,22 +146,6 @@ public:
 
 	~SESSION() {}
 
-	void do_recv()
-	{
-		DWORD recv_flag = 0;
-		memset(&_recv_over._over, 0, sizeof(_recv_over._over));
-		_recv_over._wsabuf.len = BUF_SIZE - _prev_remain;
-		_recv_over._wsabuf.buf = _recv_over._send_buf + _prev_remain;
-		WSARecv(_socket, &_recv_over._wsabuf, 1, 0, &recv_flag,
-			&_recv_over._over, 0);
-	}
-
-	void do_send(void* packet)
-	{
-		OVER_EXP* sdata = new OVER_EXP{ reinterpret_cast<char*>(packet) };
-		WSASend(_socket, &sdata->_wsabuf, 1, 0, 0, &sdata->_over, 0);
-	}
-
 	void send_login_info_packet()
 	{
 		SC_LOGIN_INFO_PACKET p;
@@ -128,12 +160,7 @@ public:
 
 	mutex	_sl;
 	SESSION_STATE _s_state;
-	atomic_int _id;
-	SOCKET _socket;
 	unordered_set<int> view_list;
-
-private:
-	OVER_EXP _recv_over;
 };
 
 void SESSION::send_move_packet(int c_id)
@@ -146,6 +173,8 @@ void SESSION::send_move_packet(int c_id)
 	p.y = clients[c_id].y;
 	do_send(&p);
 }
+
+
 
 mutex client_lock;
 array<SESSION, MAX_USER> clients;

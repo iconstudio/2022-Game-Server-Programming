@@ -72,15 +72,23 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)\include;$(ExternalIncludePath);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(SolutionDir)\Class\lua\include;$(SolutionDir)\Class\lua;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)\include;$(ExternalIncludePath);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(SolutionDir)\Class\lua\include;$(SolutionDir)\Class\lua;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(SolutionDir)\include;$(ExternalIncludePath);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(SolutionDir)\Class\lua\include;$(SolutionDir)\Class\lua;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
+    <IncludePath>$(SolutionDir)\include;$(ExternalIncludePath);$(IncludePath)</IncludePath>
+    <ExternalIncludePath>$(SolutionDir)\Class\lua\include;$(SolutionDir)\Class\lua;$(ExternalIncludePath)</ExternalIncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -144,7 +152,15 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\lua\include\lauxlib.h" />
+    <ClInclude Include="..\..\lua\include\lua.h" />
+    <ClInclude Include="..\..\lua\include\lua.hpp" />
+    <ClInclude Include="..\..\lua\include\luaconf.h" />
+    <ClInclude Include="..\..\lua\include\lualib.h" />
     <ClInclude Include="protocol.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="npc.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
