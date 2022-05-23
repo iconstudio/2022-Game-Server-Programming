@@ -22,6 +22,22 @@ Scene::~Scene()
 	}
 }
 
+void Scene::DestroyInstance(GameObject* instance)
+{
+	if (0 < myInstances.size() && instance)
+	{
+		auto it = std::find_if(myInstances.begin(), myInstances.end()
+			, [instance](const shared_ptr<GameObject>& ptr) {
+			return (ptr.get() == instance);
+		});
+
+		if (myInstances.end() != it)
+		{
+			myInstances.erase(it);
+		}
+	}
+}
+
 void Scene::Awake()
 {
 	if (0 < myInstances.size())

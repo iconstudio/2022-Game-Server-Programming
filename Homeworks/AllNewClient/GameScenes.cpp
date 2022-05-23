@@ -290,6 +290,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 
 		if (myLocalInstances.end() != rit)
 		{
+			DestroyInstance(*rit);
 			myLocalInstances.erase(rit);
 			InvalidateRect(handle, NULL, TRUE);
 		}
