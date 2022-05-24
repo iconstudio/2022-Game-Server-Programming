@@ -31,10 +31,10 @@ public:
 	/// <param name="x">월드 X 좌표</param>
 	/// <param name="y">월드 Y 좌표</param>
 	/// <returns>영역의 번호 쌍</returns>
-	inline int_pair PickCoords(float x, float y) const;
+	int_pair PickCoords(float x, float y) const;
 	/// <param name="world_position">월드 좌표의 쌍</param>
 	/// <returns>영역의 번호 쌍</returns>
-	inline int_pair PickCoords(float_pair world_position) const;
+	int_pair PickCoords(float_pair world_position) const;
 
 	/// <summary>
 	/// 시야 영역의 왼쪽 위 월드 좌표
@@ -42,10 +42,10 @@ public:
 	/// <param name="x">영역의 가로 번호</param>
 	/// <param name="y">영역의 세로 번호</param>
 	/// <returns>영역의 월드 좌표</returns>
-	inline float_pair PickPositionFirst(int x, int y) const;
+	float_pair PickPositionFirst(int x, int y) const;
 	/// <param name="coord_index">영역의 번호 쌍</param>
 	/// <returns>영역의 월드 좌표</returns>
-	inline float_pair PickPositionFirst(int_pair coord_index) const;
+	float_pair PickPositionFirst(int_pair coord_index) const;
 
 	/// <summary>
 	/// 시야 영역의 오른쪽 아래 월드 좌표
@@ -53,10 +53,10 @@ public:
 	/// <param name="x">영역의 가로 번호</param>
 	/// <param name="y">영역의 세로 번호</param>
 	/// <returns>영역의 월드 좌표</returns>
-	inline float_pair PickPositionLast(int x, int y) const;
+	float_pair PickPositionLast(int x, int y) const;
 	/// <param name="coord_index">영역의 번호 쌍</param>
 	/// <returns>영역의 월드 좌표</returns>
-	inline float_pair PickPositionLast(int_pair coord_index) const;
+	float_pair PickPositionLast(int_pair coord_index) const;
 
 	const float sizeWorldH;
 	const float sizeWorldV;

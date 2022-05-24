@@ -115,7 +115,7 @@ int_pair SightManager::ClampCoords(XMFLOAT3&& position) const
 	return PickCoords(clamped_x, clamped_y);
 }
 
-inline int_pair SightManager::PickCoords(float x, float y) const
+int_pair SightManager::PickCoords(float x, float y) const
 {
 	const int index_x = std::clamp(static_cast<int>(x / sizeSectorH), 0, WORLD_CELLS_CNT_H);
 	const int index_y = std::clamp(static_cast<int>(y / sizeSectorV), 0, WORLD_CELLS_CNT_V);
@@ -123,31 +123,31 @@ inline int_pair SightManager::PickCoords(float x, float y) const
 	return std::make_pair(index_y, index_x);
 }
 
-inline int_pair SightManager::PickCoords(float_pair world_position) const
+int_pair SightManager::PickCoords(float_pair world_position) const
 {
 	return PickCoords(world_position.first, world_position.second);
 }
 
-inline float_pair SightManager::PickPositionFirst(int x, int y) const
+float_pair SightManager::PickPositionFirst(int x, int y) const
 {
 	const float world_x = static_cast<float>(x) * sizeSectorH;
 	const float world_y = static_cast<float>(y) * sizeSectorV;
 	return std::make_pair(world_y, world_x);
 }
 
-inline float_pair SightManager::PickPositionFirst(int_pair coord_index) const
+float_pair SightManager::PickPositionFirst(int_pair coord_index) const
 {
 	return PickPositionFirst(coord_index.first, coord_index.second);
 }
 
-inline float_pair SightManager::PickPositionLast(int x, int y) const
+float_pair SightManager::PickPositionLast(int x, int y) const
 {
 	const float world_x = static_cast<float>(x + 1) * sizeSectorH;
 	const float world_y = static_cast<float>(y + 1) * sizeSectorV;
 	return std::make_pair(world_y, world_x);
 }
 
-inline float_pair SightManager::PickPositionLast(int_pair coord_index) const
+float_pair SightManager::PickPositionLast(int_pair coord_index) const
 {
 	return PickPositionLast(coord_index.first, coord_index.second);
 }
