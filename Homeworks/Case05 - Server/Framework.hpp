@@ -72,11 +72,6 @@ private:
 	/// </summary>
 	/// <param name="who"></param>
 	void InitializeWorldFor(const UINT index, SessionPtr& who);
-	/// <summary>
-	/// 특정 개체가 속한 시야 목록 갱신
-	/// </summary>
-
-	void RemoveSightOf(const shared_ptr<GameEntity>& inst) const;
 
 	/// <summary>
 	/// 패킷 생성

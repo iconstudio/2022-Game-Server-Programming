@@ -27,7 +27,7 @@ IOCPFramework::IOCPFramework()
 	for (int i = 0; i < NPC_MAX_NUMBER; ++i)
 	{
 		auto& empty = clientsPool.at(i);
-		empty = std::make_shared<Session>(i, -1, NULL, *this);
+		empty = std::make_shared<Session>(i, -1, *this);
 	}
 	
 	// 뒤쪽은 플레이어 세션 (PLAYERS_MAX_NUMBER)
@@ -35,7 +35,7 @@ IOCPFramework::IOCPFramework()
 	{
 		auto& empty = clientsPool.at(j);
 		
-		auto player = std::make_shared<PlayingSession>(j, -1, NULL, *this);
+		auto player = std::make_shared<PlayingSession>(j, -1, *this);
 		empty = std::static_pointer_cast<Session>(player);
 	}
 
@@ -276,19 +276,25 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	// 3. 각 구역의 시야 목록을 더한다.
 
 	// 4. 새로운 시야 목록 할당
-	session->AssignSight(viewlist_curr);
+	//session->AssignSight(viewlist_curr);
 
 	// 5. 시야 목록의 차이점을 전송
 	// * 현재 없는 개체는 Disappear
 	// * 현재 있는 개체는, 과거에도 있으면 Move, 없으면 Appear
 	PID cid, pid;
 
-	for (auto cit = viewlist_curr.cbegin(); viewlist_curr.cend() != cit;
-		++cit)
+	for (auto cit = viewlist_curr.cbegin(); viewlist_curr.cend() != cit;)
 	{
 		cid = *cit;
+		
+		auto other = AcquireClientByID(cid);
+		if (!other)
+		{
+			//cit = viewlist_curr.erase(cit);
+			cit++;
+			continue;
+		}
 
-		auto other = GetClientByID(cid);
 		const bool ot_is_player = other != session && other->IsPlayer();
 		const auto& ot_inst = other->Instance;
 		const auto& ot_pos = ot_inst->GetPosition();
@@ -298,6 +304,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 		if (viewlist_prev.cend() == pit)
 		{
 			// Appear: 새로운 개체 등록
+			session->AddSight(cid);
 			SendAppearEntity(session, cid, 0, ot_pos.x, ot_pos.y);
 
 			// 상대도 개체 등록
@@ -318,6 +325,9 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 
 			viewlist_prev.erase(pit);
 		}
+
+		ReleaseClient(other->Index, other);
+		cit++;
 	}
 
 	// Disappear
@@ -327,8 +337,9 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 		pid = *pit;
 
 		auto other = GetClientByID(pid);
-		const bool ot_is_player = other != session && other->IsPlayer();
+		const bool ot_is_player = other && other != session && other->IsPlayer();
 
+		session->RemoveSight(pid);
 		SendDisppearEntity(session, pid);
 		if (ot_is_player)
 		{
@@ -397,8 +408,8 @@ void IOCPFramework::ProceedAccept()
 			}
 			else
 			{
-				session->SetSocket(newbie);
 				session->SetID(key);
+				session->SetSocket(newbie);
 				session->SetStatus(SESSION_STATES::CONNECTED);
 
 				RegisterPlayer(key, session->Index);
@@ -467,23 +478,49 @@ void IOCPFramework::Disconnect(const PID id)
 
 		if (session->IsAccepted())
 		{
+			// 시야 구역에서 해당 클라이언트를 삭제
+			auto& curr_sector = session->GetSightArea();
+			curr_sector->Acquire();
+			curr_sector->Remove(id);
+			curr_sector->Release();
+
+			std::vector<PID> viewlist_curr = session->GetLocalSight();
+
+			// 소유권 해제
+			ReleaseClient(index, session);
+
+			// 세션이 갖고 있는 시야 목록의 플레이어들에게서 캐릭터 삭제
+			for (auto cit = viewlist_curr.cbegin(); viewlist_curr.cend() != cit; cit++)
+			{
+				const PID cid = *cit;
+				if (cid == id) continue;
+
+				auto other = AcquireClientByID(cid);
+				if (other)
+				{
+					// 시야 목록에서 해당 클라이언트 삭제
+					other->RemoveSight(id);
+					if (SOCKET_ERROR == SendDisppearEntity(other, id))
+					{
+						if (WSA_IO_PENDING != WSAGetLastError())
+						{
+							ErrorDisplay("Disconnect()");
+							std::cout << "클라이언트 " << id << "에서 오류!\n";
+						}
+					}
+
+					ReleaseClient(other->Index, other);
+				}
+			}
+
 			// 서버에서 해당 클라이언트를 삭제
 			DeregisterPlayer(id);
 
-			// 세션이 갖고 있는 시야 목록의 플레이어들에게서 캐릭터 삭제
-
-
-			// 시야 목록에서 해당 클라이언트의 캐릭터 삭제
-			const auto& inst = session->Instance;
-			if (inst)
-			{
-				RemoveSightOf(inst);
-			}
 			// Broadcast: 클라이언트에게 접속 종료를 통지
-			for (auto& player : myClients)
+			//for (auto& player : myClients)
 			{
-				auto other = GetClient(player.second);
-				SendSignOut(other, id);
+				//auto other = GetClient(player.second);
+				//SendSignOut(other, id);
 			}
 			// 원래 클라이언트가 있던 세션 청소
 			session->Cleanup();
@@ -494,9 +531,9 @@ void IOCPFramework::Disconnect(const PID id)
 			DeregisterPlayer(id);
 			// 원래 클라이언트가 있던 세션 청소
 			session->Cleanup();
+			// 소유권 해제
+			ReleaseClient(index, session);
 		}
-
-		ReleaseClient(index, session);
 	}
 }
 
@@ -563,17 +600,6 @@ void IOCPFramework::InitializeWorldFor(const UINT index, SessionPtr& who)
 {
 	// 시야 목록을 갱신 (잠금 없음),
 	UpdateSightOf(index);
-}
-
-void IOCPFramework::RemoveSightOf(const shared_ptr<GameEntity>& inst) const
-{
-	const auto& pos = inst->GetPosition();
-	auto curr_coords = mySightManager.PickCoords(pos.x, pos.y);
-	auto& curr_sector = mySightManager.At(curr_coords);
-
-	curr_sector->Acquire();
-	curr_sector->Remove(inst->myID);
-	curr_sector->Release();
 }
 
 template<typename MY_PACKET, typename ...Ty>

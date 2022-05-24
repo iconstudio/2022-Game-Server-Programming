@@ -15,7 +15,7 @@ public:
 	GameEntity* CreateInstance<GameEntity, GameEntity, true>();
 	template<>
 	PlayerCharacter* CreateInstance<PlayerCharacter, PlayerCharacter, true>();
-
+	void DestroyInstance(GameObject* instance);
 
 	virtual void Awake() = 0;
 	virtual void Start() = 0;
