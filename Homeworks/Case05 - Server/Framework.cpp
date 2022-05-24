@@ -39,12 +39,12 @@ IOCPFramework::IOCPFramework()
 		auto& empty = clientsPool.at(i);
 		empty = std::make_shared<Session>(i, -1, *this);
 	}
-	
+
 	// 뒤쪽은 플레이어 세션 (PLAYERS_MAX_NUMBER)
 	for (int j = NPC_MAX_NUMBER; j < ENTITIES_MAX_NUMBER; ++j)
 	{
 		auto& empty = clientsPool.at(j);
-		
+
 		auto player = std::make_shared<PlayingSession>(j, -1, *this);
 		empty = std::static_pointer_cast<Session>(player);
 	}
@@ -216,9 +216,11 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 
 	const auto& character = session->Instance;
 	const auto& my_pos = character->GetPosition();
+	const auto& my_type = character->myType;
 
 	// 0. 자기 캐릭터가 속한 구역을 갱신한다.
-	auto curr_coords = mySightManager.PickCoords(my_pos.x, my_pos.y);
+	const auto curr_pos = float_pair(my_pos.x, my_pos.y);
+	const auto curr_coords = mySightManager.PickCoords(curr_pos);
 	auto& curr_sector = mySightManager.At(curr_coords);
 
 	// 적법한 구역의 소유권 획득
@@ -246,69 +248,74 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 
 	// 1. 자기가 속한 구역의 목록을 얻는다.
 	std::vector<PID> viewlist_curr = curr_sector->GetSightList();
-	curr_sector->Release();
+	viewlist_curr.reserve(viewlist_curr.capacity() + 50);
 
 	// 2. 시야 사각형에 닿는 구역들을 찾는다.
-	std::vector<mySector&> additions;
+	//std::unordered_set<PID> additions;
 
-	constexpr int sgh_w = SIGHT_CELLS_RAD_H;
-	constexpr int sgh_h = SIGHT_CELLS_RAD_V;
+	constexpr float sgh_w = SIGHT_RAD_W;
+	constexpr float sgh_h = SIGHT_RAD_H;
+
+	// 3. 각 구역의 시야 목록을 더한다.
 
 	const auto lu_coords = curr_coords + int_pair{ -sgh_w, -sgh_h };
 	if (0 < lu_coords.first && 0 < lu_coords.second)
 	{
-		//const auto& lu_sector = mySightManager.At(lu_coords);
-		additions.push_back(mySightManager.At(lu_coords));
+		const auto& list = mySightManager.At(lu_coords)->GetSightList();
+		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
+			viewlist_curr.push_back(ot_id);
+		});
+		//additions.insert(list.begin(), list.end());
 	}
 
 	const auto ru_coords = curr_coords + int_pair{ +sgh_w, -sgh_h };
-	if (lu_coords.first < WORLD_CELLS_CNT_H && 0 < ru_coords.second)
+	if (ru_coords.first < WORLD_CELLS_CNT_H && 0 < ru_coords.second)
 	{
-		//const auto& ru_sector = mySightManager.At(ru_coords);
-		additions.push_back(mySightManager.At(ru_coords));
+		const auto& list = mySightManager.At(ru_coords)->GetSightList();
+		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
+			viewlist_curr.push_back(ot_id);
+		});
+		//additions.insert(list.begin(), list.end());
 	}
 
 	const auto ld_coords = curr_coords + int_pair{ -sgh_w, +sgh_h };
 	if (0 < ld_coords.first && ld_coords.second < WORLD_CELLS_CNT_V)
 	{
-		//const auto& ld_sector = mySightManager.At(ld_coords);
-		additions.push_back(mySightManager.At(ld_coords));
+		const auto& list = mySightManager.At(ld_coords)->GetSightList();
+		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
+			viewlist_curr.push_back(ot_id);
+		});
+		//additions.insert(list.begin(), list.end());
 	}
 
 	const auto rd_coords = curr_coords + int_pair{ +sgh_w, +sgh_h };
 	if (rd_coords.first < WORLD_CELLS_CNT_H && rd_coords.second < WORLD_CELLS_CNT_V)
 	{
-		//const auto& rd_sector = mySightManager.At(rd_coords);
-		additions.push_back(mySightManager.At(rd_coords));
+		const auto& list = mySightManager.At(rd_coords)->GetSightList();
+		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
+			viewlist_curr.push_back(ot_id);
+		});
+		//additions.insert(list.begin(), list.end());
 	}
-
-
-	// 주변의 시야 구역 열거
-	for (int k = 0; k < 9; ++k)
-	{
-
-
-		// 주변 구역의 개체를 시야 목록에 등록
-	}
-
-	// 3. 각 구역의 시야 목록을 더한다.
+	curr_sector->Release();
 
 	// 4. 새로운 시야 목록 할당
-	//session->AssignSight(viewlist_curr);
+	session->AssignSight(viewlist_curr);
 
 	// 5. 시야 목록의 차이점을 전송
 	// * 현재 없는 개체는 Disappear
 	// * 현재 있는 개체는, 과거에도 있으면 Move, 없으면 Appear
 	PID cid, pid;
+	constexpr int sight_magnitude = SIGHT_CELLS_RAD_H * SIGHT_CELLS_RAD_V;
 
 	for (auto cit = viewlist_curr.cbegin(); viewlist_curr.cend() != cit;)
 	{
 		cid = *cit;
-		
+
 		auto other = AcquireClientByID(cid);
 		if (!other)
 		{
-			//cit = viewlist_curr.erase(cit);
+			session->RemoveSight(cid);
 			cit++;
 			continue;
 		}
@@ -317,19 +324,25 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 		const auto& ot_inst = other->Instance;
 		const auto& ot_pos = ot_inst->GetPosition();
 
+		if (sight_magnitude < SightDistance(my_pos, ot_pos))
+		{
+			session->RemoveSight(cid);
+			SendDisppearEntity(session, pid);
+		}
+
 		const auto pit = std::find(viewlist_prev.cbegin(), viewlist_prev.cend(), cid);
 
 		if (viewlist_prev.cend() == pit)
 		{
 			// Appear: 새로운 개체 등록
 			session->AddSight(cid);
-			SendAppearEntity(session, cid, 0, ot_pos.x, ot_pos.y);
+			SendAppearEntity(session, cid, ot_inst->myType, ot_pos.x, ot_pos.y);
 
 			// 상대도 개체 등록
 			if (ot_is_player)
 			{
 				other->AddSight(my_id);
-				SendAppearEntity(other, my_id, 0, my_pos.x, my_pos.y);
+				SendAppearEntity(other, my_id, my_type, my_pos.x, my_pos.y);
 			}
 		}
 		else
@@ -666,7 +679,7 @@ int IOCPFramework::SendSignOut(SessionPtr& target, const PID who) const
 	return std::forward<SessionPtr>(target)->Send(ticket.first, 1, ticket.second);
 }
 
-int IOCPFramework::SendAppearEntity(SessionPtr& target, PID cid, int type, float cx, float cy) const
+int IOCPFramework::SendAppearEntity(SessionPtr& target, PID cid, ENTITY_TYPES type, float cx, float cy) const
 {
 	std::cout << target->GetID() << " → SendAppearEntity(" << cid << ")\n";
 

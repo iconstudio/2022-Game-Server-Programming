@@ -2,6 +2,11 @@
 #include "GameObject.hpp"
 #include "SightSector.hpp"
 
+enum class ENTITY_TYPES : UCHAR
+{
+	NONE, NPC, QUEEST_NPC, MOB, BOSS, PLAYER
+};
+
 class GameEntity : public GameObject
 {
 public:
@@ -15,4 +20,5 @@ public:
 	virtual void Update(float time_elapsed) = 0;
 
 	PID myID;
+	ENTITY_TYPES myType;
 };

@@ -18,8 +18,7 @@ SightManager::SightManager(IOCPFramework& framework, float w, float h, float sec
 }
 
 SightManager::~SightManager()
-{
-}
+{}
 
 const mySector& SightManager::At(int x, int y) const
 {
@@ -56,6 +55,11 @@ mySector& SightManager::At(int_pair&& coord_index)
 const mySector& SightManager::AtByPosition(float x, float y) const
 {
 	return At(PickCoords(x, y));
+}
+
+const mySector& SightManager::AtByPosition(const float_pair& pos) const
+{
+	return At(PickCoords(pos.first, pos.second));
 }
 
 const mySector& SightManager::AtByPosition(const XMFLOAT3& position) const
@@ -113,8 +117,8 @@ int_pair SightManager::ClampCoords(XMFLOAT3&& position) const
 
 inline int_pair SightManager::PickCoords(float x, float y) const
 {
-	const int index_x = static_cast<int>(x / sizeSectorH);
-	const int index_y = static_cast<int>(y / sizeSectorV);
+	const int index_x = std::clamp(static_cast<int>(x / sizeSectorH), 0, WORLD_CELLS_CNT_H);
+	const int index_y = std::clamp(static_cast<int>(y / sizeSectorV), 0, WORLD_CELLS_CNT_V);
 
 	return std::make_pair(index_y, index_x);
 }

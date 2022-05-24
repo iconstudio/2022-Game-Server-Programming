@@ -109,7 +109,7 @@ private:
 	/// <param name="type">종류</param>
 	/// <param name="cx"></param>
 	/// <param name="cy"></param>
-	int SendAppearEntity(SessionPtr& target, PID cid, int type, float cx, float cy) const;
+	int SendAppearEntity(SessionPtr& target, PID cid, ENTITY_TYPES type, float cx, float cy) const;
 	/// <summary>
 	/// 시야 내에서 개체가 사라졌음을 알린다.
 	/// </summary>

@@ -326,22 +326,6 @@ void Session::ClearRecvBuffer()
 	ZeroMemory(recvCBuffer, sizeof(recvCBuffer));
 }
 
-void Session::SetRecvBuffer(const WSABUF& buffer)
-{
-	recvBuffer = buffer;
-}
-
-void Session::SetRecvBuffer(LPWSABUF buffer)
-{
-	SetRecvBuffer(*buffer);
-}
-
-void Session::SetRecvBuffer(CHAR* cbuffer, DWORD size)
-{
-	recvBuffer.buf = cbuffer;
-	recvBuffer.len = size;
-}
-
 int Session::Recv(DWORD flags)
 {
 	if (!recvBuffer.buf) return 0;

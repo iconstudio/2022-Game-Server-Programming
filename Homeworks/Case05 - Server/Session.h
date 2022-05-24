@@ -14,8 +14,8 @@ public:
 	void SetSocket(SOCKET sock);
 	void SetID(const PID id);
 
-	void AddSight(const PID id);
-	void RemoveSight(const PID id);
+	virtual void AddSight(const PID id);
+	virtual void RemoveSight(const PID id);
 
 	void AssignSight(const concurrent_set<PID>& view);
 	void AssignSight(const std::vector<PID>& view);

@@ -20,6 +20,7 @@ public:
 	mySector& At(int_pair&& coord_index);
 
 	const mySector& AtByPosition(float x, float y) const;
+	const mySector& AtByPosition(const float_pair& pos) const;
 	const mySector& AtByPosition(const XMFLOAT3& position) const;
 	mySector& AtByPosition(float x, float y);
 	mySector& AtByPosition(const XMFLOAT3& position);
