@@ -17,8 +17,8 @@ void PlayerCharacter::Render(HDC surface, float ax, float ay) const
 	auto filler = CreateSolidBrush(C_GOLD);
 	auto old_filler = Draw::Attach(surface, filler);
 
-	auto dx = int(ax + myPosition.x) + CELL_W * 0.5;
-	auto dy = int(ax + myPosition.y) + CELL_H * 0.5;
+	auto dx = int(ax + myPosition.x) + CELL_W / 2;
+	auto dy = int(ax + myPosition.y) + CELL_H / 2;
 
 	Draw::Ellipse(surface, dx - 16, dy - 16, dx + 16, dy + 16);
 	Draw::Detach(surface, old_filler, filler);

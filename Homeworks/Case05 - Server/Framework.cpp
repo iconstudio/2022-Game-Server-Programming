@@ -253,8 +253,8 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	// 2. 시야 사각형에 닿는 구역들을 찾는다.
 	//std::unordered_set<PID> additions;
 
-	constexpr float sgh_w = SIGHT_RAD_W;
-	constexpr float sgh_h = SIGHT_RAD_H;
+	constexpr auto sgh_w = SIGHT_CELLS_RAD_H;
+	constexpr auto sgh_h = SIGHT_CELLS_RAD_V;
 
 	// 3. 각 구역의 시야 목록을 더한다.
 
@@ -306,7 +306,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	// * 현재 없는 개체는 Disappear
 	// * 현재 있는 개체는, 과거에도 있으면 Move, 없으면 Appear
 	PID cid, pid;
-	constexpr int sight_magnitude = SIGHT_CELLS_RAD_H * SIGHT_CELLS_RAD_V;
+	constexpr int sight_magnitude = SIGHT_RAD_W * SIGHT_RAD_H;
 
 	for (auto cit = viewlist_curr.cbegin(); viewlist_curr.cend() != cit;)
 	{
@@ -323,16 +323,17 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 		const bool ot_is_player = other != session && other->IsPlayer();
 		const auto& ot_inst = other->Instance;
 		const auto& ot_pos = ot_inst->GetPosition();
-
-		if (sight_magnitude < SightDistance(my_pos, ot_pos))
-		{
-			session->RemoveSight(cid);
-			SendDisppearEntity(session, pid);
-		}
+		const bool check = sight_magnitude < SightDistance(my_pos, ot_pos);
 
 		const auto pit = std::find(viewlist_prev.cbegin(), viewlist_prev.cend(), cid);
 
-		if (viewlist_prev.cend() == pit)
+		if (check)
+		{
+			session->RemoveSight(cid);
+			SendDisppearEntity(session, cid);
+			cit++;
+		}
+		else if (viewlist_prev.cend() == pit)
 		{
 			// Appear: 새로운 개체 등록
 			session->AddSight(cid);
@@ -344,6 +345,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 				other->AddSight(my_id);
 				SendAppearEntity(other, my_id, my_type, my_pos.x, my_pos.y);
 			}
+			cit++;
 		}
 		else
 		{
@@ -355,10 +357,10 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 			}
 
 			viewlist_prev.erase(pit);
+			cit++;
 		}
 
 		ReleaseClient(other->Index, other);
-		cit++;
 	}
 
 	// Disappear
