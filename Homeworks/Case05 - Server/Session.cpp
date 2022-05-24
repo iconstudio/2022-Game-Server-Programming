@@ -15,6 +15,7 @@ Session::Session(UINT index, PID id, SOCKET sock, IOCPFramework& framework)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 	, Instance(nullptr)
 	, mySightSector(nullptr), myViewList()
+	, myLuaMachine(nullptr)
 {
 	ClearOverlap(&recvOverlap);
 

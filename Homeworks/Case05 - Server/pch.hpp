@@ -15,6 +15,13 @@ using DirectX::XMFLOAT3, DirectX::XMFLOAT4, DirectX::XMFLOAT4X4;
 using DirectX::XMStoreFloat3, DirectX::XMStoreFloat4, DirectX::XMStoreFloat4x4;
 using DirectX::XMLoadFloat3, DirectX::XMLoadFloat4, DirectX::XMLoadFloat4x4;
 
+extern "C" {
+#include "include/luaconf.h"
+#include "include/lauxlib.h"
+#include "include/lualib.h"
+#include "include/lua.h"
+}
+
 #include <string>
 #include <iostream>
 #include <mutex>

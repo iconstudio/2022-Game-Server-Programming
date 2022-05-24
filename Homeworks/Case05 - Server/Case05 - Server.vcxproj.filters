@@ -19,6 +19,9 @@
     <Filter Include="헤더 파일\System">
       <UniqueIdentifier>{efe31269-ecdf-40f3-b22a-9a3f1418dea0}</UniqueIdentifier>
     </Filter>
+    <Filter Include="헤더 파일\Lua">
+      <UniqueIdentifier>{81a12e3b-817a-4ae2-8e1c-73bd88a0d1ef}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Commons.cpp">
@@ -109,6 +112,21 @@
     </ClInclude>
     <ClInclude Include="PlayingSession.hpp">
       <Filter>헤더 파일\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lauxlib.h">
+      <Filter>헤더 파일\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lua.h">
+      <Filter>헤더 파일\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lua.hpp">
+      <Filter>헤더 파일\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="include\luaconf.h">
+      <Filter>헤더 파일\Lua</Filter>
+    </ClInclude>
+    <ClInclude Include="include\lualib.h">
+      <Filter>헤더 파일\Lua</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

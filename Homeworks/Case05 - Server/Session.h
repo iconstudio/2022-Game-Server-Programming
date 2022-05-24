@@ -83,6 +83,8 @@ private:
 	shared_ptr<SightSector> mySightSector;
 	// 시야 목록 (식별자만 저장)
 	concurrent_set<PID> myViewList;
+
+	lua_State* myLuaMachine;
 };
 
 enum class SESSION_STATES
