@@ -33,7 +33,7 @@ SCPacketCreatePlayer::SCPacketCreatePlayer(PID pid, const CHAR* nickname)
 	strcpy_s(Nickname, nickname);
 }
 
-SCPacketAppearCharacter::SCPacketAppearCharacter(PID cid, int type, float nx, float ny)
+SCPacketAppearCharacter::SCPacketAppearCharacter(PID cid, ENTITY_TYPES type, float nx, float ny)
 	: Packet(PACKET_TYPES::SC_APPEAR_CHARACTER, sizeof(SCPacketAppearCharacter), cid)
 	, myType(type), x(nx), y(ny)
 {}
@@ -51,3 +51,35 @@ SCPacketSignOut::SCPacketSignOut(PID pid, UINT users)
 	: Packet(PACKET_TYPES::SC_SIGNOUT, sizeof(SCPacketSignOut), pid)
 	, usersCurrent(users)
 {}
+
+CSPacketChatMessage::CSPacketChatMessage(PID fid, PID tid, const WCHAR* msg, size_t length)
+	: Packet(PACKET_TYPES::CS_CHAT, sizeof(CSPacketChatMessage), fid)
+	, Caption()
+{
+	ZeroMemory(Caption, sizeof(Caption));
+	lstrcpyn(Caption, msg, length);
+}
+
+CSPacketChatMessage::CSPacketChatMessage(PID fid, PID tid, const WCHAR msg[])
+	: Packet(PACKET_TYPES::CS_CHAT, sizeof(CSPacketChatMessage), fid)
+	, Caption()
+{
+	ZeroMemory(Caption, sizeof(Caption));
+	lstrcpy(Caption, msg);
+}
+
+SCPacketChatMessage::SCPacketChatMessage(PID tid, const WCHAR* msg, size_t length)
+	: Packet(PACKET_TYPES::SC_CHAT, sizeof(SCPacketChatMessage), tid)
+	, Caption()
+{
+	ZeroMemory(Caption, sizeof(Caption));
+	lstrcpyn(Caption, msg, length);
+}
+
+SCPacketChatMessage::SCPacketChatMessage(PID tid, const WCHAR msg[])
+	: Packet(PACKET_TYPES::SC_CHAT, sizeof(SCPacketChatMessage), tid)
+	, Caption()
+{
+	ZeroMemory(Caption, sizeof(Caption));
+	lstrcpy(Caption, msg);
+}

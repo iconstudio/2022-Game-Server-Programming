@@ -30,6 +30,8 @@ public:
 	/// </summary>
 	void UpdateSightOf(const UINT index);
 
+	SessionPtr CreateNPC(const UINT index, ENTITY_TYPES type, int info_index);
+
 	SessionPtr GetClient(const UINT index) const;
 	SessionPtr GetClientByID(const PID id) const;
 	SessionPtr GetClient(const PID) const = delete;

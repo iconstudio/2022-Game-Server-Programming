@@ -31,6 +31,18 @@ struct CSPacketKeyInput : public Packet
 };
 
 /// <summary>
+/// 대화 메시지, 대상이 -1이면 모두에게 보낸다.
+/// </summary>
+struct CSPacketChatMessage : public Packet
+{
+	CSPacketChatMessage(PID fid, PID tid, const WCHAR* msg, size_t length);
+	CSPacketChatMessage(PID fid, PID tid, const WCHAR msg[]);
+
+	PID targetID;
+	WCHAR Caption[100];
+};
+
+/// <summary>
 /// 새로 접속한 플레이어에게 ID 부여, 현재 동접자 수, 최대 동접자 수 알리기
 /// (첫 접속 시에만 실행)
 /// </summary>
@@ -58,9 +70,9 @@ struct SCPacketCreatePlayer : public Packet
 /// </summary>
 struct SCPacketAppearCharacter : public Packet
 {
-	SCPacketAppearCharacter(PID cid, int type, float cx, float cy);
+	SCPacketAppearCharacter(PID cid, ENTITY_TYPES type, float cx, float cy);
 
-	int myType;
+	ENTITY_TYPES myType;
 	float x, y;
 };
 
@@ -80,6 +92,17 @@ struct SCPacketMoveCharacter : public Packet
 struct SCPacketDisppearCharacter : public Packet
 {
 	SCPacketDisppearCharacter(PID cid);
+};
+
+/// <summary>
+/// 대화 메시지, 대상이 -1이면 모두에게 보낸다.
+/// </summary>
+struct SCPacketChatMessage : public Packet
+{
+	SCPacketChatMessage(PID tid, const WCHAR* msg, size_t length);
+	SCPacketChatMessage(PID tid, const WCHAR msg[]);
+
+	WCHAR Caption[100];
 };
 
 /// <summary>

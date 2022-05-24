@@ -10,6 +10,16 @@
 
 constexpr USHORT PORT = 6000;
 
+int SightDistance(const XMFLOAT3& pos1, const XMFLOAT3 pos2)
+{
+	const auto x1 = int(pos1.x);
+	const auto y1 = int(pos1.y);
+	const auto x2 = int(pos2.x);
+	const auto y2 = int(pos2.y);
+
+	return int(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2));
+}
+
 IOCPFramework::IOCPFramework()
 	: acceptOverlap(), acceptBytes(0), acceptCBuffer()
 	, serverKey(100)
@@ -239,38 +249,46 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	curr_sector->Release();
 
 	// 2. 시야 사각형에 닿는 구역들을 찾는다.
-	 
+	std::vector<mySector&> additions;
+
 	constexpr int sgh_w = SIGHT_CELLS_RAD_H;
 	constexpr int sgh_h = SIGHT_CELLS_RAD_V;
 
 	const auto lu_coords = curr_coords + int_pair{ -sgh_w, -sgh_h };
-	//const auto& lu_sector = mySightManager.At(lu_coords);
-	const auto ru_coords = curr_coords + int_pair{ +sgh_w, -sgh_h };
-	//const auto& ru_sector = mySightManager.At(ru_coords);
-	const auto ld_coords = curr_coords + int_pair{ -sgh_w, +sgh_h };
-	//const auto& ld_sector = mySightManager.At(ld_coords);
-	const auto rd_coords = curr_coords + int_pair{ +sgh_w, +sgh_h };
-	//const auto& rd_sector = mySightManager.At(rd_coords);
+	if (0 < lu_coords.first && 0 < lu_coords.second)
+	{
+		//const auto& lu_sector = mySightManager.At(lu_coords);
+		additions.push_back(mySightManager.At(lu_coords));
+	}
 
-	// 주변 구역의 개체를 시야 목록에 등록
-	constexpr int_pair pos_pairs[] = {
-		{ -1, -1 }, { -1, 0 }, { -1, +1 },
-		{  0, -1 }, {  0, 0 }, { +1, +1 },
-		{ +1, -1 }, { +1, 0 }, { +1, +1 }
-	};
+	const auto ru_coords = curr_coords + int_pair{ +sgh_w, -sgh_h };
+	if (lu_coords.first < WORLD_CELLS_CNT_H && 0 < ru_coords.second)
+	{
+		//const auto& ru_sector = mySightManager.At(ru_coords);
+		additions.push_back(mySightManager.At(ru_coords));
+	}
+
+	const auto ld_coords = curr_coords + int_pair{ -sgh_w, +sgh_h };
+	if (0 < ld_coords.first && ld_coords.second < WORLD_CELLS_CNT_V)
+	{
+		//const auto& ld_sector = mySightManager.At(ld_coords);
+		additions.push_back(mySightManager.At(ld_coords));
+	}
+
+	const auto rd_coords = curr_coords + int_pair{ +sgh_w, +sgh_h };
+	if (rd_coords.first < WORLD_CELLS_CNT_H && rd_coords.second < WORLD_CELLS_CNT_V)
+	{
+		//const auto& rd_sector = mySightManager.At(rd_coords);
+		additions.push_back(mySightManager.At(rd_coords));
+	}
+
 
 	// 주변의 시야 구역 열거
 	for (int k = 0; k < 9; ++k)
 	{
-		const auto indexes = pos_pairs[k];
-		const auto inter = curr_coords + indexes;
-		const auto index_x = indexes.first;
-		const auto index_y = indexes.second;
 
-		//auto& sector = At(index_x, index_y);
 
-		// 시야 구역 내에 있는 모든 플레이어 훑기
-		// 
+		// 주변 구역의 개체를 시야 목록에 등록
 	}
 
 	// 3. 각 구역의 시야 목록을 더한다.
@@ -351,6 +369,11 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	session->ReleaseID(my_id);
 
 	ReleaseClient(index, session);
+}
+
+SessionPtr IOCPFramework::CreateNPC(const UINT index, ENTITY_TYPES type, int info_index)
+{
+	return SessionPtr();
 }
 
 SessionPtr IOCPFramework::GetClient(const UINT index) const

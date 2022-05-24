@@ -201,6 +201,9 @@
     <ClInclude Include="SightSector.hpp" />
     <ClInclude Include="stdafx.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="SampleNPC.lua" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

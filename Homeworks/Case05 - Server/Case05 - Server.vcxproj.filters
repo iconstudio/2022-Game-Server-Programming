@@ -129,4 +129,9 @@
       <Filter>헤더 파일\Lua</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="SampleNPC.lua">
+      <Filter>헤더 파일\Lua</Filter>
+    </None>
+  </ItemGroup>
 </Project>
