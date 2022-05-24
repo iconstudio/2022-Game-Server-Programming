@@ -3,6 +3,11 @@
 
 TCHAR* msgBuffer = NULL;
 
+enum class ENTITY_TYPES : UCHAR
+{
+	NONE, NPC, QUEEST_NPC, MOB, BOSS, PLAYER
+};
+
 void ErrorDisplay(const char* title)
 {
 	FormatMessage(

@@ -54,7 +54,7 @@ class GameEntity;
 using PID = long long;
 class PlayerCharacter;
 class NonPlayerable;
-enum class ENTITY_TYPES;
+enum class ENTITY_TYPES : UCHAR;
 
 constexpr size_t BUFFSZ = 512;
 constexpr PID PLAYERS_ID_BEGIN = 10000;

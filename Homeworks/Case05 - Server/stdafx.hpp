@@ -16,6 +16,7 @@ class SightSector;
 class GameObject;
 class GameEntity;
 class PlayerCharacter;
+enum class ENTITY_TYPES : UCHAR;
 
 void ErrorDisplay(const char* title);
 
