@@ -19,7 +19,7 @@ using namespace std;
 #pragma comment (lib, "winmm.lib")
 #pragma comment (lib, "ws2_32.lib")
 
-#include "../Server_sample/protocol.h"
+#include "..\..\multi_iocp_server\multi_iocp_server\protocol.h"
 sf::TcpSocket socket;
 
 constexpr auto SCREEN_WIDTH = 9;
@@ -80,7 +80,10 @@ public:
 };
 
 OBJECT avatar;
+//unordered_map<int, OBJECT> players;
+//unordered_map<int, OBJECT> npcs;
 OBJECT players[MAX_USER];
+OBJECT npcs[NUM_NPC];
 
 OBJECT white_tile;
 OBJECT black_tile;
@@ -94,14 +97,15 @@ void client_initialize()
 	pieces = new sf::Texture;
 	board->loadFromFile("chessmap.bmp");
 	pieces->loadFromFile("chess2.png");
-
 	white_tile = OBJECT{ *board, 5, 5, TILE_WIDTH, TILE_WIDTH };
 	black_tile = OBJECT{ *board, 69, 5, TILE_WIDTH, TILE_WIDTH };
-
 	avatar = OBJECT{ *pieces, 128, 0, 64, 64 };
 	avatar.move(4, 4);
 	for (auto& pl : players) {
 		pl = OBJECT{ *pieces, 64, 0, 64, 64 };
+	}
+	for (auto& pl : npcs) {
+		pl = OBJECT{ *pieces, 0, 0, 64, 64 };
 	}
 }
 
@@ -122,6 +126,9 @@ void ProcessPacket(char* ptr)
 		g_myid = packet->id;
 		avatar.m_x = packet->x;
 		avatar.m_y = packet->y;
+
+		g_left_x = packet->x - 4;
+		g_top_y = packet->y - 4;
 		avatar.show();
 		break;
 	}
@@ -136,9 +143,8 @@ void ProcessPacket(char* ptr)
 			players[id].show();
 		}
 		else {
-			//npc[id - NPC_START].x = my_packet->x;
-			//npc[id - NPC_START].y = my_packet->y;
-			//npc[id - NPC_START].attr |= BOB_ATTR_VISIBLE;
+			npcs[id - MAX_USER].move(my_packet->x, my_packet->y);
+			npcs[id - MAX_USER].show();
 		}
 		break;
 	}
@@ -148,19 +154,14 @@ void ProcessPacket(char* ptr)
 		int other_id = my_packet->id;
 		if (other_id == g_myid) {
 			avatar.move(my_packet->x, my_packet->y);
-
-			// 
-			g_left_x = 
-				my_packet->x - 4;
-			g_top_y = 
-				my_packet->y - 4;
+			g_left_x = my_packet->x - 4;
+			g_top_y = my_packet->y - 4;
 		}
 		else if (other_id < MAX_USER) {
 			players[other_id].move(my_packet->x, my_packet->y);
 		}
 		else {
-			//npc[other_id - NPC_START].x = my_packet->x;
-			//npc[other_id - NPC_START].y = my_packet->y;
+			npcs[other_id - MAX_USER].move(my_packet->x, my_packet->y);
 		}
 		break;
 	}
@@ -176,7 +177,7 @@ void ProcessPacket(char* ptr)
 			players[other_id].hide();
 		}
 		else {
-			//		npc[other_id - NPC_START].attr &= ~BOB_ATTR_VISIBLE;
+			npcs[other_id - MAX_USER].hide();
 		}
 		break;
 	}
@@ -229,7 +230,6 @@ void client_main()
 		{
 			int tile_x = i + g_left_x;
 			int tile_y = j + g_top_y;
-
 			if ((tile_x < 0) || (tile_y < 0)) continue;
 			if (((tile_x + tile_y) % 6) < 3) {
 				white_tile.a_move(TILE_WIDTH * i + 7, TILE_WIDTH * j + 7);
@@ -243,6 +243,7 @@ void client_main()
 		}
 	avatar.draw();
 	for (auto& pl : players) pl.draw();
+	for (auto& pl : npcs) pl.draw();
 }
 
 void send_packet(void *packet)
