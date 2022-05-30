@@ -27,7 +27,7 @@ bool PlayerCharacter::TryMoveLT()
 {
 	if (8.0f < myPosition.x)
 	{
-		myPosition.x -= 5.0f;
+		myPosition.x -= 16.0f;
 		return true;
 	}
 	else if (myPosition.x != 8.0f)
@@ -42,7 +42,7 @@ bool PlayerCharacter::TryMoveRT()
 {
 	if (myPosition.x < WORLD_W - 8.0f)
 	{
-		myPosition.x += 5.0f;
+		myPosition.x += 16.0f;
 		return true;
 	}
 	else if (myPosition.x != WORLD_W - 8.0f)
@@ -57,7 +57,7 @@ bool PlayerCharacter::TryMoveUP()
 {
 	if (8.0f < myPosition.y)
 	{
-		myPosition.y -= 5.0f;
+		myPosition.y -= 16.0f;
 		return true;
 	}
 	else if (myPosition.y != 8.0f)
@@ -72,7 +72,7 @@ bool PlayerCharacter::TryMoveDW()
 {
 	if (myPosition.y < WORLD_H - 8.0f)
 	{
-		myPosition.y += 5.0f;
+		myPosition.y += 16.0f;
 		return true;
 	}
 	else if (myPosition.y != WORLD_H - 8.0f)

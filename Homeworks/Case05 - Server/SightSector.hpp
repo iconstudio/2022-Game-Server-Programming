@@ -13,7 +13,7 @@ public:
 	void Add(const PID id);
 	void Remove(const PID id);
 
-	std::vector<PID> GetSightList() const;
+	std::unordered_set<PID> GetSightList() const;
 
 	bool operator==(const SightSector& other) const noexcept;
 
@@ -22,5 +22,5 @@ public:
 private:
 	std::atomic_flag isOwned;
 
-	std::vector<PID> mySight;
+	std::unordered_set<PID> mySight;
 };

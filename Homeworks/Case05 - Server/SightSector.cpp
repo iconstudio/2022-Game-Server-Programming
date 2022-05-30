@@ -30,22 +30,21 @@ bool SightSector::TryAcquire()
 
 void SightSector::Add(const PID id)
 {
-	mySight.push_back(id);
-	std::sort(mySight.begin(), mySight.end());
+	mySight.insert(id);
 }
 
 void SightSector::Remove(const PID id)
 {
-	auto it = std::find(mySight.begin(), mySight.end(), id);
+	auto it = mySight.find(id);
 	if (mySight.end() != it)
 	{
 		mySight.erase(it);
 	}
 }
 
-std::vector<PID> SightSector::GetSightList() const
+std::unordered_set<PID> SightSector::GetSightList() const
 {
-	return std::vector<PID>{ mySight };
+	return std::unordered_set<PID>{ mySight };
 }
 
 bool SightSector::operator==(const SightSector& other) const noexcept

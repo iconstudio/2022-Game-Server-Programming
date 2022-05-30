@@ -247,8 +247,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	}
 
 	// 1. 자기가 속한 구역의 목록을 얻는다.
-	std::vector<PID> viewlist_curr = curr_sector->GetSightList();
-	viewlist_curr.reserve(viewlist_curr.capacity() + 50);
+	auto viewlist_curr = curr_sector->GetSightList();
 
 	// 2. 시야 사각형에 닿는 구역들을 찾는다.
 	//std::unordered_set<PID> additions;
@@ -263,7 +262,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	{
 		const auto& list = mySightManager.At(lu_coords)->GetSightList();
 		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
-			viewlist_curr.push_back(ot_id);
+			viewlist_curr.insert(ot_id);
 		});
 		//additions.insert(list.begin(), list.end());
 	}
@@ -273,7 +272,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	{
 		const auto& list = mySightManager.At(ru_coords)->GetSightList();
 		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
-			viewlist_curr.push_back(ot_id);
+			viewlist_curr.insert(ot_id);
 		});
 		//additions.insert(list.begin(), list.end());
 	}
@@ -283,7 +282,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	{
 		const auto& list = mySightManager.At(ld_coords)->GetSightList();
 		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
-			viewlist_curr.push_back(ot_id);
+			viewlist_curr.insert(ot_id);
 		});
 		//additions.insert(list.begin(), list.end());
 	}
@@ -293,7 +292,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	{
 		const auto& list = mySightManager.At(rd_coords)->GetSightList();
 		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
-			viewlist_curr.push_back(ot_id);
+			viewlist_curr.insert(ot_id);
 		});
 		//additions.insert(list.begin(), list.end());
 	}
