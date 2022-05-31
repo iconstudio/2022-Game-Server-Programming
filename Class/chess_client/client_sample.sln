@@ -11,6 +11,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "2020_StressW", "2020_Stress
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Lua", "Lua\Lua.vcxproj", "{3B7B7EE8-66B9-43B9-8E74-F82413C8327A}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Database", "Database\Database.vcxproj", "{3A761976-BFC4-44C3-8D26-C67BCCAAE0B7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -51,6 +53,14 @@ Global
 		{3B7B7EE8-66B9-43B9-8E74-F82413C8327A}.Release|x64.Build.0 = Release|x64
 		{3B7B7EE8-66B9-43B9-8E74-F82413C8327A}.Release|x86.ActiveCfg = Release|Win32
 		{3B7B7EE8-66B9-43B9-8E74-F82413C8327A}.Release|x86.Build.0 = Release|Win32
+		{3A761976-BFC4-44C3-8D26-C67BCCAAE0B7}.Debug|x64.ActiveCfg = Debug|x64
+		{3A761976-BFC4-44C3-8D26-C67BCCAAE0B7}.Debug|x64.Build.0 = Debug|x64
+		{3A761976-BFC4-44C3-8D26-C67BCCAAE0B7}.Debug|x86.ActiveCfg = Debug|Win32
+		{3A761976-BFC4-44C3-8D26-C67BCCAAE0B7}.Debug|x86.Build.0 = Debug|Win32
+		{3A761976-BFC4-44C3-8D26-C67BCCAAE0B7}.Release|x64.ActiveCfg = Release|x64
+		{3A761976-BFC4-44C3-8D26-C67BCCAAE0B7}.Release|x64.Build.0 = Release|x64
+		{3A761976-BFC4-44C3-8D26-C67BCCAAE0B7}.Release|x86.ActiveCfg = Release|Win32
+		{3A761976-BFC4-44C3-8D26-C67BCCAAE0B7}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
