@@ -51,6 +51,7 @@ int GetNewClientID()
 
 class session// : public std::enable_shared_from_this<session>
 {
+public:
 	int my_id_;
 	tcp::socket socket_; // 소멸자에서 소켓 삭제, 멀티스레드 환경에서 오류 발생 가능성
 
@@ -259,7 +260,8 @@ void do_accept(boost::asio::io_context& io_service, int port)
 		t_acceptor.async_accept(sk, [&](boost::system::error_code ec) {
 			if (!ec)
 			{
-				class session* new_session = new session(t_socket);
+				auto new_session = new session(t_socket);
+
 				players[new_id].my_session = new_session;
 				players[new_id].my_session->start();
 			}
@@ -274,8 +276,9 @@ void worker_thread(boost::asio::io_context* service)
 
 int main()
 {
-	boost::asio::io_service io_service;
-	vector <thread*> worker_threads;
+	boost::asio::io_context io_service{};
+	vector <thread*> worker_threads{};
+
 	Init_Server();
 	do_accept(io_service, PORT_NUM);
 
