@@ -7,7 +7,6 @@ CSPacketSignIn::CSPacketSignIn(const CHAR* nickname)
 	: Packet(PACKET_TYPES::CS_SIGNIN, sizeof(CSPacketSignIn), 0)
 	, Nickname()
 {
-	ZeroMemory(Nickname, sizeof(Nickname));
 	strcpy_s(Nickname, nickname);
 }
 
@@ -15,8 +14,8 @@ CSPacketSignOut::CSPacketSignOut(PID pid)
 	: Packet(PACKET_TYPES::CS_SIGNOUT, pid)
 {}
 
-CSPacketKeyInput::CSPacketKeyInput(PID pid, WPARAM key)
-	: Packet(PACKET_TYPES::CS_KEY, sizeof(CSPacketKeyInput), pid)
+CSPacketMove::CSPacketMove(PID pid, UCHAR key)
+	: Packet(PACKET_TYPES::CS_MOVE, sizeof(CSPacketMove), pid)
 	, Key(key)
 {}
 
@@ -29,22 +28,21 @@ SCPacketCreatePlayer::SCPacketCreatePlayer(PID pid, const CHAR* nickname)
 	: Packet(PACKET_TYPES::SC_CREATE_PLAYER, sizeof(SCPacketCreatePlayer), pid)
 	, Nickname()
 {
-	ZeroMemory(Nickname, sizeof(Nickname));
 	strcpy_s(Nickname, nickname);
 }
 
 SCPacketAppearCharacter::SCPacketAppearCharacter(PID cid, ENTITY_TYPES type, float nx, float ny)
-	: Packet(PACKET_TYPES::SC_APPEAR_CHARACTER, sizeof(SCPacketAppearCharacter), cid)
+	: Packet(PACKET_TYPES::SC_APPEAR_OBJ, sizeof(SCPacketAppearCharacter), cid)
 	, myType(type), x(nx), y(ny)
 {}
 
 SCPacketMoveCharacter::SCPacketMoveCharacter(PID cid, float nx, float ny)
-	: Packet(PACKET_TYPES::SC_MOVE_CHARACTER, sizeof(SCPacketMoveCharacter), cid)
+	: Packet(PACKET_TYPES::SC_MOVE_OBJ, sizeof(SCPacketMoveCharacter), cid)
 	, x(nx), y(ny)
 {}
 
 SCPacketDisppearCharacter::SCPacketDisppearCharacter(PID cid)
-	: Packet(PACKET_TYPES::SC_DISAPPEAR_CHARACTER, cid)
+	: Packet(PACKET_TYPES::SC_DISAPPEAR_OBJ, cid)
 {}
 
 SCPacketSignOut::SCPacketSignOut(PID pid, UINT users)
@@ -56,7 +54,6 @@ CSPacketChatMessage::CSPacketChatMessage(PID fid, PID tid, const WCHAR* msg, siz
 	: Packet(PACKET_TYPES::CS_CHAT, sizeof(CSPacketChatMessage), fid)
 	, Caption()
 {
-	ZeroMemory(Caption, sizeof(Caption));
 	lstrcpyn(Caption, msg, length);
 }
 
@@ -64,7 +61,6 @@ CSPacketChatMessage::CSPacketChatMessage(PID fid, PID tid, const WCHAR msg[])
 	: Packet(PACKET_TYPES::CS_CHAT, sizeof(CSPacketChatMessage), fid)
 	, Caption()
 {
-	ZeroMemory(Caption, sizeof(Caption));
 	lstrcpy(Caption, msg);
 }
 
@@ -72,7 +68,6 @@ SCPacketChatMessage::SCPacketChatMessage(PID tid, const WCHAR* msg, size_t lengt
 	: Packet(PACKET_TYPES::SC_CHAT, sizeof(SCPacketChatMessage), tid)
 	, Caption()
 {
-	ZeroMemory(Caption, sizeof(Caption));
 	lstrcpyn(Caption, msg, length);
 }
 
@@ -80,6 +75,5 @@ SCPacketChatMessage::SCPacketChatMessage(PID tid, const WCHAR msg[])
 	: Packet(PACKET_TYPES::SC_CHAT, sizeof(SCPacketChatMessage), tid)
 	, Caption()
 {
-	ZeroMemory(Caption, sizeof(Caption));
 	lstrcpy(Caption, msg);
 }

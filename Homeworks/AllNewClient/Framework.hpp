@@ -49,9 +49,10 @@ private:
 	std::vector<unique_ptr<Packet>> myTasks;
 
 	std::unordered_map<string, shared_ptr<Scene>> myScenes;
-	std::vector<shared_ptr<Scene>> myPipeline;
-	std::vector<shared_ptr<Scene>>::reverse_iterator myPipelineIterator;
+	std::vector<shared_ptr<Scene>> myStages;
+	std::vector<shared_ptr<Scene>>::reverse_iterator myStageIterator;
 	shared_ptr<Scene> myState;
+	shared_ptr<GameObject> myViewFollower;
 
 	bool isPaused;
 

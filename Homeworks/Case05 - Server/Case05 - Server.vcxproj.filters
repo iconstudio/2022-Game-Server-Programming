@@ -45,9 +45,6 @@
     <ClCompile Include="Packet.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="GameEntity.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="PlayerCharacter.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -87,9 +84,6 @@
       <Filter>헤더 파일\Network</Filter>
     </ClInclude>
     <ClInclude Include="Framework.hpp">
-      <Filter>헤더 파일\System</Filter>
-    </ClInclude>
-    <ClInclude Include="GameEntity.hpp">
       <Filter>헤더 파일\System</Filter>
     </ClInclude>
     <ClInclude Include="GameObject.hpp">

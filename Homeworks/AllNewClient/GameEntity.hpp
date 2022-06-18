@@ -1,11 +1,6 @@
 #pragma once
 #include "GameObject.hpp"
 
-enum class ENTITY_TYPES : UCHAR
-{
-	NONE, NPC, QUEEST_NPC, MOB, BOSS, PLAYER
-};
-
 class GameEntity : public GameObject
 {
 public:

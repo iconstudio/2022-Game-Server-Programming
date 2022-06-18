@@ -1,7 +1,6 @@
 #pragma once
-#include "stdafx.hpp"
 #include "Asynchron.hpp"
-#include "GameEntity.hpp"
+#include "GameObject.hpp"
 #include "PlayerCharacter.hpp"
 
 class Session
@@ -18,6 +17,7 @@ public:
 	virtual void RemoveSight(const PID id);
 
 	void AssignSight(const concurrent_set<PID>& view);
+	void AssignSight(const std::unordered_set<PID>& view);
 	void AssignSight(const std::vector<PID>& view);
 	void AssignSight(std::vector<PID>&& view);
 

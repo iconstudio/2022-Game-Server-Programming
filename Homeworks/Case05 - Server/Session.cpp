@@ -60,6 +60,12 @@ void Session::AssignSight(const concurrent_set<PID>& view)
 	myViewList = (view);
 }
 
+void Session::AssignSight(const std::unordered_set<PID>& view)
+{
+	myViewList.clear();
+	myViewList.insert(view.begin(), view.end());
+}
+
 void Session::AssignSight(const std::vector<PID>& view)
 {
 	myViewList.clear();
@@ -221,9 +227,9 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 			}
 			break;
 
-			case PACKET_TYPES::CS_KEY:
+			case PACKET_TYPES::CS_MOVE:
 			{
-				auto result = reinterpret_cast<CSPacketKeyInput*>(cbuffer);
+				auto result = reinterpret_cast<CSPacketMove*>(cbuffer);
 
 				if (pid == ID && Instance)
 				{

@@ -1,7 +1,7 @@
 #pragma once
-#include "GameEntity.hpp"
+#include "GameObject.hpp"
 
-class PlayerCharacter : public GameEntity
+class PlayerCharacter : public GameObject
 {
 public:
 	PlayerCharacter(PID id, float x, float y, float z);

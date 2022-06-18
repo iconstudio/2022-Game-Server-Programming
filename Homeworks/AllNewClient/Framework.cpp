@@ -6,14 +6,15 @@
 #include "Scene.hpp"
 
 Framework::Framework(Network& network)
-	: myScenes(), myPipeline(), myState(nullptr)
+	: myScenes(), myStages(), myState(nullptr)
 	, appHandle(NULL), myNetwork(network), myTasks()
+	, myViewFollower(nullptr)
 	, isPaused(false)
 	, appSurface(NULL), appPainter()
 {
 	myTasks.reserve(1000);
 	myScenes.reserve(10);
-	myPipeline.reserve(10);
+	myStages.reserve(10);
 }
 
 Framework::~Framework()
@@ -36,7 +37,7 @@ void Framework::AddRoom(Scene* scene)
 
 bool Framework::JumpToNextScene()
 {
-	if (0 < myPipeline.size() && myPipeline.rend() != myPipelineIterator)
+	if (0 < myStages.size() && myStages.rend() != myStageIterator)
 	{
 		myState = Pop();
 		myState->Start();
@@ -50,9 +51,9 @@ bool Framework::JumpToNextScene()
 
 bool Framework::JumpToPrevScene()
 {
-	if (0 < myPipeline.size() && myPipeline.rbegin() != myPipelineIterator)
+	if (0 < myStages.size() && myStages.rbegin() != myStageIterator)
 	{
-		myState = *(--myPipelineIterator);
+		myState = *(--myStageIterator);
 		myState->Start();
 		InvalidateRect(NULL, NULL, FALSE);
 
@@ -65,15 +66,15 @@ bool Framework::JumpToPrevScene()
 bool Framework::JumpTo(const char* scene_name)
 {
 	auto scene = GetScene(scene_name);
-	auto it = std::find_if(myPipeline.rbegin(), myPipeline.rend()
+	auto it = std::find_if(myStages.rbegin(), myStages.rend()
 		, [scene_name](const shared_ptr<Scene>& scene) {
 		return (0 == std::strcmp(scene_name, scene->myName.c_str()));
 	});
 
-	if (it != myPipelineIterator)
+	if (it != myStageIterator)
 	{
-		myPipelineIterator = it;
-		myState = *myPipelineIterator;
+		myStageIterator = it;
+		myState = *myStageIterator;
 		myState->Start();
 	}
 
@@ -104,10 +105,10 @@ void Framework::Awake()
 
 void Framework::Start()
 {
-	if (0 < myPipeline.size())
+	if (0 < myStages.size())
 	{
-		std::reverse(myPipeline.begin(), myPipeline.end());
-		myPipelineIterator = myPipeline.rbegin();
+		std::reverse(myStages.begin(), myStages.end());
+		myStageIterator = myStages.rbegin();
 
 		myState = Pop();
 
@@ -248,14 +249,14 @@ shared_ptr<Scene> Framework::Push(Scene* scene)
 	auto ptr = shared_ptr<Scene>(scene);
 
 	Register(ptr);
-	myPipeline.push_back(ptr);
+	myStages.push_back(ptr);
 
 	return ptr;
 }
 
 shared_ptr<Scene> Framework::Pop()
 {
-	return *(myPipelineIterator++);
+	return *(myStageIterator++);
 }
 
 shared_ptr<Scene> Framework::GetScene(const char* name) const

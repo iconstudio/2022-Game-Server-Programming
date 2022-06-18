@@ -1,48 +1,128 @@
 #pragma once
-#include "pch.hpp"
 
-class IOCPFramework;
-class Session;
-class Packet;
-class Asynchron;
-enum class SESSION_STATES;
-enum class OVERLAP_OPS : UCHAR;
-enum class PACKET_TYPES : UCHAR;
+#pragma comment(lib, "MSWSock.lib")
+#pragma comment(lib, "Ws2_32.lib")
+#define _WINSOCK_DEPRECATED_NO_WARNINGS
+#include <WS2tcpip.h>
+#include <MSWSock.h>
 
-class GameCamera;
-class SightManager;
-class SightSector;
+extern "C" {
+#include "include/luaconf.h"
+#include "include/lauxlib.h"
+#include "include/lualib.h"
+#include "include/lua.h"
+}
 
-class GameObject;
-class GameEntity;
-class PlayerCharacter;
-enum class ENTITY_TYPES : UCHAR;
+#include <string>
+#include <iostream>
+#include <mutex>
+#include <thread>
+#include <atomic>
+#include <chrono>
+#include <optional>
+#include <memory>
+#include <numeric>
+#include <concurrent_vector.h>
+#include <concurrent_unordered_map.h>
+#include <concurrent_unordered_set.h>
+#include <vector>
+#include <array>
+#include <unordered_set>
+#include <unordered_map>
+#include <algorithm>
+
+using std::string;
+using std::array;
+using std::shared_ptr;
+using std::unique_ptr;
+using std::weak_ptr;
+using std::optional;
+using std::atomic;
+using std::atomic_bool;
+using std::atomic_int;
+using std::atomic_uint;
+using std::make_shared;
+using std::make_unique;
+
+using int_pair = std::pair<int, int>;
+using float_pair = std::pair<float, float>;
+using Clock = std::chrono::system_clock::time_point;
+using Duration = std::chrono::system_clock::duration;
+
+template<typename Ty1, typename Ty2>
+	requires std::is_arithmetic_v<Ty1>&& std::is_arithmetic_v<Ty2>
+constexpr std::pair<Ty1, Ty2> operator+(std::pair<Ty1, Ty2>&& lhs
+	, std::pair<Ty1, Ty2>&& rhs)
+{
+	return std::make_pair<Ty1, Ty2>(
+		std::forward<Ty1>(lhs.first) + std::forward<Ty1>(rhs.first)
+		, std::forward<Ty2>(lhs.second) + std::forward<Ty2>(rhs.second));
+}
+
+template<typename Ty1, typename Ty2>
+	requires std::is_arithmetic_v<Ty1>&& std::is_arithmetic_v<Ty2>
+constexpr std::pair<Ty1, Ty2> operator+(const std::pair<Ty1, Ty2>& lhs
+	, const std::pair<Ty1, Ty2>& rhs)
+{
+	return std::make_pair<Ty1, Ty2>(lhs.first + rhs.first, lhs.second + rhs.second);
+}
+
+template<typename Ty>
+	requires std::is_arithmetic_v<Ty>
+constexpr std::pair<Ty, Ty> operator+(std::pair<Ty, Ty>&& lhs
+	, std::pair<Ty, Ty>&& rhs)
+{
+	return std::make_pair<Ty, Ty>(
+		std::forward<Ty>(lhs.first) + std::forward<Ty>(rhs.first)
+		, std::forward<Ty>(lhs.second) + std::forward<Ty>(rhs.second));
+}
+
+template<typename Type>
+using concurrent_vector = Concurrency::concurrent_vector<Type>;
+template<typename Type>
+using shared_concurrent_vector = concurrent_vector<shared_ptr<Type>>;
+template<typename Type>
+using weak_concurrent_vector = concurrent_vector<weak_ptr<Type>>;
+template<typename Type>
+using unique_concurrent_vector = concurrent_vector<unique_ptr<Type>>;
+
+template<typename KeyType, typename ValueType>
+using concurrent_map = Concurrency::concurrent_unordered_map<KeyType, ValueType>;
+template<typename KeyType>
+using concurrent_set = Concurrency::concurrent_unordered_set<KeyType>;
+template<typename KeyType, typename ValueType>
+using shared_concurrent_map = concurrent_map<KeyType, shared_ptr<ValueType>>;
+template<typename KeyType>
+using shared_concurrent_set = Concurrency::concurrent_unordered_set<shared_ptr<KeyType>>;
+
+template<typename Type>
+using shared_atomic = atomic<shared_ptr<Type>>;
+template<typename Type>
+using weak_atomic = atomic<weak_ptr<Type>>;
+
+template<typename Type>
+using shared_atomic_concurrent_vector = concurrent_vector<shared_atomic<Type>>;
+template<typename Type>
+using weak_atomic_concurrent_vector = concurrent_vector<weak_atomic<Type>>;
+template<typename KeyType, typename ValueType>
+using shared_atomic_concurrent_map = concurrent_map<KeyType, shared_atomic<ValueType>>;
+template<typename KeyType>
+using shared_atomic_concurrent_set = Concurrency::concurrent_unordered_set<shared_atomic<KeyType>>;
+
+constexpr double PI = 3.141592653589793;
+
+template<typename T>
+constexpr T dcos(T value)
+{
+	return std::cos(value * PI / 180);
+}
+
+template<typename T>
+constexpr T dsin(T value)
+{
+	return std::sin(value * PI / 180);
+}
 
 void ErrorDisplay(const char* title);
 
-constexpr UINT PLAYERS_MAX_NUMBER = 10000;
-constexpr UINT NPC_MAX_NUMBER = 10000;
-constexpr UINT ENTITIES_MAX_NUMBER = PLAYERS_MAX_NUMBER + NPC_MAX_NUMBER;
-constexpr UINT CLIENTS_ORDER_BEGIN = NPC_MAX_NUMBER;
-
-constexpr PID NPC_ID_BEGIN = 0;
-constexpr PID CLIENTS_ID_BEGIN = PID(NPC_MAX_NUMBER);
-
-constexpr float CELL_SIZE = 32.0f;
-constexpr float CELL_W = CELL_SIZE;
-constexpr float CELL_H = CELL_SIZE;
-
-constexpr int WORLD_CELLS_CNT_H = 400;
-constexpr int WORLD_CELLS_CNT_V = 400;
-constexpr float WORLD_W = CELL_W * WORLD_CELLS_CNT_H;
-constexpr float WORLD_H = CELL_H * WORLD_CELLS_CNT_V;
-
-constexpr int SIGHT_CELLS_CNT_H = 11;
-constexpr int SIGHT_CELLS_CNT_V = 11;
-constexpr int SIGHT_CELLS_RAD_H = SIGHT_CELLS_CNT_H / 2;
-constexpr int SIGHT_CELLS_RAD_V = SIGHT_CELLS_CNT_H / 2;
-
-constexpr float SIGHT_W = CELL_W * SIGHT_CELLS_CNT_H;
-constexpr float SIGHT_H = CELL_H * SIGHT_CELLS_CNT_V;
-constexpr float SIGHT_RAD_W = CELL_W * SIGHT_CELLS_RAD_H;
-constexpr float SIGHT_RAD_H = CELL_H * SIGHT_CELLS_RAD_V;
+using PID = long long;

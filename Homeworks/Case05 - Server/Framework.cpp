@@ -10,12 +10,12 @@
 
 constexpr USHORT PORT = 6000;
 
-int SightDistance(const XMFLOAT3& pos1, const XMFLOAT3 pos2)
+int SightDistance(const float pos1[2], const float pos2[2])
 {
-	const auto x1 = int(pos1.x);
-	const auto y1 = int(pos1.y);
-	const auto x2 = int(pos2.x);
-	const auto y2 = int(pos2.y);
+	const auto x1 = int(pos1[0]);
+	const auto y1 = int(pos1[1]);
+	const auto x2 = int(pos2[0]);
+	const auto y2 = int(pos2[1]);
 
 	return int(std::pow(x1 - x2, 2) + std::pow(y1 - y2, 2));
 }
@@ -219,7 +219,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	const auto& my_type = character->myType;
 
 	// 0. 자기 캐릭터가 속한 구역을 갱신한다.
-	const auto curr_pos = float_pair(my_pos.x, my_pos.y);
+	const auto curr_pos = float_pair(my_pos[0], my_pos[1]);
 	const auto curr_coords = mySightManager.PickCoords(curr_pos);
 	auto& curr_sector = mySightManager.At(curr_coords);
 
@@ -336,23 +336,23 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 		{
 			// Appear: 새로운 개체 등록
 			session->AddSight(cid);
-			SendAppearEntity(session, cid, ot_inst->myType, ot_pos.x, ot_pos.y);
+			SendAppearEntity(session, cid, ot_inst->myType, ot_pos[0], ot_pos[1]);
 
 			// 상대도 개체 등록
 			if (ot_is_player)
 			{
 				other->AddSight(my_id);
-				SendAppearEntity(other, my_id, my_type, my_pos.x, my_pos.y);
+				SendAppearEntity(other, my_id, my_type, my_pos[0], my_pos[1]);
 			}
 			cit++;
 		}
 		else
 		{
 			// Move
-			SendMoveEntity(session, cid, ot_pos.x, ot_pos.y);
+			SendMoveEntity(session, cid, ot_pos[0], ot_pos[1]);
 			if (ot_is_player)
 			{
-				SendMoveEntity(other, my_id, my_pos.x, my_pos.y);
+				SendMoveEntity(other, my_id, my_pos[0], my_pos[1]);
 			}
 
 			viewlist_prev.erase(pit);

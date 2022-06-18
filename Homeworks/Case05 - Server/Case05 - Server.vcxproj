@@ -160,7 +160,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Commons.cpp" />
-    <ClCompile Include="GameEntity.cpp" />
     <ClCompile Include="GameEvent.cpp" />
     <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="pch.cpp" />
@@ -182,7 +181,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Commons.hpp" />
-    <ClInclude Include="GameEntity.hpp" />
     <ClInclude Include="Framework.hpp" />
     <ClInclude Include="GameEvent.hpp" />
     <ClInclude Include="GameObject.hpp" />

@@ -23,11 +23,11 @@ struct CSPacketSignOut : public Packet
 /// <summary>
 /// 서버에 입력한 키 알림
 /// </summary>
-struct CSPacketKeyInput : public Packet
+struct CSPacketMove : public Packet
 {
-	CSPacketKeyInput(PID pid, WPARAM key);
+	CSPacketMove(PID pid, UCHAR key);
 
-	WPARAM Key;
+	const UCHAR Key;
 };
 
 /// <summary>
@@ -115,3 +115,25 @@ struct SCPacketSignOut : public Packet
 	UINT usersCurrent;
 };
 #pragma pack(pop)
+
+enum class PACKET_TYPES : UCHAR
+{
+	NONE = 0,
+	CS_SIGNIN,
+	CS_SIGNOUT,
+	CS_MOVE,
+	CS_ATTACK_TARGET,
+	CS_ATTACK_NONTARGET,
+	CS_ATTACK_PLACE,
+	CS_CHAT,
+
+	SC_SIGNUP,
+	SC_CREATE_PLAYER,
+	SC_SIGNOUT,
+	SC_CHAT,
+
+	SC_APPEAR_OBJ,
+	SC_DISAPPEAR_OBJ,
+	SC_MOVE_OBJ,
+	SC_STAT_OBJ,
+};

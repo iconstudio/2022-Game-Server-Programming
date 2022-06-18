@@ -8,15 +8,6 @@
 #include <WS2tcpip.h>
 #include <MSWSock.h>
 
-#include <DirectXMath.h>
-#include <DirectXPackedVector.h>
-#include <DirectXColors.h>
-#include <DirectXCollision.h>
-using DirectX::BoundingBox, DirectX::BoundingOrientedBox, DirectX::BoundingFrustum;
-using DirectX::XMFLOAT3, DirectX::XMFLOAT4, DirectX::XMFLOAT4X4;
-using DirectX::XMStoreFloat3, DirectX::XMStoreFloat4, DirectX::XMStoreFloat4x4;
-using DirectX::XMLoadFloat3, DirectX::XMLoadFloat4, DirectX::XMLoadFloat4x4;
-
 #include <string>
 #include <iostream>
 #include <mutex>

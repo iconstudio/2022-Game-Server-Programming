@@ -65,7 +65,7 @@ bool SceneMain::OnNetwork(const Packet& packet)
 		Complete();
 		return true;
 	}
-	else if (PACKET_TYPES::CS_KEY == packet.Type)
+	else if (PACKET_TYPES::CS_MOVE == packet.Type)
 	{
 		return true;
 	}
@@ -186,7 +186,7 @@ bool SceneLoading::OnNetwork(const Packet& packet)
 		Complete();
 		return false; // 처리는 안 하지만 종료는 함.
 	}
-	else if (PACKET_TYPES::CS_KEY == packet.Type)
+	else if (PACKET_TYPES::CS_MOVE == packet.Type)
 	{
 		return true;
 	}
@@ -252,7 +252,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 
 		return true;
 	}
-	else if (PACKET_TYPES::SC_APPEAR_CHARACTER == packet_type)
+	else if (PACKET_TYPES::SC_APPEAR_OBJ == packet_type)
 	{
 		auto ticket = const_cast<Packet*>(&packet);
 		const auto rp = static_cast<SCPacketAppearCharacter*>(ticket);
@@ -279,7 +279,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 
 		return true;
 	}
-	else if (PACKET_TYPES::SC_DISAPPEAR_CHARACTER == packet_type)
+	else if (PACKET_TYPES::SC_DISAPPEAR_OBJ == packet_type)
 	{
 		// 다른 플레이어의 캐릭터 삭제
 		auto rit = std::find_if(myLocalInstances.begin()
@@ -297,7 +297,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 
 		return true;
 	}
-	else if (PACKET_TYPES::SC_MOVE_CHARACTER == packet_type)
+	else if (PACKET_TYPES::SC_MOVE_OBJ == packet_type)
 	{
 		auto ticket = const_cast<Packet*>(&packet);
 		const auto rp = static_cast<SCPacketMoveCharacter*>(ticket);
@@ -321,7 +321,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	{
 		return true;
 	}
-	else if (PACKET_TYPES::CS_KEY == packet.Type)
+	else if (PACKET_TYPES::CS_MOVE == packet.Type)
 	{
 		return true;
 	}

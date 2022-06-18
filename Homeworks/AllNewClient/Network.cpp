@@ -93,7 +93,7 @@ int Network::SendSignOutMsg()
 
 int Network::SendKeyMsg(WPARAM key)
 {
-	return SendPacket(new CSPacketKeyInput(myProfile.myID, key));
+	return SendPacket(new CSPacketMove(myProfile.myID, key));
 }
 
 bool Network::IsPlayer(PID id) const
@@ -174,21 +174,21 @@ std::vector<Packet*> Network::OnReceive(DWORD bytes)
 				}
 				break;
 
-				case PACKET_TYPES::SC_APPEAR_CHARACTER:
+				case PACKET_TYPES::SC_APPEAR_OBJ:
 				{
 					auto rp = reinterpret_cast<SCPacketAppearCharacter*>(cbuffer);
 					result.push_back(new SCPacketAppearCharacter(*rp));
 				}
 				break;
 
-				case PACKET_TYPES::SC_DISAPPEAR_CHARACTER:
+				case PACKET_TYPES::SC_DISAPPEAR_OBJ:
 				{
 					auto rp = reinterpret_cast<SCPacketDisppearCharacter*>(cbuffer);
 					result.push_back(new SCPacketDisppearCharacter(*rp));
 				}
 				break;
 
-				case PACKET_TYPES::SC_MOVE_CHARACTER:
+				case PACKET_TYPES::SC_MOVE_OBJ:
 				{
 					auto rp = reinterpret_cast<SCPacketMoveCharacter*>(cbuffer);
 					result.push_back(new SCPacketMoveCharacter(*rp));
