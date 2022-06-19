@@ -39,7 +39,7 @@ public:
 			&recvOverlap._over, 0);
 	}
 
-	void do_send(const void* packet);
+	void do_send(const void* packet, size_t size);
 
 	void send_login_info_packet(size_t number_users);
 

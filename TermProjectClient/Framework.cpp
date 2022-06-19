@@ -145,6 +145,11 @@ void Framework::Render()
 		pl.second->Render(*clientPanel, view_x, view_y);
 	}
 
+	if (myAvatar)
+	{
+		myAvatar->Render(*clientPanel, view_x, view_y);
+	}
+
 	clientPanel->display();
 }
 
@@ -205,9 +210,11 @@ void Framework::ProcessStream()
 
 	while (0 != recvSize)
 	{
+		const auto view = reinterpret_cast<const Packet*>(ptr);
+
 		if (0 == wanted_size_min)
 		{
-			wanted_size_min = static_cast<size_t>(ptr[0]); // packet.size
+			wanted_size_min = static_cast<size_t>(view->mySize);
 		}
 
 		const auto got_size = recvSize + savedSize;
@@ -485,7 +492,7 @@ void CallbackRender(Framework& framework)
 	{
 		framework.Render();
 
-		std::this_thread::sleep_for(Duration(10));
+		//std::this_thread::sleep_for(Duration(10));
 	}
 }
 

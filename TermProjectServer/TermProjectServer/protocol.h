@@ -76,13 +76,17 @@ constexpr bool IsNPC(const PID id)
 }
 
 template<size_t length>
-constexpr void string_copy_safe(char (&dest)[length], const char* src)
+constexpr void string_copy_safe(char(&dest)[length], const char* src, size_t src_length)
 {
 	for (size_t i = 0; i < length; i++)
 	{
-		if (0 == src[i]) break;
+		if (src_length <= i) break;
 
-		dest[i] = src[i];
+		const char now = *(src + i);
+
+		if ('0' == now) break;
+
+		dest[i] = now;
 	}
 };
 
@@ -105,11 +109,11 @@ struct Packet
 
 struct CS_LOGIN_PACKET : public Packet
 {
-	constexpr CS_LOGIN_PACKET(const char* nickname)
+	constexpr CS_LOGIN_PACKET(const string& nickname)
 		: Packet(PACKET_TYPES::CS_LOGIN, sizeof(CS_LOGIN_PACKET))
 		, myNickname()
 	{
-		string_copy_safe(myNickname, nickname);
+		string_copy_safe(myNickname, nickname.c_str(), nickname.size());
 	}
 
 	char myNickname[NAME_SIZE];
@@ -162,13 +166,13 @@ struct CS_ATTACK_NONTARGET_PACKET : public Packet
 
 struct CS_CHAT_PACKET : public Packet
 {
-	constexpr CS_CHAT_PACKET(PID talker, char type, const char* msg, PID target = PID(-1))
+	constexpr CS_CHAT_PACKET(PID talker, char type, const string& msg, PID target = PID(-1))
 		: Packet(PACKET_TYPES::CS_CHAT, sizeof(CS_CHAT_PACKET))
 		, talkerID(talker)
 		, myType(type), myMsg()
 		, targetID(target)
 	{
-		string_copy_safe(myMsg, msg);
+		string_copy_safe(myMsg, msg.c_str(), msg.size());
 	}
 
 	// 시스템 메시지는 PID(-1)
@@ -226,12 +230,12 @@ struct SC_ADD_OBJECT_PACKET : public Packet
 		, myNickname()
 	{}
 
-	constexpr SC_ADD_OBJECT_PACKET(PID id, PLAYER_CATEGORY type, const char* nickname, float cx = 0.0f, float cy = 0.0f)
+	constexpr SC_ADD_OBJECT_PACKET(PID id, PLAYER_CATEGORY type, const string& nickname, float cx = 0.0f, float cy = 0.0f)
 		: Packet(PACKET_TYPES::SC_ADD_OBJECT, sizeof(SC_ADD_OBJECT_PACKET))
 		, myID(id), playerType(type)
 		, x(0.0f), y(0.0f)
 	{
-		string_copy_safe(myNickname, nickname);
+		string_copy_safe(myNickname, nickname.c_str(), nickname.size());
 	}
 
 	const PID myID;

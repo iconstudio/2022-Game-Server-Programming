@@ -80,6 +80,9 @@
     <ClInclude Include="Framework.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="..\TermProjectServer\TermProjectServer\protocol.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\freetype.lib">

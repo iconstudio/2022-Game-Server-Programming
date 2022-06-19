@@ -172,6 +172,7 @@
     <ClCompile Include="TermProjectClient.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\TermProjectServer\TermProjectServer\protocol.h" />
     <ClInclude Include="Framework.hpp" />
     <ClInclude Include="GameObject.hpp" />
     <ClInclude Include="GameSprite.hpp" />

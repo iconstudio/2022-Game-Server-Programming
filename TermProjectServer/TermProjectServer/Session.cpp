@@ -89,10 +89,18 @@ shared_ptr<GameObject> Session::GetAvatar()
 	return myAvatar.load(std::memory_order_relaxed);
 }
 
-void Session::do_send(const void* packet)
+void Session::do_send(const void* packet, size_t size)
 {
-	auto special = new Asynchron(reinterpret_cast<const char*>(packet));
-	WSASend(mySocket, &special->_wsabuf, 1, 0, 0, &special->_over, 0);
+	auto special = new Asynchron(reinterpret_cast<const char*>(packet), size);
+
+	int result = WSASend(mySocket, &special->_wsabuf, 1, 0, 0, &special->_over, 0);
+	if (SOCKET_ERROR == result)
+	{
+		if (WSA_IO_PENDING != result)
+		{
+			std::cout << "do_send: 송신 오류 발생!\n";
+		}
+	}
 }
 
 void Session::send_login_info_packet(size_t number_users)
@@ -103,7 +111,7 @@ void Session::send_login_info_packet(size_t number_users)
 	p.y = handle->y;
 	ReleseAvatar(handle);
 
-	do_send(&p);
+	do_send(&p, static_cast<size_t>(p.mySize));
 }
 
 void Session::send_move_packet(PID c_id, shared_ptr<Session> other, int client_time)
@@ -119,7 +127,7 @@ void Session::send_move_packet(PID c_id, shared_ptr<Session> other, int client_t
 	p.client_time = client_time;
 	other->ReleseAvatar(avatar);
 
-	do_send(&p);
+	do_send(&p, static_cast<size_t>(p.mySize));
 }
 
 void Session::send_add_object(PID c_id, shared_ptr<Session> other)
@@ -134,12 +142,12 @@ void Session::send_add_object(PID c_id, shared_ptr<Session> other)
 	SC_ADD_OBJECT_PACKET p{ c_id, PLAYER_CATEGORY::HUMAN, p.myNickname, other_avatar->x, other_avatar->y };
 	other->ReleseAvatar(other_avatar);
 
-	do_send(&p);
+	do_send(&p, static_cast<size_t>(p.mySize));
 }
 
 void Session::send_remove_object(PID c_id)
 {
 	SC_REMOVE_OBJECT_PACKET p{ c_id };
 
-	do_send(&p);
+	do_send(&p, static_cast<size_t>(p.mySize));
 }

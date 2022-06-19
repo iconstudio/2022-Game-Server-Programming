@@ -23,16 +23,16 @@ public:
 	}
 
 	// ¼Û½Å
-	Asynchron(const char* packet)
+	Asynchron(const char* packet, size_t size)
 	{
-		_wsabuf.len = packet[0];
+		_wsabuf.len = size;
 		_wsabuf.buf = _send_buf;
 
 		ZeroMemory(_send_buf, sizeof(_send_buf));
 		Clear();
 
 		myOperation = OP_SEND;
-		memcpy(_send_buf, packet, packet[0]);
+		memcpy(_send_buf, packet, size);
 	}
 
 	void Clear()

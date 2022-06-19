@@ -63,13 +63,13 @@ void process_packet(PID client_id, const Packet* packet)
 					char temp_nickname[NAME_SIZE]{};
 					if (strcmp("TEMP", p->myNickname) == 0)
 					{
-						sprintf_s(temp_nickname, "P%zd", client_id);
+					//	sprintf_s(temp_nickname, "P%zd", client_id);
 					}
-					else
+					else if (0 < strlen(p->myNickname))
 					{
-						strcpy_s(temp_nickname, p->myNickname);
+					//	strcpy_s(temp_nickname, p->myNickname);
 					}
-					strcpy_s(session->myNickname, temp_nickname);
+					//strcpy_s(session->myNickname, temp_nickname);
 
 					session->SetStatus(ST_INGAME);
 
@@ -930,7 +930,7 @@ void Disconnect(const PID who)
 
 			SC_REMOVE_OBJECT_PACKET p{ who };
 
-			other->do_send(&p);
+			other->do_send(&p, static_cast<size_t>(p.mySize));
 		}
 		else
 		{
