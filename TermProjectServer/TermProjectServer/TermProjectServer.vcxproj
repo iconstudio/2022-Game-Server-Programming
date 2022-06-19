@@ -143,13 +143,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Asynchron.cpp" />
+    <ClCompile Include="Framework.cpp" />
+    <ClCompile Include="GameObject.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Session.cpp" />
     <ClCompile Include="TermProjectServer.cpp" />
+    <ClCompile Include="Timeline.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Asynchron.hpp" />
+    <ClInclude Include="Framework.hpp" />
+    <ClInclude Include="GameObject.hpp" />
     <ClInclude Include="pch.hpp" />
     <ClInclude Include="protocol.h" />
+    <ClInclude Include="Session.hpp" />
+    <ClInclude Include="stdafx.hpp" />
     <ClInclude Include="TermProjectServer.hpp" />
+    <ClInclude Include="Timeline.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

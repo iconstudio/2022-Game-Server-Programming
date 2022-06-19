@@ -163,16 +163,26 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Framework.cpp" />
+    <ClCompile Include="GameObject.cpp" />
+    <ClCompile Include="GameSprite.cpp" />
     <ClCompile Include="pch.cpp" />
+    <ClCompile Include="Session.cpp" />
+    <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="TermProjectClient.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Framework.hpp" />
+    <ClInclude Include="GameObject.hpp" />
+    <ClInclude Include="GameSprite.hpp" />
     <ClInclude Include="include\SFML\Config.hpp" />
     <ClInclude Include="include\SFML\Graphics.hpp" />
     <ClInclude Include="include\SFML\Network.hpp" />
     <ClInclude Include="include\SFML\System.hpp" />
     <ClInclude Include="include\SFML\Window.hpp" />
     <ClInclude Include="pch.hpp" />
+    <ClInclude Include="Session.hpp" />
+    <ClInclude Include="stdafx.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Library Include="lib\freetype.lib" />
@@ -190,6 +200,13 @@
     <None Include="lib\sfml-network-s-d.pdb" />
     <None Include="lib\sfml-system-s-d.pdb" />
     <None Include="lib\sfml-window-s-d.pdb" />
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="chess2.png" />
+    <Image Include="chessmap.bmp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="cour.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

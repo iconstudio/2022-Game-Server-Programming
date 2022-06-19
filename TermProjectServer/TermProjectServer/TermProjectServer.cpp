@@ -1,562 +1,375 @@
 ﻿#include "pch.hpp"
-#include "protocol.h"
+#include "TermProjectServer.hpp"
+#include "Framework.hpp"
 
-constexpr int RANGE = 3;
+HANDLE serverPort;
+SOCKET serverListener;
+const ULONG_PTR serverID = 30000;
+const DWORD threadsCount = 6;
+char acceptBuffer[512]{};
+DWORD acceptByte = 0;
+atomic<SOCKET> acceptNewbie = NULL;
 
-enum EVENT_TYPE { EV_MOVE, EV_HEAL, EV_ATTACK };
-struct TIMER_EVENT
+concurrent_vector<Timeline> timer_queue{};
+std::mutex timer_l;
+
+array<shared_atomic<Session>, MAX_USER + MAX_NPC> clients;
+extern size_t numberClients = 0;
+
+constexpr int SIGHT_RANGE = 7;
+
+void add_timer(PID obj_id, int act_time, EVENT_TYPE e_type, PID target_id)
 {
-	int object_id;
-	EVENT_TYPE ev;
-	chrono::system_clock::time_point act_time;
-	int target_id;
+	using namespace std::chrono;
 
-	constexpr bool operator < (const TIMER_EVENT& _Left) const
-	{
-		return (act_time > _Left.act_time);
-	}
+	Timeline ev{};
 
-};
-
-priority_queue<TIMER_EVENT> timer_queue;
-mutex timer_l;
-
-enum COMP_TYPE { OP_ACCEPT, OP_RECV, OP_SEND };
-class OVER_EXP
-{
-public:
-	WSAOVERLAPPED _over;
-	WSABUF _wsabuf;
-	char _send_buf[BUF_SIZE];
-	COMP_TYPE _comp_type;
-	OVER_EXP()
-	{
-		_wsabuf.len = BUF_SIZE;
-		_wsabuf.buf = _send_buf;
-		_comp_type = OP_RECV;
-		ZeroMemory(&_over, sizeof(_over));
-	}
-	OVER_EXP(char* packet)
-	{
-		_wsabuf.len = packet[0];
-		_wsabuf.buf = _send_buf;
-		ZeroMemory(&_over, sizeof(_over));
-		_comp_type = OP_SEND;
-		memcpy(_send_buf, packet, packet[0]);
-	}
-};
-
-enum SESSION_STATE { ST_FREE, ST_ACCEPTED, ST_INGAME };
-
-class SESSION
-{
-	OVER_EXP _recv_over;
-
-public:
-	mutex	_sl;
-	SESSION_STATE _s_state;
-	int _id;
-	SOCKET _socket;
-	short	x, y;
-	char	_name[NAME_SIZE];
-	unordered_set <int> view_list;
-	mutex	vl;
-
-	chrono::system_clock::time_point next_move_time;
-	int		_prev_remain;
-public:
-	SESSION()
-	{
-		_id = -1;
-		_socket = 0;
-		x = rand() % W_WIDTH;
-		y = rand() % W_HEIGHT;
-		_name[0] = 0;
-		_s_state = ST_FREE;
-		_prev_remain = 0;
-		next_move_time = chrono::system_clock::now() + chrono::seconds(1);
-	}
-
-	~SESSION() {}
-
-	void do_recv()
-	{
-		DWORD recv_flag = 0;
-		memset(&_recv_over._over, 0, sizeof(_recv_over._over));
-		_recv_over._wsabuf.len = BUF_SIZE - _prev_remain;
-		_recv_over._wsabuf.buf = _recv_over._send_buf + _prev_remain;
-		WSARecv(_socket, &_recv_over._wsabuf, 1, 0, &recv_flag,
-			&_recv_over._over, 0);
-	}
-
-	void do_send(void* packet)
-	{
-		OVER_EXP* sdata = new OVER_EXP{ reinterpret_cast<char*>(packet) };
-		WSASend(_socket, &sdata->_wsabuf, 1, 0, 0, &sdata->_over, 0);
-	}
-
-	void send_login_info_packet()
-	{
-		SC_LOGIN_OK_PACKET p;
-		p.id = _id;
-		p.size = sizeof(SC_LOGIN_OK_PACKET);
-		p.type = SC_LOGIN_OK;
-		p.x = x;
-		p.y = y;
-		do_send(&p);
-	}
-	void send_move_packet(int c_id, int client_time);
-	void send_add_object(int c_id);
-	void send_remove_object(int c_id);
-};
-
-array<SESSION, MAX_USER + NUM_NPC> clients;
-HANDLE g_h_iocp;
-SOCKET g_s_socket;
-
-void add_timer(int obj_id, int act_time, EVENT_TYPE e_type, int target_id)
-{
-	using namespace chrono;
-	TIMER_EVENT ev;
 	ev.act_time = system_clock::now() + milliseconds(act_time);
 	ev.object_id = obj_id;
 	ev.ev = e_type;
 	ev.target_id = target_id;
-	timer_queue.push(ev);
+
+	timer_queue.push_back(ev);
 }
 
-int distance(int a, int b)
+void process_packet(PID client_id, const Packet* packet)
 {
-	return abs(clients[a].x - clients[b].x) + abs(clients[a].y - clients[b].y);
-}
+	auto session = AcquireSession(client_id);
 
-void SESSION::send_move_packet(int c_id, int client_time)
-{
-	if (c_id < 0)
+	const auto pk_type = packet->myType;
+
+	switch (pk_type)
 	{
-		cout << "ROOR2";
-	}
-
-	SC_MOVE_OBJECT_PACKET p;
-	p.id = c_id;
-	p.size = sizeof(SC_MOVE_OBJECT_PACKET);
-	p.type = SC_MOVE_OBJECT;
-	p.x = clients[c_id].x;
-	p.y = clients[c_id].y;
-	p.client_time = client_time;
-	do_send(&p);
-}
-
-void SESSION::send_add_object(int c_id)
-{
-	if (c_id < 0)
-	{
-		cout << "ROOR";
-	}
-
-	SC_ADD_OBJECT_PACKET p;
-	p.id = c_id;
-	p.size = sizeof(SC_ADD_OBJECT_PACKET);
-	p.type = SC_ADD_OBJECT;
-	p.x = clients[c_id].x;
-	p.y = clients[c_id].y;
-	strcpy_s(p.name, clients[c_id]._name);
-	do_send(&p);
-}
-
-void SESSION::send_remove_object(int c_id)
-{
-	SC_REMOVE_OBJECT_PACKET p;
-	p.id = c_id;
-	p.size = sizeof(SC_REMOVE_OBJECT_PACKET);
-	p.type = SC_REMOVE_OBJECT;
-	do_send(&p);
-}
-
-void disconnect(int c_id);
-int get_new_client_id()
-{
-	for (int i = 0; i < MAX_USER; ++i)
-	{
-		clients[i]._sl.lock();
-		if (clients[i]._s_state == ST_FREE)
+		case PACKET_TYPES::CS_LOGIN:
 		{
-			clients[i]._s_state = ST_ACCEPTED;
-			clients[i]._sl.unlock();
-			return i;
-		}
-		clients[i]._sl.unlock();
-	}
-	return -1;
-}
+			const auto p = reinterpret_cast<const CS_LOGIN_PACKET*>(packet);
 
-void process_packet(int c_id, char* packet)
-{
-	switch (packet[1])
-	{
-		case CS_LOGIN:
-		{
-			CS_LOGIN_PACKET* p = reinterpret_cast<CS_LOGIN_PACKET*>(packet);
-			clients[c_id]._sl.lock();
-			if (clients[c_id]._s_state == ST_FREE)
+			auto newbie_status = session->AcquireStatus();
+
+			switch (newbie_status)
 			{
-				clients[c_id]._sl.unlock();
+				case ST_FREE:
+				{}
+				break;
+
+				case ST_INGAME:
+				{
+					Disconnect(client_id);
+				}
+				break;
+
+				case ST_ACCEPTED:
+				{
+					char temp_nickname[NAME_SIZE]{};
+					if (strcmp("TEMP", p->myNickname) == 0)
+					{
+						sprintf_s(temp_nickname, "P%zd", client_id);
+					}
+					else
+					{
+						strcpy_s(temp_nickname, p->myNickname);
+					}
+					strcpy_s(session->myNickname, temp_nickname);
+
+					session->SetStatus(ST_INGAME);
+
+					auto avatar = make_shared<GameObject>();
+					avatar->x = rand() % W_WIDTH;
+					avatar->y = rand() % W_HEIGHT;
+					session->SetAvatar(avatar);
+
+					session->send_login_info_packet(numberClients);
+
+					// 원래 있던 플레이어들에게 새로 접속한 플레이어의 시야 정보 전송
+					for (auto i = ORDER_BEGIN_USER; i < ORDER_END_USER; i++)
+					{
+						if (i == client_id)
+						{
+							continue;
+						}
+
+						auto other = AcquireSession(i);
+						auto other_statsus = other->AcquireStatus();
+
+						if (ST_INGAME != other_statsus)
+						{
+							other->ReleseStatus(other_statsus);
+							ReleaseSession(i, other);
+
+							continue;
+						}
+
+						if (GetGridDistance(client_id, i) <= SIGHT_RANGE)
+						{
+							std::unique_lock guard(other->cvSight);
+							other->view_list.insert(client_id);
+							guard.unlock();
+
+							other->send_add_object(client_id, session);
+						}
+
+						other->ReleseStatus(other_statsus);
+						ReleaseSession(i, other);
+					}
+
+					// 접속한 플레이어에게 시야 전송
+					for (auto i = 0; i < ORDER_END_ALL; i++)
+					{
+						if (i == client_id)
+						{
+							continue;
+						}
+
+						auto other = AcquireSession(i);
+						auto other_statsus = other->AcquireStatus();
+
+						if (ST_INGAME != other_statsus)
+						{
+							other->ReleseStatus(other_statsus);
+							ReleaseSession(i, other);
+
+							continue;
+						}
+
+						//if (GetGridDistance(i, client_id) <= SIGHT_RANGE)
+						if (0 != other->view_list.count(client_id))
+						{
+							std::unique_lock guard(session->cvSight);
+							session->view_list.insert(other->myID);
+							guard.unlock();
+
+							session->send_add_object(other->myID, other);
+						}
+
+						other->ReleseStatus(other_statsus);
+						ReleaseSession(i, other);
+					}
+				}
+				break;
+
+				default:
+				{
+					throw "패킷 오류!";
+				}
 				break;
 			}
-			if (clients[c_id]._s_state == ST_INGAME)
-			{
-				clients[c_id]._sl.unlock();
-				disconnect(c_id);
-				break;
-			}
 
-			if (strcmp("TEMP", p->name) == 0)
-			{
-				sprintf_s(p->name, "P%d", c_id);
-			}
-
-			strcpy_s(clients[c_id]._name, p->name);
-			clients[c_id].send_login_info_packet();
-			clients[c_id]._s_state = ST_INGAME;
-			clients[c_id]._sl.unlock();
-
-			clients[c_id].x = rand() % W_WIDTH;
-			clients[c_id].y = rand() % W_HEIGHT;
-
-			for (int i = 0; i < MAX_USER; ++i)
-			{
-				auto& pl = clients[i];
-				if (pl._id == c_id) continue;
-				pl._sl.lock();
-				if (ST_INGAME != pl._s_state)
-				{
-					pl._sl.unlock();
-					continue;
-				}
-				if (RANGE >= distance(c_id, pl._id))
-				{
-					pl.vl.lock();
-					pl.view_list.insert(c_id);
-					pl.vl.unlock();
-					pl.send_add_object(c_id);
-				}
-				pl._sl.unlock();
-			}
-			for (auto& pl : clients)
-			{
-				if (pl._id == c_id) continue;
-				lock_guard<mutex> aa{ pl._sl };
-				if (ST_INGAME != pl._s_state) continue;
-
-				if (RANGE >= distance(pl._id, c_id))
-				{
-					clients[c_id].vl.lock();
-					clients[c_id].view_list.insert(pl._id);
-					clients[c_id].vl.unlock();
-					clients[c_id].send_add_object(pl._id);
-				}
-			}
-			break;
+			session->ReleseStatus(newbie_status);
 		}
-		case CS_MOVE:
+		break;
+
+		case PACKET_TYPES::CS_MOVE:
 		{
-			CS_MOVE_PACKET* p = reinterpret_cast<CS_MOVE_PACKET*>(packet);
-			short x = clients[c_id].x;
-			short y = clients[c_id].y;
-			clients[c_id].vl.lock();
-			auto old_vl = clients[c_id].view_list;
-			clients[c_id].vl.unlock();
+			const auto p = reinterpret_cast<const CS_MOVE_PACKET*>(packet);
+			auto avatar = session->AcquireAvatar();
+
+			if (!avatar)
+			{
+				ReleaseSession(client_id, session);
+				std::cout << "MOVE: 클라이언트 " << client_id << "의 아바타를 찾을 수 없습니다!\n";
+				return;
+			}
+
+			auto& cl_x = avatar->x;
+			auto& cl_y = avatar->y;
+
+			session->cvSight.lock();
+			auto old_sight_list = session->view_list;
+			session->cvSight.unlock();
 
 			switch (p->direction)
 			{
-				case 0: if (y > 0) y--; break;
-				case 1: if (y < W_HEIGHT - 1) y++; break;
-				case 2: if (x > 0) x--; break;
-				case 3: if (x < W_WIDTH - 1) x++; break;
-			}
-			clients[c_id].x = x;
-			clients[c_id].y = y;
-
-			unordered_set <int> new_vl;
-			for (auto& obj : clients)
-			{
-				if (obj._id == c_id) continue;
-				if (obj._s_state != ST_INGAME) continue;
-				if (distance(c_id, obj._id) > RANGE) continue;
-				new_vl.insert(obj._id);
-			}
-
-			clients[c_id].send_move_packet(c_id, p->client_time);
-			for (auto obj : new_vl)
-			{
-				clients[c_id].vl.lock();
-				if (0 == clients[c_id].view_list.count(obj))
+				case MOVE_TYPES::LEFT:
 				{
-					clients[c_id].view_list.insert(obj);
-					clients[c_id].vl.unlock();
-					clients[c_id].send_add_object(obj);
+					if (cl_x > 0)
+						cl_x--;
+				}
+				break;
+
+				case MOVE_TYPES::RIGHT:
+				{
+					if (cl_x < W_WIDTH - 1)
+						cl_x++;
+				}
+				break;
+
+				case MOVE_TYPES::UP:
+				{
+					if (cl_y > 0)
+						cl_y--;
+				}
+				break;
+
+				case MOVE_TYPES::DOWN:
+				{
+					if (cl_y < W_HEIGHT - 1)
+						cl_y++;
+				}
+				break;
+			}
+
+			std::unordered_set<PID> new_sight_list{};
+
+			for (auto pid = ORDER_BEGIN_USER; pid < ORDER_END_USER; pid++)
+			{
+				auto other = AcquireSession(pid);
+				auto& other_id = other->myID;
+
+				if (other->myID == client_id)
+				{
+					continue;
+				}
+				if (ST_INGAME != other->myStatus)
+				{
+					continue;
+				}
+
+				if (SIGHT_RANGE < GetGridDistance(client_id, other_id))
+				{
+					ReleaseSession(pid, other);
+					continue;
+				}
+
+				new_sight_list.insert(other_id);
+				ReleaseSession(other_id, other);
+			}
+			session->send_move_packet(client_id, session, p->client_time);
+
+			auto& my_view_list = session->view_list;
+			for (const auto& instance_id : new_sight_list)
+			{
+				std::unique_lock guard(session->cvSight);
+
+				auto other = AcquireSession(instance_id);
+
+				if (0 == my_view_list.count(instance_id))
+				{
+					my_view_list.insert(instance_id);
+					guard.unlock();
+
+					session->send_add_object(instance_id, other);
 				}
 				else
 				{
-					clients[c_id].vl.unlock();
-					clients[c_id].send_move_packet(obj, 0);
+					guard.unlock();
+
+					session->send_move_packet(instance_id, other, 0);
 				}
-				if (obj < MAX_USER)
+
+				if (IsPlayer(instance_id))
 				{
-					clients[obj].vl.lock();
-					if (0 == clients[obj].view_list.count(c_id))
+					std::unique_lock other_guard(other->cvSight);
+
+					auto& other_view_list = other->view_list;
+					if (0 == other_view_list.count(client_id))
 					{
-						clients[obj].view_list.insert(c_id);
-						clients[obj].vl.unlock();
-						clients[obj].send_add_object(c_id);
+						other_view_list.insert(client_id);
+						other_guard.unlock();
+
+						other->send_add_object(client_id, session);
 					}
 					else
 					{
-						clients[obj].vl.unlock();
-						clients[obj].send_move_packet(c_id, 0);
+						other_guard.unlock();
+
+						other->send_move_packet(client_id, session, 0);
 					}
 				}
+
+				ReleaseSession(instance_id, other);
 			}
 
-			for (auto obj : old_vl)
+			for (auto instance_id : old_sight_list)
 			{
-				if (0 != new_vl.count(obj)) continue;
-
-				clients[c_id].vl.lock();
-				if (0 != clients[c_id].view_list.count(obj))
+				if (0 != new_sight_list.count(instance_id))
 				{
-					clients[c_id].view_list.erase(obj);
-					clients[c_id].vl.unlock();
-					clients[c_id].send_remove_object(obj);
+					continue;
+				}
+
+				std::unique_lock guard(session->cvSight);
+
+				auto other = AcquireSession(instance_id);
+
+				if (0 != my_view_list.count(instance_id))
+				{
+					my_view_list.erase(instance_id);
+					guard.unlock();
+
+					session->send_remove_object(instance_id);
 				}
 				else
 				{
-					clients[c_id].vl.unlock();
+					guard.unlock();
 				}
-				if (obj < MAX_USER)
+
+				if (IsPlayer(instance_id))
 				{
-					clients[obj].vl.lock();
-					if (0 != clients[obj].view_list.count(c_id))
+					std::unique_lock other_guard(other->cvSight);
+
+					auto& other_view_list = other->view_list;
+					if (0 != other_view_list.count(client_id))
 					{
-						clients[obj].view_list.erase(c_id);
-						clients[obj].vl.unlock();
-						clients[obj].send_remove_object(c_id);
+						other_view_list.erase(client_id);
+						other_guard.unlock();
+
+						other->send_remove_object(client_id);
 					}
 					else
 					{
-						clients[obj].vl.unlock();
+						other_guard.unlock();
 					}
 				}
-			}
 
-
-			break;
-		}
-	}
-}
-
-void disconnect(int c_id)
-{
-	clients[c_id]._sl.lock();
-	if (clients[c_id]._s_state == ST_FREE)
-	{
-		clients[c_id]._sl.unlock();
-		return;
-	}
-	closesocket(clients[c_id]._socket);
-	clients[c_id]._s_state = ST_FREE;
-	clients[c_id]._sl.unlock();
-
-	for (auto& pl : clients)
-	{
-		if (pl._id == c_id) continue;
-		if (pl._id >= MAX_USER) continue;
-		pl._sl.lock();
-		if (pl._s_state != ST_INGAME)
-		{
-			pl._sl.unlock();
-			continue;
-		}
-		pl.vl.lock();
-		if (0 != pl.view_list.count(c_id))
-		{
-			pl.view_list.erase(c_id);
-			pl.vl.unlock();
-
-			SC_REMOVE_OBJECT_PACKET p;
-			p.id = c_id;
-			p.size = sizeof(p);
-			p.type = SC_REMOVE_OBJECT;
-			pl.do_send(&p);
-		}
-		else
-			pl.vl.unlock();
-		pl._sl.unlock();
-	}
-}
-
-void do_worker()
-{
-	while (true)
-	{
-		DWORD num_bytes;
-		ULONG_PTR key;
-		WSAOVERLAPPED* over = nullptr;
-		BOOL ret = GetQueuedCompletionStatus(g_h_iocp, &num_bytes, &key, &over, INFINITE);
-		OVER_EXP* ex_over = reinterpret_cast<OVER_EXP*>(over);
-		int client_id = static_cast<int>(key);
-		if (FALSE == ret)
-		{
-			if (ex_over->_comp_type == OP_ACCEPT) cout << "Accept Error";
-			else
-			{
-				cout << "GQCS Error on client[" << key << "]\n";
-				disconnect(static_cast<int>(key));
-				if (ex_over->_comp_type == OP_SEND) delete ex_over;
-				continue;
+				ReleaseSession(instance_id, other);
 			}
 		}
+		break;
 
-		switch (ex_over->_comp_type)
+		case PACKET_TYPES::CS_ATTACK:
 		{
-			case OP_ACCEPT:
-			{
-				SOCKET c_socket = reinterpret_cast<SOCKET>(ex_over->_wsabuf.buf);
-				int client_id = get_new_client_id();
-				if (client_id != -1)
-				{
-					clients[client_id].x = 0;
-					clients[client_id].y = 0;
-					clients[client_id]._id = client_id;
-					clients[client_id]._name[0] = 0;
-					clients[client_id]._prev_remain = 0;
-					clients[client_id]._socket = c_socket;
-					CreateIoCompletionPort(reinterpret_cast<HANDLE>(c_socket),
-						g_h_iocp, client_id, 0);
-					clients[client_id].do_recv();
-					c_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-				}
-				else
-				{
-					cout << "Max user exceeded.\n";
-				}
-
-				ZeroMemory(&ex_over->_over, sizeof(ex_over->_over));
-				ex_over->_wsabuf.buf = reinterpret_cast<CHAR*>(c_socket);
-				int addr_size = sizeof(SOCKADDR_IN);
-
-				AcceptEx(g_s_socket, c_socket, ex_over->_send_buf, 0, addr_size + 16, addr_size + 16, 0, &ex_over->_over);
-				break;
-			}
-			case OP_RECV:
-			{
-				if (0 == num_bytes) disconnect(client_id);
-				int remain_data = num_bytes + clients[key]._prev_remain;
-				char* p = ex_over->_send_buf;
-				while (remain_data > 0)
-				{
-					int packet_size = p[0];
-					if (packet_size <= remain_data)
-					{
-						process_packet(static_cast<int>(key), p);
-						p = p + packet_size;
-						remain_data = remain_data - packet_size;
-					}
-					else break;
-				}
-				clients[key]._prev_remain = remain_data;
-				if (remain_data > 0)
-				{
-					memcpy(ex_over->_send_buf, p, remain_data);
-				}
-				clients[key].do_recv();
-				break;
-			}
-			case OP_SEND:
-			if (0 == num_bytes) disconnect(client_id);
-			delete ex_over;
-			break;
 		}
-	}
-}
+		break;
 
-void move_npc(int npc_id)
-{
-	short x = clients[npc_id].x;
-	short y = clients[npc_id].y;
-	unordered_set<int> old_vl;
-	for (int i = 0; i < MAX_USER; ++i)
-	{
-		if (clients[i]._s_state != ST_INGAME) continue;
-		if (distance(npc_id, i) <= RANGE) old_vl.insert(i);
-	}
-	switch (rand() % 4)
-	{
-		case 0: if (y > 0) y--; break;
-		case 1: if (y < W_HEIGHT - 1) y++; break;
-		case 2: if (x > 0) x--; break;
-		case 3: if (x < W_WIDTH - 1) x++; break;
-	}
-
-	volatile int i = 0;
-	volatile int sum = 0;
-	for (int i = 0; i < 10000; ++i)
-		sum += i;
-
-	clients[npc_id].x = x;
-	clients[npc_id].y = y;
-
-	unordered_set<int> new_vl;
-	for (int i = 0; i < MAX_USER; ++i)
-	{
-		if (clients[i]._s_state != ST_INGAME) continue;
-		if (distance(npc_id, i) <= RANGE) new_vl.insert(i);
-	}
-
-	for (auto p_id : new_vl)
-	{
-		clients[p_id].vl.lock();
-		if (0 == clients[p_id].view_list.count(npc_id))
+		case PACKET_TYPES::CS_ATTACK_NONTARGET:
 		{
-			clients[p_id].view_list.insert(npc_id);
-			clients[p_id].vl.unlock();
-			clients[p_id].send_add_object(npc_id);
 		}
-		else
+		break;
+
+		case PACKET_TYPES::CS_SKILL_1:
 		{
-			clients[p_id].vl.unlock();
-			clients[p_id].send_move_packet(npc_id, 0);
 		}
-	}
-	for (auto p_id : old_vl)
-	{
-		if (0 == new_vl.count(p_id))
+		break;
+
+		case PACKET_TYPES::CS_SKILL_2:
 		{
-			clients[p_id].vl.lock();
-			if (clients[p_id].view_list.count(npc_id) == 1)
-			{
-				clients[p_id].view_list.erase(npc_id);
-				clients[p_id].vl.unlock();
-				clients[p_id].send_remove_object(npc_id);
-			}
-			else
-				clients[p_id].vl.unlock();
 		}
+		break;
+
+		case PACKET_TYPES::CS_CHAT:
+		{
+		}
+		break;
 	}
+
+	ReleaseSession(client_id, session);
 }
 
 void do_ai_ver_1()
 {
-	for (;;)
+	while (true)
 	{
-		auto start_t = chrono::system_clock::now();
-		for (int i = 0; i < NUM_NPC; ++i)
+		auto start_t = std::chrono::system_clock::now();
+
+		for (auto i = ORDER_BEGIN_NPC; i < ORDER_END_NPC; i++)
 		{
-			int npc_id = i + MAX_USER;
-			if (start_t > clients[npc_id].next_move_time)
+			const auto npc = GetSession(i);
+
+			auto& behave_time = npc->next_move_time;
+			if (behave_time < start_t)
 			{
-				move_npc(npc_id);
-				clients[npc_id].next_move_time = start_t + chrono::seconds(1);
+				BehaveNPC(i);
+
+				behave_time = start_t + std::chrono::seconds(1);
 			}
 		}
 	}
@@ -564,31 +377,22 @@ void do_ai_ver_1()
 
 void do_ai_ver_heat_beat()
 {
-	for (;;)
+	while (true)
 	{
-		auto start_t = chrono::system_clock::now();
-		for (int i = 0; i < NUM_NPC; ++i)
-		{
-			int npc_id = i + MAX_USER;
-			move_npc(npc_id);
-		}
-		auto end_t = chrono::system_clock::now();
-		auto ai_t = end_t - start_t;
-		cout << "AI time : " << chrono::duration_cast<chrono::milliseconds>(ai_t).count();
-		cout << "ms\n";
-		this_thread::sleep_until(start_t + chrono::seconds(1));
-	}
-}
+		const auto start_t = std::chrono::system_clock::now();
 
-void initialize_npc()
-{
-	for (int i = 0; i < NUM_NPC + MAX_USER; ++i)
-		clients[i]._id = i;
-	for (int i = 0; i < NUM_NPC; ++i)
-	{
-		int npc_id = i + MAX_USER;
-		clients[npc_id]._s_state = ST_INGAME;
-		sprintf_s(clients[npc_id]._name, "M-%d", npc_id);
+		for (auto i = ORDER_BEGIN_NPC; i < ORDER_END_NPC; i++)
+		{
+			BehaveNPC(i);
+		}
+
+		const auto end_t = std::chrono::system_clock::now();
+		const auto ai_t = end_t - start_t;
+
+		std::cout << "AI time : " << std::chrono::duration_cast<std::chrono::milliseconds>(ai_t).count();
+
+		std::cout << "ms\n";
+		std::this_thread::sleep_until(start_t + std::chrono::seconds(1));
 	}
 }
 
@@ -596,39 +400,562 @@ void do_timer()
 {
 
 }
+
 int main()
 {
-	initialize_npc();
+	Awake();
+	Start();
+	Update();
+	Release();
+}
 
-	WSADATA WSAData;
-	WSAStartup(MAKEWORD(2, 2), &WSAData);
-	g_s_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	SOCKADDR_IN server_addr;
-	memset(&server_addr, 0, sizeof(server_addr));
+void Awake()
+{
+	WSADATA WSAData{};
+	int result = WSAStartup(MAKEWORD(2, 2), &WSAData);
+	if (SOCKET_ERROR == result)
+	{
+		throw "WSAStartup()";
+	}
+
+	serverListener = MakeSocket();
+	if (INVALID_SOCKET == serverListener)
+	{
+		throw "WSASocket(listener)";
+	}
+
+	SOCKADDR_IN server_addr{};
+	server_addr.sin_addr.s_addr = INADDR_ANY;
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_port = htons(PORT_NUM);
-	server_addr.sin_addr.S_un.S_addr = INADDR_ANY;
-	bind(g_s_socket, reinterpret_cast<sockaddr*>(&server_addr), sizeof(server_addr));
-	listen(g_s_socket, SOMAXCONN);
-	SOCKADDR_IN cl_addr;
-	int addr_size = sizeof(cl_addr);
-	int client_id = 0;
 
-	g_h_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, 0, 0, 0);
-	CreateIoCompletionPort(reinterpret_cast<HANDLE>(g_s_socket), g_h_iocp, 9999, 0);
-	SOCKET c_socket = WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
-	OVER_EXP a_over;
-	a_over._comp_type = OP_ACCEPT;
-	a_over._wsabuf.buf = reinterpret_cast<CHAR*>(c_socket);
-	AcceptEx(g_s_socket, c_socket, a_over._send_buf, 0, addr_size + 16, addr_size + 16, 0, &a_over._over);
+	constexpr int address_size = sizeof(SOCKADDR_IN);
 
-	vector <thread> worker_threads;
+	result = bind(serverListener, reinterpret_cast<sockaddr*>(&server_addr), address_size);
+	if (SOCKET_ERROR == result)
+	{
+		throw "bind()";
+	}
+
+	serverPort = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, threadsCount);
+	if (NULL == serverPort)
+	{
+		throw "CreateIoCompletionPort(INVALID_HANDLE_VALUE)";
+	}
+
+	auto handle = reinterpret_cast<HANDLE>(serverListener);
+	CreateIoCompletionPort(handle, serverPort, serverID, 0);
+
+	std::cout << "서버 초기화 중...\n";
+
+	BuildSessions();
+	BuildPlayers();
+	BuildNPCs();
+}
+
+void BuildSessions()
+{
+	for (PID i = 0; i < MAX_NPC + MAX_USER; ++i)
+	{
+		auto session = AcquireSession(i);
+
+		auto handle = make_shared<Session>();
+		handle->myID = i;
+
+		ReleaseSession(i, handle);
+	}
+}
+
+void BuildPlayers()
+{}
+
+void BuildNPCs()
+{
+	constexpr auto order_npc_begin = ORDER_BEGIN_NPC;
+	constexpr auto order_npc_end = order_npc_begin + MAX_NPC;
+
+	for (auto i = order_npc_begin; i < order_npc_end; ++i)
+	{
+		const PID npc_id = i + MAX_USER;
+
+		auto npc = AcquireSession(i);
+
+		auto npc_avatar = npc->AcquireAvatar();
+		npc_avatar = make_shared<GameObject>();
+		npc_avatar->x = 4;
+		npc_avatar->y = 4;
+		npc->ReleseAvatar(npc_avatar);
+
+		npc->SetStatus(ST_INGAME);
+		sprintf_s(npc->myNickname, "M-%d", npc_id);
+
+		ReleaseSession(i, npc);
+	}
+}
+
+void Start()
+{
+	int result = listen(serverListener, SOMAXCONN);
+	if (SOCKET_ERROR == result)
+	{
+		throw "listen()";
+	}
+
+	acceptNewbie = MakeSocket();
+	if (NULL == acceptNewbie)
+	{
+		throw "MakeSocket(first_socket)";
+	}
+
+	auto a_over = new Asynchron{};
+	a_over->myOperation = OP_ACCEPT;
+
+	Listen(&a_over->_over);
+
+	std::cout << "서버 준비 중...\n";
+
+	std::vector<std::jthread> worker_threads{};
 	for (int i = 0; i < 6; ++i)
-		worker_threads.emplace_back(do_worker);
-	thread ai_thread{ do_ai_ver_heat_beat };
-	ai_thread.join();
-	for (auto& th : worker_threads)
-		th.join();
-	closesocket(g_s_socket);
+	{
+		worker_threads.emplace_back(ConcurrentWorker);
+	}
+
+	std::jthread ai_thread{ do_ai_ver_heat_beat };
+
+	std::cout << "서버 시작\n";
+}
+
+void Listen(LPWSAOVERLAPPED overlapped)
+{
+	const int address_size = sizeof(SOCKADDR_IN);
+	int result = AcceptEx(serverListener, acceptNewbie
+		, acceptBuffer, 0
+		, address_size + 16, address_size + 16
+		, &acceptByte
+		, overlapped);
+	if (FALSE == result)
+	{
+		auto error = WSAGetLastError();
+		if (ERROR_IO_PENDING != error)
+		{
+			ZeroMemory(overlapped, sizeof(WSAOVERLAPPED));
+
+			throw "Accept 오류!";
+		}
+	}
+}
+
+void Update()
+{
+	while (true)
+	{
+
+	}
+}
+
+void ConcurrentWorker()
+{
+	DWORD portBytes = 0;
+	ULONG_PTR portKey = 0;
+	WSAOVERLAPPED* portOverlap = nullptr;
+
+	BOOL result;
+	while (true)
+	{
+		result = GetQueuedCompletionStatus(serverPort, &portBytes, &portKey, &portOverlap, INFINITE);
+
+		auto asynchron = reinterpret_cast<Asynchron*>(portOverlap);
+		
+		if (FALSE == result)
+		{
+			if (WSA_IO_PENDING != WSAGetLastError())
+			{
+				if (asynchron->myOperation == OP_ACCEPT)
+				{
+					std::cout << "Accept 오류!\n";
+
+					asynchron->Clear();
+				}
+				else
+				{
+					const PID client_id = static_cast<PID>(portKey);
+
+					std::cout << "GQCS Error on client[" << client_id << "]\n";
+
+					Disconnect(client_id);
+
+					if (asynchron->myOperation == OP_SEND)
+					{
+						delete asynchron;
+					}
+					else
+					{
+						asynchron->Clear();
+					}
+				}
+			}
+		}
+		else
+		{
+			switch (asynchron->myOperation)
+			{
+				case OP_ACCEPT:
+				{
+					ProceedAccept(asynchron);
+				}
+				break;
+
+				case OP_RECV:
+				{
+					const PID client_id = static_cast<PID>(portKey);
+					ProceedRecv(client_id, asynchron, portBytes);
+				}
+				break;
+
+				case OP_SEND:
+				{
+					const PID client_id = static_cast<PID>(portKey);
+					ProceedSend(client_id, asynchron, portBytes);
+
+					delete asynchron;
+				}
+				break;
+			}
+		}
+	}
+}
+
+void ProceedAccept(Asynchron* asynchron)
+{
+	const auto newbie_socket = acceptNewbie.load(std::memory_order_acquire);
+	if (NULL == newbie_socket)
+	{
+		acceptNewbie.store(newbie_socket, std::memory_order_release);
+		throw "ProceedAccept(newbie_socket) 오류!";
+	}
+
+	const auto newbie_id = MakeNewbieID();
+
+	if (PID(-1) != newbie_id)
+	{
+		auto newbie = AcquireSession(newbie_id);
+
+		auto newbie_status = newbie->AcquireStatus();
+
+		auto newbie_avatar = newbie->AcquireAvatar();
+		newbie_avatar = make_shared<GameObject>();
+		newbie_avatar->x = 4;
+		newbie_avatar->y = 4;
+		newbie->ReleseAvatar(newbie_avatar);
+
+		newbie->SetID(newbie_id);
+		newbie->SetSocket(newbie_socket);
+
+		newbie->ReleseStatus(newbie_status);
+		ReleaseSession(newbie_id, newbie);
+
+		CreateIoCompletionPort(reinterpret_cast<HANDLE>(newbie_socket), serverPort, newbie_id, 0);
+
+		newbie->do_recv();
+
+		acceptNewbie.store(MakeSocket(), std::memory_order_release);
+	}
+	else
+	{
+		acceptNewbie.store(newbie_socket, std::memory_order_release);
+
+		std::cout << "Max user exceeded.\n";
+	}
+	asynchron->Clear();
+
+	Listen(&asynchron->_over);
+}
+
+void ProceedRecv(const PID pid, Asynchron* asynchron, const DWORD recv_bytes)
+{
+	if (0 == recv_bytes)
+	{
+		std::cout << "클라이언트 " << pid << "가 수신에서 0을 받음.\n";
+		Disconnect(pid);
+
+		return;
+	}
+
+	const char* raw_packet = asynchron->_send_buf;
+	const Packet* raw_view = reinterpret_cast<const Packet*>(raw_packet);
+
+	auto session = AcquireSession(pid);
+	auto& saved_bytes = session->recvBytes;
+
+	saved_bytes += recv_bytes;
+	while (0 < saved_bytes)
+	{
+		// int?
+		const unsigned char packet_size = raw_view->mySize;
+			//raw_packet[0];
+		if (packet_size <= saved_bytes)
+		{
+			process_packet(pid, raw_view);
+
+			raw_packet = raw_packet + packet_size;
+			saved_bytes -= packet_size;
+		}
+		else
+		{
+			break;
+		}
+	}
+
+	if (0 < saved_bytes)
+	{
+		memcpy(asynchron->_send_buf, raw_packet, saved_bytes);
+	}
+
+	ReleaseSession(pid, session);
+
+	session->do_recv();
+}
+
+void ProceedSend(const PID pid, Asynchron* asynchron, const DWORD sent_bytes)
+{
+	if (0 == sent_bytes)
+	{
+		std::cout << "클라이언트 " << pid << "가 송신에 0을 줌.\n";
+		Disconnect(pid);
+
+		return;
+	}
+}
+
+void Release()
+{
+	closesocket(serverListener);
 	WSACleanup();
+}
+
+int GetGridDistance(PID user_id1, PID user_id2)
+{
+	const auto& user1 = GetSession(user_id1);
+	const auto& user2 = GetSession(user_id2);
+
+	const auto avatar1 = user1->GetAvatar();
+	const auto avatar2 = user2->GetAvatar();
+
+	return static_cast<int>(abs(avatar1->x - avatar2->x) + abs(avatar1->y - avatar2->y));
+}
+
+void BehaveNPC(PID npc_id)
+{
+	auto npc = AcquireSession(npc_id);
+	auto npc_avatar = npc->AcquireAvatar();
+
+	auto& npc_x = npc_avatar->x;
+	auto& npc_y = npc_avatar->y;
+
+	std::unordered_set<PID> old_view_list{};
+	for (auto i = ORDER_BEGIN_USER; i < ORDER_END_USER; ++i)
+	{
+		const auto session = GetSession(i);
+
+		if (session->myStatus != ST_INGAME)
+		{
+			continue;
+		}
+
+		if (GetGridDistance(npc_id, i) <= SIGHT_RANGE)
+		{
+			old_view_list.insert(i);
+		}
+	}
+
+	switch (rand() % 5)
+	{
+		case 0: break;
+		case 1: if (npc_y > 0) npc_y--; break;
+		case 2: if (npc_y < W_HEIGHT - 1) npc_y++; break;
+		case 3: if (npc_x > 0) npc_x--; break;
+		case 4: if (npc_x < W_WIDTH - 1) npc_x++; break;
+	}
+
+	std::unordered_set<PID> new_view_list{};
+	for (auto i = ORDER_BEGIN_USER; i < ORDER_END_USER; ++i)
+	{
+		const auto session = GetSession(i);
+
+		if (session->myStatus != ST_INGAME)
+		{
+			continue;
+		}
+
+		if (GetGridDistance(npc_id, i) <= SIGHT_RANGE)
+		{
+			new_view_list.insert(i);
+		}
+	}
+
+	// 새로운 시야는 전송
+	for (const auto session_id : new_view_list)
+	{
+		const auto session = AcquireSession(session_id);
+		auto& view_list = session->view_list;
+
+		std::unique_lock guard(session->cvSight);
+
+		auto oit = old_view_list.find(session_id);
+		if (oit != old_view_list.end())
+		{
+			old_view_list.erase(oit);
+		}
+
+		if (0 == view_list.count(npc_id))
+		{
+			view_list.insert(npc_id);
+			guard.unlock();
+
+			session->send_add_object(npc_id, npc);
+		}
+		else
+		{
+			guard.unlock();
+
+			session->send_move_packet(npc_id, npc, 0);
+		}
+
+		ReleaseSession(session_id, session);
+	}
+
+	// 예전 시야는 삭제
+	for (auto session_id : old_view_list)
+	{
+		if (0 == new_view_list.count(session_id))
+		{
+			const auto session = AcquireSession(session_id);
+			auto& view_list = session->view_list;
+
+			std::unique_lock guard(session->cvSight);
+
+			if (0 != view_list.count(npc_id))
+			{
+				view_list.erase(npc_id);
+				guard.unlock();
+
+				session->send_remove_object(npc_id);
+			}
+			else
+			{
+				guard.unlock();
+			}
+
+			ReleaseSession(session_id, session);
+		}
+	}
+
+	npc->ReleseAvatar(npc_avatar);
+	ReleaseSession(npc_id, npc);
+}
+
+SOCKET MakeSocket()
+{
+	return WSASocket(AF_INET, SOCK_STREAM, 0, NULL, 0, WSA_FLAG_OVERLAPPED);
+}
+
+PID MakeNewbieID()
+{
+	for (auto i = ORDER_BEGIN_USER; i < ORDER_END_USER; i++)
+	{
+		auto session = AcquireSession(i);
+
+		auto state = session->AcquireStatus();
+
+		if (ST_FREE == state)
+		{
+			state = ST_ACCEPTED;
+
+			session->ReleseStatus(state);
+			ReleaseSession(i, session);
+
+			return i;
+		}
+
+		session->ReleseStatus(state);
+		ReleaseSession(i, session);
+	}
+
+	return PID(-1);
+}
+
+void Disconnect(const PID who)
+{
+	if (!IsPlayer(who))
+	{
+		throw "Disconnect: 잘못된 ID 참조!";
+	}
+
+	auto session = AcquireSession(who);
+	auto status = session->AcquireStatus();
+
+	if (status == ST_FREE)
+	{
+		session->ReleseStatus(status);
+		ReleaseSession(who, session);
+
+		return;
+	}
+
+	for (auto other_id = ORDER_BEGIN_USER; other_id < ORDER_END_USER; other_id++)
+	{
+		if (other_id == who)
+		{
+			continue;
+		}
+
+		auto other = AcquireSession(other_id);
+		auto other_status = other->AcquireStatus();
+
+		if (ST_INGAME != other_status)
+		{
+			other->ReleseStatus(other_status);
+			ReleaseSession(other_id, other);
+
+			continue;
+		}
+
+		std::unique_lock sight_guard(other->cvSight);
+
+		auto& view_list = other->view_list;
+		if (0 != view_list.count(who))
+		{
+			view_list.erase(who);
+			sight_guard.unlock();
+
+			SC_REMOVE_OBJECT_PACKET p{ who };
+
+			other->do_send(&p);
+		}
+		else
+		{
+			//sight_guard.unlock();
+		}
+	}
+
+	closesocket(session->mySocket);
+	status = ST_FREE;
+
+	session->ReleseStatus(status);
+	ReleaseSession(who, session);
+}
+
+shared_ptr<Session> AcquireSession(PID index)
+{
+	return clients[index].load(std::memory_order_acquire);
+}
+
+void ReleaseSession(PID index, shared_ptr<Session> handle)
+{
+	clients[index].store(handle, std::memory_order_release);
+}
+
+shared_ptr<Session> GetSession(PID index)
+{
+	return clients[index].load(std::memory_order_relaxed);
 }
