@@ -1,0 +1,20 @@
+#pragma once
+
+class GameObject
+{
+public:
+	GameObject(PID id);
+	GameObject(PID id, float x, float y);
+	GameObject(PID id, float pos[2]);
+
+	virtual void Awake() = 0;
+	virtual void Start() = 0;
+	virtual void Update(float time_elapsed) = 0;
+
+	const float* GetPosition() const;
+	float* GetPosition();
+
+	float myPosition[2];
+	PID myID;
+	ENTITY_TYPES myType;
+};
