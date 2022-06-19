@@ -207,7 +207,7 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 					Nickname = result->Nickname;
 					std::cout << ID << "'s Nickname: " << Nickname << ".\n";
 
-					Instance = std::make_shared<PlayerCharacter>(ID, 100.0f, 100.0f, 0.0f);
+					Instance = std::make_shared<PlayerCharacter>(ID, 100.0f, 100.0f);
 
 					Framework.ConnectFrom(Index);
 				}
@@ -235,8 +235,8 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 				{
 					auto key = result->Key;
 					bool moved = TryMove(key);
-					auto px = Instance->myPosition.x;
-					auto py = Instance->myPosition.y;
+					auto px = Instance->myPosition[0];
+					auto py = Instance->myPosition[1];
 
 					if (!moved)
 					{

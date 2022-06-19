@@ -21,9 +21,9 @@ public:
 
 	const mySector& AtByPosition(float x, float y) const;
 	const mySector& AtByPosition(const float_pair& pos) const;
-	const mySector& AtByPosition(const XMFLOAT3& position) const;
+	const mySector& AtByPosition(const float (&position)[2]) const;
 	mySector& AtByPosition(float x, float y);
-	mySector& AtByPosition(const XMFLOAT3& position);
+	mySector& AtByPosition(const float (&position)[2]);
 
 	/// <summary>
 	/// 월드 좌표에 위치한 시야 영역의 번호
@@ -68,8 +68,8 @@ public:
 private:
 	mySights BuildSectors(size_t count_h, size_t count_v);
 
-	int_pair ClampCoords(const XMFLOAT3& position) const;
-	int_pair ClampCoords(XMFLOAT3&& position) const;
+	int_pair ClampCoords(const float_pair& position) const;
+	int_pair ClampCoords(const float(&position)[2]) const;
 
 	IOCPFramework& myFramework;
 

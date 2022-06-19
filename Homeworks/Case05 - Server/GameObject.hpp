@@ -15,8 +15,6 @@ public:
 	virtual void Awake() = 0;
 	virtual void Start() = 0;
 	virtual void Update(float time_elapsed) = 0;
-	virtual void Render(HDC surface);
-	virtual void Render(HDC surface, float ax, float ay) = 0;
 
 	const float* GetPosition() const;
 	float* GetPosition();

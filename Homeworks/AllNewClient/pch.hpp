@@ -8,6 +8,9 @@
 #include <WS2tcpip.h>
 #include <MSWSock.h>
 
+#include <DirectXMath.h>
+using DirectX::XMFLOAT3;
+
 #include <string>
 #include <iostream>
 #include <mutex>

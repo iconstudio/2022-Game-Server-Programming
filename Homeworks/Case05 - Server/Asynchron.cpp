@@ -2,6 +2,7 @@
 #include "stdafx.hpp"
 #include "Asynchron.hpp"
 #include "Packet.hpp"
+#include "Commons.hpp"
 
 Asynchron::Asynchron(OVERLAP_OPS operation)
 	: Operation(operation), Type(PACKET_TYPES::NONE)

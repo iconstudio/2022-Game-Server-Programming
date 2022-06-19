@@ -15,11 +15,6 @@ GameObject::GameObject(PID id, float pos[2])
 	: GameObject(id, pos[0], pos[1])
 {}
 
-void GameObject::Render(HDC surface)
-{
-	Render(surface, 0.0f, 0.0f);
-}
-
 const float* GameObject::GetPosition() const
 {
 	return myPosition;

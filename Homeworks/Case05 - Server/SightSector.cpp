@@ -1,7 +1,6 @@
 #include "pch.hpp"
 #include "stdafx.hpp"
 #include "SightSector.hpp"
-#include "GameEntity.hpp"
 
 SightSector::SightSector(int x, int y, float w, float h)
 	: index_x(x), index_y(y)

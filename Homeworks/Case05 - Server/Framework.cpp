@@ -305,7 +305,8 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	// * 현재 없는 개체는 Disappear
 	// * 현재 있는 개체는, 과거에도 있으면 Move, 없으면 Appear
 	PID cid, pid;
-	constexpr int sight_magnitude = SIGHT_RAD_W * SIGHT_RAD_H;
+
+	constexpr auto sight_magnitude = SIGHT_RAD_W * SIGHT_RAD_H;
 
 	for (auto cit = viewlist_curr.cbegin(); viewlist_curr.cend() != cit;)
 	{

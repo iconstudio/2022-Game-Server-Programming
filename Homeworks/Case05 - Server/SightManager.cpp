@@ -3,7 +3,6 @@
 #include "SightManager.hpp"
 #include "SightSector.hpp"
 #include "GameObject.hpp"
-#include "GameEntity.hpp"
 #include "Framework.hpp"
 
 SightManager::SightManager(IOCPFramework& framework, float w, float h, float sector_w, float sector_h)
@@ -62,9 +61,9 @@ const mySector& SightManager::AtByPosition(const float_pair& pos) const
 	return At(PickCoords(pos.first, pos.second));
 }
 
-const mySector& SightManager::AtByPosition(const XMFLOAT3& position) const
+const mySector& SightManager::AtByPosition(const float(&position)[2]) const
 {
-	return At(PickCoords(position.x, position.y));
+	return At(PickCoords(position[0], position[1]));
 }
 
 mySector& SightManager::AtByPosition(float x, float y)
@@ -72,9 +71,9 @@ mySector& SightManager::AtByPosition(float x, float y)
 	return At(PickCoords(x, y));
 }
 
-mySector& SightManager::AtByPosition(const XMFLOAT3& position)
+mySector& SightManager::AtByPosition(const float(&position)[2])
 {
-	return At(PickCoords(position.x, position.y));
+	return At(PickCoords(position[0], position[1]));
 }
 
 SightManager::mySights SightManager::BuildSectors(size_t count_h, size_t count_v)
@@ -101,16 +100,15 @@ SightManager::mySights SightManager::BuildSectors(size_t count_h, size_t count_v
 	return result;
 }
 
-int_pair SightManager::ClampCoords(const XMFLOAT3& position) const
+int_pair SightManager::ClampCoords(const float_pair& position) const
 {
-	return ClampCoords(std::move(XMFLOAT3(position)));
+	return ClampCoords({ position.first, position.second });
 }
 
-int_pair SightManager::ClampCoords(XMFLOAT3&& position) const
+int_pair SightManager::ClampCoords(const float(&position)[2]) const
 {
-	const auto&& pos = std::forward<XMFLOAT3>(position);
-	const float clamped_x = std::clamp(0.0f, pos.x, sizeWorldH);
-	const float clamped_y = std::clamp(0.0f, pos.y, sizeWorldV);
+	const float clamped_x = std::clamp(0.0f, position[0], sizeWorldH);
+	const float clamped_y = std::clamp(0.0f, position[1], sizeWorldV);
 
 	return PickCoords(clamped_x, clamped_y);
 }

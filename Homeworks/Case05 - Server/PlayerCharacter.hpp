@@ -4,9 +4,9 @@
 class PlayerCharacter : public GameObject
 {
 public:
-	PlayerCharacter(PID id, float x, float y, float z);
-	PlayerCharacter(PID id, const XMFLOAT3& pos);
-	PlayerCharacter(PID id, XMFLOAT3&& pos);
+	PlayerCharacter(PID id);
+	PlayerCharacter(PID id, float x, float y);
+	PlayerCharacter(PID id, float pos[2]);
 
 	void Awake() override;
 	void Start() override;

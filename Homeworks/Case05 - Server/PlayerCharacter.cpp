@@ -2,16 +2,16 @@
 #include "stdafx.hpp"
 #include "PlayerCharacter.hpp"
 
-PlayerCharacter::PlayerCharacter(PID id, float x, float y, float z)
-	: PlayerCharacter(id, XMFLOAT3(x, y, z))
+PlayerCharacter::PlayerCharacter(PID id)
+	: GameObject(id)
 {}
 
-PlayerCharacter::PlayerCharacter(PID id, const XMFLOAT3& pos)
-	: PlayerCharacter(id, XMFLOAT3(pos))
+PlayerCharacter::PlayerCharacter(PID id, float x, float y)
+	: GameObject(id, x, y)
 {}
 
-PlayerCharacter::PlayerCharacter(PID id, XMFLOAT3&& pos)
-	: GameEntity(id, std::forward<XMFLOAT3>(pos))
+PlayerCharacter::PlayerCharacter(PID id, float pos[2])
+	: GameObject(id, pos[0], pos[1])
 {}
 
 void PlayerCharacter::Awake()
@@ -25,14 +25,14 @@ void PlayerCharacter::Update(float time_elapsed)
 
 bool PlayerCharacter::TryMoveLT()
 {
-	if (8.0f < myPosition.x)
+	if (8.0f < myPosition[0])
 	{
-		myPosition.x -= 16.0f;
+		myPosition[0] -= 16.0f;
 		return true;
 	}
-	else if (myPosition.x != 8.0f)
+	else if (myPosition[0] != 8.0f)
 	{
-		myPosition.x = 8.0f;
+		myPosition[0] = 8.0f;
 		return true;
 	}
 	return false;
@@ -40,14 +40,14 @@ bool PlayerCharacter::TryMoveLT()
 
 bool PlayerCharacter::TryMoveRT()
 {
-	if (myPosition.x < WORLD_W - 8.0f)
+	if (myPosition[0] < WORLD_W - 8.0f)
 	{
-		myPosition.x += 16.0f;
+		myPosition[0] += 16.0f;
 		return true;
 	}
-	else if (myPosition.x != WORLD_W - 8.0f)
+	else if (myPosition[0] != WORLD_W - 8.0f)
 	{
-		myPosition.x = WORLD_W - 8.0f;
+		myPosition[0] = WORLD_W - 8.0f;
 		return true;
 	}
 	return false;
@@ -55,14 +55,14 @@ bool PlayerCharacter::TryMoveRT()
 
 bool PlayerCharacter::TryMoveUP()
 {
-	if (8.0f < myPosition.y)
+	if (8.0f < myPosition[1])
 	{
-		myPosition.y -= 16.0f;
+		myPosition[1] -= 16.0f;
 		return true;
 	}
-	else if (myPosition.y != 8.0f)
+	else if (myPosition[1] != 8.0f)
 	{
-		myPosition.y = 8.0f;
+		myPosition[1] = 8.0f;
 		return true;
 	}
 	return false;
@@ -70,14 +70,14 @@ bool PlayerCharacter::TryMoveUP()
 
 bool PlayerCharacter::TryMoveDW()
 {
-	if (myPosition.y < WORLD_H - 8.0f)
+	if (myPosition[1] < WORLD_H - 8.0f)
 	{
-		myPosition.y += 16.0f;
+		myPosition[1] += 16.0f;
 		return true;
 	}
-	else if (myPosition.y != WORLD_H - 8.0f)
+	else if (myPosition[1] != WORLD_H - 8.0f)
 	{
-		myPosition.y = WORLD_H - 8.0f;
+		myPosition[1] = WORLD_H - 8.0f;
 		return true;
 	}
 	return false;
