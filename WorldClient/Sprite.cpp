@@ -1,9 +1,12 @@
 ﻿#include "pch.hpp"
-#include "Sprite.h"
+#include "Sprite.hpp"
 #include "Draw.hpp"
 
 GameSprite::GameSprite(HINSTANCE instance, UINT resource, UINT number, int xoff, int yoff)
-	: raw(CImage()), raw_width(0), raw_height(0), width(0), height(0), number(number), xoffset(xoff), yoffset(yoff)
+	: raw(CImage()), raw_width(0), raw_height(0)
+	, width(0), height(0)
+	, number(number)
+	, xoffset(xoff), yoffset(yoff)
 {
 	raw.LoadFromResource(instance, resource);
 	if (raw.IsNull())
@@ -39,10 +42,18 @@ GameSprite::GameSprite(HINSTANCE instance, UINT resource, UINT number, int xoff,
 	}
 }
 
-GameSprite::GameSprite(LPCTSTR path, UINT number, int xoff, int yoff)
-	: raw(CImage()), raw_width(0), raw_height(0), width(0), height(0), number(number), xoffset(xoff), yoffset(yoff)
+GameSprite::GameSprite(const Filepath& path, UINT number, int xoff, int yoff)
+	: raw(CImage()), raw_width(0), raw_height(0)
+	, width(0), height(0)
+	, number(number)
+	, xoffset(xoff), yoffset(yoff)
 {
-	raw.Load(path);
+	if (!std::filesystem::exists(path))
+	{
+		throw "이미지 파일을 찾을 수 없습니다!";
+	}
+
+	raw.Load(path.c_str());
 	if (raw.IsNull())
 	{
 		WCHAR temp[256]{};

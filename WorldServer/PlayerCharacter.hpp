@@ -12,8 +12,6 @@ public:
 	void Start() override;
 	void Update(float time_elapsed) override;
 
-	bool TryMoveLT();
-	bool TryMoveRT();
-	bool TryMoveUP();
-	bool TryMoveDW();
+	ENTITY_CATEGORY myCategory = ENTITY_CATEGORY::PLAYER;
+	ENTITY_TYPES myType = ENTITY_TYPES::PLAYER_WARRIOR;
 };

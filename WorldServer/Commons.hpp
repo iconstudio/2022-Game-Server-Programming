@@ -1,5 +1,7 @@
 #pragma once
 
+using PID = long long;
+
 enum class PACKET_TYPES : UCHAR
 {
 	NONE = 0,
@@ -22,11 +24,29 @@ enum class PACKET_TYPES : UCHAR
 	SC_STAT_OBJ,
 };
 
-enum class ENTITY_TYPES : UCHAR
+// 객체의 범주
+enum class ENTITY_CATEGORY : UCHAR
 {
-	NONE, NPC, QUEEST_NPC, MOB, BOSS, PLAYER
+	NONE = 0
+	, NPC, QUEST_NPC, MOB, BOSS, PLAYER
 };
 
+// 객체의 하위 종류
+enum class ENTITY_TYPES : UINT
+{
+	NONE = 0,
+	PLAYER_WARRIOR = 1,
+	PLAYER_ARCHER,
+	PLAYER_MAGICIAN,
+	NPC_SHOPKEEPER = 1000,
+	NPC_GUARD,
+	MOB_SLIME_1 = 10000,
+	MOB_SLIME_2,
+	MOB_MUSHROOM,
+	MOB_BEE,
+	MOB_DEMON,
+	MOB_GOLEM
+};
 
 #pragma pack(push, 1)
 class Packet
@@ -100,6 +120,7 @@ struct CSPacketChatMessage : public Packet
 	CSPacketChatMessage(PID fid, PID tid, const WCHAR msg[])
 		: Packet(PACKET_TYPES::CS_CHAT, sizeof(CSPacketChatMessage), fid)
 		, Caption()
+		, targetID(0)
 	{
 		lstrcpy(Caption, msg);
 	}
@@ -127,8 +148,6 @@ struct SCPacketSignUp : public Packet
 /// </summary>
 struct SCPacketCreatePlayer : public Packet
 {
-	/// <param name="pid">다른 플레이어의 고유 식별자</param>
-	/// <param name="nickname">별명</param>
 	SCPacketCreatePlayer(PID pid, const CHAR* nickname)
 		: Packet(PACKET_TYPES::SC_CREATE_PLAYER, sizeof(SCPacketCreatePlayer), pid)
 		, Nickname()
@@ -142,14 +161,21 @@ struct SCPacketCreatePlayer : public Packet
 /// <summary>
 /// 특정 개체의 시야 진입
 /// </summary>
-struct SCPacketAppearCharacter : public Packet
+struct SCPacketAppearEntity : public Packet
 {
-	SCPacketAppearCharacter(PID cid, ENTITY_TYPES type, float cx, float cy)
-		: Packet(PACKET_TYPES::SC_APPEAR_OBJ, sizeof(SCPacketAppearCharacter), cid)
-		, myType(type), x(cx), y(cy)
+	SCPacketAppearEntity(PID cid, ENTITY_CATEGORY category, ENTITY_TYPES type, float cx, float cy)
+		: Packet(PACKET_TYPES::SC_APPEAR_OBJ, sizeof(SCPacketAppearEntity), cid)
+		, myCategory(category), myType(type)
+		, x(cx), y(cy)
 	{}
 
+	ENTITY_CATEGORY myCategory;
 	ENTITY_TYPES myType;
+
+	int level = 0;
+	int hp = 1, maxhp = 1;
+	int mp = 0, maxmp = 0;
+	int amour = 0;
 	float x, y;
 };
 
@@ -212,22 +238,24 @@ struct SCPacketSignOut : public Packet
 };
 #pragma pack(pop)
 
-constexpr COLORREF C_BLACK = RGB(0, 0, 0);
-constexpr COLORREF C_WHITE = RGB(255, 255, 255);
-constexpr COLORREF C_GREEN = RGB(0, 128, 0);
-constexpr COLORREF C_GOLD = RGB(223, 130, 20);
 constexpr int CLIENT_W = 800;
 constexpr int CLIENT_H = 600;
 constexpr float FRAME_W = 800.0f;
 constexpr float FRAME_H = 600.0f;
 
-constexpr UINT PLAYERS_MAX_NUMBER = 10000;
-constexpr UINT NPC_MAX_NUMBER = 10000;
-constexpr UINT ENTITIES_MAX_NUMBER = PLAYERS_MAX_NUMBER + NPC_MAX_NUMBER;
-constexpr UINT CLIENTS_ORDER_BEGIN = NPC_MAX_NUMBER;
+constexpr USHORT PORT = 6000;
+constexpr size_t BUFFSZ = 256;
 
-constexpr PID NPC_ID_BEGIN = 0;
-constexpr PID CLIENTS_ID_BEGIN = PID(NPC_MAX_NUMBER);
+constexpr UINT USERS_MAX = 10000;
+constexpr UINT NPCS_MAX = 200000;
+constexpr UINT ENTITIES_MAX_NUMBER = USERS_MAX + NPCS_MAX;
+
+constexpr UINT NPC_ID_BEGIN = 0;
+constexpr UINT NPC_ID_END = NPCS_MAX;
+constexpr UINT USERS_ID_BEGIN = NPC_ID_BEGIN + NPCS_MAX;
+constexpr UINT USERS_ID_END = USERS_ID_BEGIN + USERS_MAX;
+
+constexpr PID CLIENTS_ORDER_BEGIN = NPCS_MAX;
 
 constexpr float CELL_SIZE = 32.0f;
 constexpr float CELL_W = CELL_SIZE;
@@ -247,3 +275,18 @@ constexpr float SIGHT_W = CELL_W * SIGHT_CELLS_CNT_H;
 constexpr float SIGHT_H = CELL_H * SIGHT_CELLS_CNT_V;
 constexpr float SIGHT_RAD_W = CELL_W * SIGHT_CELLS_RAD_H;
 constexpr float SIGHT_RAD_H = CELL_H * SIGHT_CELLS_RAD_V;
+
+constexpr COLORREF C_BLACK = RGB(0, 0, 0);
+constexpr COLORREF C_WHITE = RGB(255, 255, 255);
+constexpr COLORREF C_GREEN = RGB(0, 128, 0);
+constexpr COLORREF C_GOLD = RGB(223, 130, 20);
+
+constexpr bool IsPlayer(PID id)
+{
+	return CLIENTS_ORDER_BEGIN <= id;
+}
+
+constexpr bool IsNonPlayer(PID id)
+{
+	return id < CLIENTS_ORDER_BEGIN;
+}

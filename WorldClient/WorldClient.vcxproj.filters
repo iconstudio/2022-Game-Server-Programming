@@ -34,6 +34,12 @@
     <Filter Include="리소스 파일\Images">
       <UniqueIdentifier>{892fdf21-df5c-4638-a25c-cd6738713d61}</UniqueIdentifier>
     </Filter>
+    <Filter Include="소스 파일\Contents\Scenes">
+      <UniqueIdentifier>{0fc10df0-45b4-46cd-98e3-c095d5e27270}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="헤더 파일\Contents\Scenes">
+      <UniqueIdentifier>{ff3018f4-ef8c-4ea1-8230-5f98f69fe029}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="stdafx.hpp">
@@ -60,9 +66,6 @@
     <ClInclude Include="Session.hpp">
       <Filter>헤더 파일\Network</Filter>
     </ClInclude>
-    <ClInclude Include="Commons.hpp">
-      <Filter>헤더 파일\Network</Filter>
-    </ClInclude>
     <ClInclude Include="Draw.hpp">
       <Filter>헤더 파일\System</Filter>
     </ClInclude>
@@ -87,11 +90,20 @@
     <ClInclude Include="PlayerCharacter.hpp">
       <Filter>헤더 파일\Contents</Filter>
     </ClInclude>
-    <ClInclude Include="GameScenes.hpp">
-      <Filter>헤더 파일\Contents</Filter>
-    </ClInclude>
-    <ClInclude Include="Sprite.h">
+    <ClInclude Include="Sprite.hpp">
       <Filter>헤더 파일\System</Filter>
+    </ClInclude>
+    <ClInclude Include="..\WorldServer\Commons.hpp">
+      <Filter>헤더 파일\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneLoading.hpp">
+      <Filter>헤더 파일\Contents\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="SceneMain.hpp">
+      <Filter>헤더 파일\Contents\Scenes</Filter>
+    </ClInclude>
+    <ClInclude Include="GameScenes.hpp">
+      <Filter>헤더 파일\Contents\Scenes</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -137,14 +149,20 @@
     <ClCompile Include="GameObject.cpp">
       <Filter>소스 파일\Contents</Filter>
     </ClCompile>
-    <ClCompile Include="GameScenes.cpp">
-      <Filter>소스 파일\Contents</Filter>
-    </ClCompile>
     <ClCompile Include="PlayerCharacter.cpp">
       <Filter>소스 파일\Contents</Filter>
     </ClCompile>
     <ClCompile Include="Sprite.cpp">
       <Filter>소스 파일\System</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneMain.cpp">
+      <Filter>소스 파일\Contents\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="SceneLoading.cpp">
+      <Filter>소스 파일\Contents\Scenes</Filter>
+    </ClCompile>
+    <ClCompile Include="GameScenes.cpp">
+      <Filter>소스 파일\Contents\Scenes</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -124,5 +124,3 @@ constexpr T dsin(T value)
 }
 
 void ErrorDisplay(const char* title);
-
-using PID = long long;

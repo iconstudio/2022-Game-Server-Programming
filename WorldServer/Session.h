@@ -12,32 +12,33 @@ public:
 	void SetStatus(SESSION_STATES state);
 	void SetSocket(SOCKET sock);
 	void SetID(const PID id);
+	void SetAvatar(shared_ptr<GameObject> handle);
+
+	SESSION_STATES AcquireStatus() const volatile;
+	PID AcquireID() const volatile;
+	shared_ptr<GameObject> AcquireAvatar();
+
+	SESSION_STATES GetStatus() const volatile;
+	PID GetID() const volatile;
+	shared_ptr<GameObject> GetAvatar();
+
+	void ReleaseStatus(SESSION_STATES state);
+	void ReleaseID(PID id);
+	void ReleaseAvatar(shared_ptr<GameObject> handle);
 
 	virtual void AddSight(const PID id);
 	virtual void RemoveSight(const PID id);
-
 	void AssignSight(const concurrent_set<PID>& view);
 	void AssignSight(const std::unordered_set<PID>& view);
 	void AssignSight(const std::vector<PID>& view);
 	void AssignSight(std::vector<PID>&& view);
-
 	const concurrent_set<PID>& GetSight() const;
 	concurrent_set<PID>& GetSight();
-	std::vector<PID> GetLocalSight() const;
-	
-	SESSION_STATES GetStatus() const volatile;
-	SESSION_STATES AcquireStatus() const volatile;
-	PID GetID() const volatile;
-	PID AcquireID() const volatile;
-
-	void ReleaseStatus(SESSION_STATES state);
-	void ReleaseID(PID id);
+	std::unordered_set<PID> GetLocalSight() const;
 
 	virtual bool IsConnected() const volatile;
 	virtual bool IsDisconnected() const volatile;
 	virtual bool IsAccepted() const volatile;
-	virtual bool IsPlayer() const volatile;
-	virtual bool IsNonPlayer() const volatile;
 
 	void ProceedReceived(Asynchron* overlap, DWORD byte);
 	void ProceedSent(Asynchron* overlap, DWORD byte);
@@ -57,8 +58,8 @@ public:
 	void Disconnect();
 
 	const UINT Index;
-	string Nickname;
-	std::shared_ptr<PlayerCharacter> Instance;
+	string myNickname;
+	shared_atomic<GameObject> myAvatar;
 
 protected:
 	void SetRecvBuffer(const WSABUF& buffer);
@@ -74,7 +75,7 @@ protected:
 
 	Asynchron recvOverlap;
 	WSABUF recvBuffer;
-	char recvCBuffer[BUFSIZ];
+	char recvCBuffer[BUFFSZ];
 	DWORD recvBytes;
 
 	IOCPFramework& Framework;

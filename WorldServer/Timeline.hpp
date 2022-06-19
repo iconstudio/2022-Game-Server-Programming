@@ -2,8 +2,9 @@
 
 enum TIMELINE_EVENTS { EV_MOVE, EV_HEAL, EV_ATTACK };
 
-struct Timeline
+class Timeline
 {
+public:
 	PID object_id;
 	TIMELINE_EVENTS ev;
 

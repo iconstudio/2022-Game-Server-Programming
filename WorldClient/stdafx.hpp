@@ -19,7 +19,6 @@
 #include <thread>
 #include <atomic>
 #include <chrono>
-#include <optional>
 #include <memory>
 #include <numeric>
 #include <concurrent_vector.h>
@@ -29,6 +28,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <filesystem>
+#include <random>
 
 using std::string;
 using std::array;
@@ -41,6 +41,9 @@ using std::atomic_int;
 using std::atomic_uint;
 using std::make_shared;
 using std::make_unique;
+using std::uniform_int_distribution;
+using std::uniform_real_distribution;
+using std::default_random_engine;
 
 using int_pair = std::pair<int, int>;
 using float_pair = std::pair<float, float>;
@@ -94,7 +97,7 @@ constexpr Ty degtorad(Ty value)
 }
 
 template<typename Ty>
-constexpr Ty lengthdir_x(double length, Ty direction)
+constexpr Ty lengthdir_x(Ty length, Ty direction)
 {
 	return std::cos(degtorad<Ty>(direction)) * length;
 }

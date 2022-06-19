@@ -8,6 +8,7 @@ const UINT THREADS_COUNT = 6;
 using SessionPtr = shared_ptr<Session>;
 
 void IOCPWorker();
+void AIWorker();
 void TimerWorker();
 
 class IOCPFramework
@@ -16,12 +17,17 @@ public:
 	IOCPFramework();
 	~IOCPFramework();
 
-	void Init();
+	void Awake();
 	void Start();
-	void Update(float time_elapsed);
+	void Update();
 	void Communicate();
+	void Release();
+
+	void BuildSession();
+	void BuildNPC();
 
 	friend void IOCPWorker();
+	friend void AIWorker();
 	friend void TimerWorker();
 
 	/// <summary>
@@ -30,7 +36,7 @@ public:
 	/// </summary>
 	void UpdateSightOf(const UINT index);
 
-	SessionPtr CreateNPC(const UINT index, ENTITY_TYPES type, int info_index);
+	SessionPtr CreateNPC(const UINT index, ENTITY_CATEGORY type, int info_index);
 
 	SessionPtr GetClient(const UINT index) const;
 	SessionPtr GetClientByID(const PID id) const;
@@ -48,6 +54,8 @@ private:
 	void Disconnect(const PID id);
 	void ConnectFrom(const PID) = delete;
 	void Disconnect(const UINT) = delete;
+	void CreateSight(shared_ptr<Session> who);
+	void RemoveSight(const PID id);
 	void RegisterPlayer(const PID id, const UINT place);
 	void DeregisterPlayer(const PID id);
 
@@ -59,7 +67,7 @@ private:
 	SOCKET AcquireNewbieSocket() const volatile;
 	PID AcquireNewbieID() const volatile;
 
-	SOCKET&& CreateSocket() const volatile;
+	SOCKET CreateSocket() const volatile;
 	shared_ptr<Session> FindPlaceForNewbie() const;
 
 	void ReleaseClientsNumber(const UINT number) volatile;
@@ -106,10 +114,8 @@ private:
 	/// </summary>
 	/// <param name="target">클라이언트의 세션</param>
 	/// <param name="cid">NPC, 특수 객체, 플레이어의 고유 식별자</param>
-	/// <param name="type">종류</param>
-	/// <param name="cx"></param>
-	/// <param name="cy"></param>
-	int SendAppearEntity(SessionPtr& target, PID cid, ENTITY_TYPES type, float cx, float cy) const;
+	/// <param name="data">객체의 성분</param>
+	int SendAppearEntity(SessionPtr& target, PID cid, SCPacketAppearEntity data) const;
 	/// <summary>
 	/// 시야 내에서 개체가 사라졌음을 알린다.
 	/// </summary>
@@ -136,9 +142,12 @@ private:
 
 	WSAOVERLAPPED acceptOverlap;
 	DWORD acceptBytes;
-	char acceptCBuffer[BUFSIZ];
+	char acceptCBuffer[BUFFSZ];
 	atomic<SOCKET> acceptNewbie;
 	std::array<shared_atomic<Session>, ENTITIES_MAX_NUMBER>::const_iterator acceptBeginPlace;
+
+	concurrent_vector<Timeline> timerQueue;
+	std::mutex timerMutex;
 
 	/// <summary>
 	/// NPC, 특수 객체, 플레이어를 저장하는 저장소
@@ -154,4 +163,5 @@ private:
 	std::timed_mutex mutexClient;
 
 	SightManager mySightManager;
+	SCPacketAppearEntity myCharacterDatas;
 };

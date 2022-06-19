@@ -78,7 +78,7 @@ private:
 
 	Asynchron recvOverlap;
 	WSABUF recvBuffer;
-	CHAR recvCBuffer[BUFFSZ];
+	CHAR recvCBuffer[BUFSIZ];
 	DWORD recvBytes;
 };
 

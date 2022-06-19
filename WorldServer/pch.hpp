@@ -16,10 +16,10 @@ enum class PACKET_TYPES : UCHAR;
 class GameCamera;
 class SightManager;
 class SightSector;
+class Timeline;
 
 class GameObject;
-class GameEntity;
 class PlayerCharacter;
-enum class ENTITY_TYPES : UCHAR;
+enum class ENTITY_CATEGORY : UCHAR;
 
 #endif

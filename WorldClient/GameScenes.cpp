@@ -5,199 +5,28 @@
 #include "PlayerCharacter.hpp"
 #include "Draw.hpp"
 
-SceneMain::SceneMain(Framework& framework)
-	: Scene(framework, "SceneMain", 0)
-	, streamIP("127.0.0.1")
-	, streamRect{ draw_x - 50, draw_y - 15, draw_x + 50, draw_y - 15 }
-{}
-
-void SceneMain::Awake()
-{}
-
-void SceneMain::Start()
-{}
-
-void SceneMain::Update(float time_elapsed)
-{}
-
-void SceneMain::Render(HDC surface)
-{
-	Draw::Clear(surface, CLIENT_W, CLIENT_H, C_WHITE);
-
-	auto filler = CreateSolidBrush(C_BLACK);
-	auto old_filler = Draw::Attach(surface, filler);
-	auto old_bk = SetBkMode(surface, TRANSPARENT);
-
-	auto old_align = SetTextAlign(surface, TA_CENTER);
-	constexpr auto notification = L"접속할 서버의 IP 주소를 입력해주세요.";
-	auto noti_len = lstrlen(notification);
-
-	size_t ip_size = 16;
-	WCHAR ip_address[17];
-	mbstowcs_s(&ip_size, ip_address, streamIP.c_str(), 16);
-
-	TextOut(surface, draw_x, draw_y - 70, notification, noti_len);
-	TextOut(surface, draw_x, draw_y, ip_address, lstrlen(ip_address));
-
-	SetTextAlign(surface, old_align);
-
-	SetBkMode(surface, old_bk);
-	Draw::Detach(surface, old_filler, filler);
-}
-
-void SceneMain::Reset()
-{
-	streamIP = "";
-}
-
-void SceneMain::Complete()
-{
-	Scene::Complete();
-}
-
-bool SceneMain::OnNetwork(const Packet& packet)
-{
-	if (PACKET_TYPES::CS_SIGNIN == packet.Type)
-	{
-		// 로그인 요청 전송 성공
-		Complete();
-		return true;
-	}
-	else if (PACKET_TYPES::CS_MOVE == packet.Type)
-	{
-		return true;
-	}
-
-	return false;
-}
-
-void SceneMain::OnKeyDown(WPARAM key, LPARAM states)
-{
-	switch (key)
-	{
-		case VK_RETURN:
-		{
-			if (7 < streamIP.length())
-			{
-				myFramework.Connect(streamIP.c_str());
-
-				InvalidateRect(NULL, &streamRect, FALSE);
-			}
-		}
-		break;
-
-		case VK_ESCAPE:
-		{
-			streamIP.clear();
-			InvalidateRect(NULL, &streamRect, FALSE);
-		}
-		break;
-
-		case VK_BACK:
-		{
-			if (0 < streamIP.length())
-			{
-				streamIP.erase(streamIP.end() - 1);
-			}
-			InvalidateRect(NULL, &streamRect, FALSE);
-		}
-		break;
-
-		case VK_OEM_PERIOD:
-		{
-			if (streamIP.length() < 15)
-			{
-				streamIP.push_back('.');
-				InvalidateRect(NULL, &streamRect, FALSE);
-			}
-		}
-		break;
-
-		default:
-		{
-			if (isdigit(int(key)))
-			{
-				if (streamIP.length() < 16)
-				{
-					streamIP.push_back(char(key));
-					InvalidateRect(NULL, &streamRect, FALSE);
-				}
-			}
-		}
-		break;
-	}
-}
-
-SceneLoading::SceneLoading(Framework& framework)
-	: Scene(framework, "SceneLoading", 0)
-	, streamRect{ draw_x - 50, draw_y - 15, draw_x + 50, draw_y - 15 }
-	, myLife(0.0f)
-{}
-
-void SceneLoading::Awake()
-{}
-
-void SceneLoading::Start()
-{
-	myLife = 20.0f;
-}
-
-void SceneLoading::Update(float time_elapsed)
-{
-	if (myLife -= time_elapsed; myLife <= 0)
-	{
-		myFramework.JumpToPrevScene();
-	}
-}
-
-void SceneLoading::Render(HDC surface)
-{
-	Draw::Clear(surface, CLIENT_W, CLIENT_H, C_WHITE);
-
-	auto filler = CreateSolidBrush(C_BLACK);
-	auto old_filler = Draw::Attach(surface, filler);
-	auto old_bk = SetBkMode(surface, TRANSPARENT);
-
-	auto old_align = SetTextAlign(surface, TA_CENTER);
-
-	constexpr auto notification = L"접속 중 입니다...";
-	auto noti_len = lstrlen(notification);
-	TextOut(surface, draw_x, draw_y, notification, noti_len);
-
-	SetTextAlign(surface, old_align);
-	SetBkMode(surface, old_bk);
-	Draw::Detach(surface, old_filler, filler);
-}
-
-void SceneLoading::Reset()
-{}
-
-void SceneLoading::Complete()
-{
-	Scene::Complete();
-}
-
-bool SceneLoading::OnNetwork(const Packet& packet)
-{
-	if (PACKET_TYPES::SC_SIGNUP == packet.Type)
-	{
-		Complete();
-		return false; // 처리는 안 하지만 종료는 함.
-	}
-	else if (PACKET_TYPES::CS_MOVE == packet.Type)
-	{
-		return true;
-	}
-
-	return false;
-}
-
 SceneGame::SceneGame(Framework& framework)
 	: Scene(framework, "SceneGame", 10)
 	, myLocalInstances()
 	, myPlayerCharacter(nullptr)
+	, myWorldImage(NULL), myWorldImageContext(NULL)
+	, myRandomEngine(), myTerrainRandomizer(0, 255)
+	, myWorldRegions(), myWorldTerrain()
 {
 	myLocalInstances.reserve(100);
+	myWorldRegions.reserve(20);
+
+	for (int y = 0; y < WORLD_CELLS_CNT_V; y++)
+	{
+		auto& row = myWorldTerrain[y];
+
+		for (int x = 0; x < WORLD_CELLS_CNT_H; x++)
+		{
+			auto& column = row[x];
+
+			column = myTerrainRandomizer(myRandomEngine);
+		}
+	}
 }
 
 void SceneGame::Awake()
@@ -208,7 +37,7 @@ void SceneGame::Start()
 
 void SceneGame::Update(float time_elapsed)
 {
-	if (myPlayerCharacter) 
+	if (myPlayerCharacter)
 	{
 		const auto& follower_pos = myPlayerCharacter->myPosition;
 
@@ -235,9 +64,23 @@ void SceneGame::Complete()
 
 void SceneGame::Render(HDC surface)
 {
-	Draw::Clear(surface, CLIENT_W, CLIENT_H, C_GREEN);
+	const auto cam_pos = myCamera.myPosition;
 
 	auto old_bk = SetBkMode(surface, TRANSPARENT);
+	Draw::Clear(surface, CLIENT_W, CLIENT_H, C_GREEN);
+
+	constexpr COLORREF outer_color = 0;
+	auto m_hPen = CreatePen(PS_NULL, 1, outer_color);
+	auto m_oldhPen = HPEN(Draw::Attach(surface, m_hPen));
+
+	auto m_hBR = CreateSolidBrush(outer_color);
+	auto m_oldhBR = HBRUSH(Draw::Attach(surface, m_hBR));
+
+	//Draw::SizedRect(surface, 0, 0, width, height);
+
+	Draw::Detach(surface, m_oldhBR, m_hBR);
+	Draw::Detach(surface, m_oldhPen, m_hPen);
+
 	Scene::Render(surface);
 	SetBkMode(surface, old_bk);
 }
@@ -249,7 +92,18 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	const auto& packet_sz = packet.Size;
 	const auto& handle = myFramework.GetHandle();
 
+	// 접속 전까진 -1
+	const auto my_id = myFramework.GetMyID();
+
 	if (PACKET_TYPES::SC_SIGNUP == packet_type)
+	{
+		return true;
+	}
+	else if (PACKET_TYPES::CS_MOVE == packet_type)
+	{
+		return true;
+	}
+	else if (PACKET_TYPES::SC_SIGNUP == packet_type)
 	{
 		return true;
 	}
@@ -263,31 +117,56 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	else if (PACKET_TYPES::SC_APPEAR_OBJ == packet_type)
 	{
 		auto ticket = const_cast<Packet*>(&packet);
-		const auto rp = static_cast<SCPacketAppearCharacter*>(ticket);
+		const auto rp = static_cast<SCPacketAppearEntity*>(ticket);
 
-		for (const auto& inst : myLocalInstances)
+		auto it = myLocalInstances.find(pid);
+
+		if (myLocalInstances.end() != it)
 		{
-			if (inst->myID == pid)
+			auto& instance = *it->second;
+			// 속성 갱신
+			instance.myID = pid;
+			instance.myCategory = rp->myCategory;
+			instance.myType = rp->myType;
+			instance.myMaxHP = rp->maxhp;
+			instance.myHP = rp->hp;
+			instance.myMaxMP = rp->maxmp;
+			instance.myMP = rp->mp;
+			instance.myArmour = rp->amour;
+
+			// 위치 갱신
+			instance.myPosition[0] = rp->x;
+			instance.myPosition[1] = rp->y;
+		}
+		else if (IsPlayer(pid)) // 플레이어의 캐릭터
+		{
+			auto instance = CreateInstance<PlayerCharacter>();
+			instance->myID = pid;
+			instance->myCategory = rp->myCategory;
+			instance->myType = rp->myType;
+			instance->myMaxHP = rp->maxhp;
+			instance->myHP = rp->hp;
+			instance->myMaxMP = rp->maxmp;
+			instance->myMP = rp->mp;
+			instance->myArmour = rp->amour;
+			instance->myPosition[0] = rp->x;
+			instance->myPosition[1] = rp->y;
+
+			if (!myPlayerCharacter && PID(-1) != my_id && pid == my_id)
 			{
-				inst->myPosition[0] = rp->x;
-				inst->myPosition[1] = rp->y;
+				myPlayerCharacter = instance;
 
-				return true;
+				myCamera.myPosition[0] = rp->x - FRAME_W / 2;
+				myCamera.myPosition[1] = rp->y - FRAME_H / 2;
 			}
+
+			myLocalInstances.try_emplace(pid, instance);
 		}
-
-		// 플레이어의 캐릭터
-		auto inst = CreateInstance<PlayerCharacter>();
-		inst->myPosition[0] = rp->x;
-		inst->myPosition[1] = rp->y;
-		inst->myID = pid;
-
-		if (!myPlayerCharacter && pid == myFramework.GetMyID())
+		else // NPC
 		{
-			myPlayerCharacter = inst;
+
 		}
 
-		myLocalInstances.push_back(inst);
 		InvalidateRect(handle, NULL, TRUE);
 
 		return true;
@@ -295,16 +174,15 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	else if (PACKET_TYPES::SC_DISAPPEAR_OBJ == packet_type)
 	{
 		// 다른 플레이어의 캐릭터 삭제
-		auto rit = std::find_if(myLocalInstances.begin()
-			, myLocalInstances.end()
-			, [pid](const GameEntity* entity) -> bool {
-			return (entity->myID == pid);
-		});
+		auto rit = myLocalInstances.find(pid);
 
 		if (myLocalInstances.end() != rit)
 		{
-			DestroyInstance(*rit);
+			rit->second->Hide();
+			//DestroyInstance(rit->second);
+
 			myLocalInstances.erase(rit);
+
 			InvalidateRect(handle, NULL, TRUE);
 		}
 
@@ -315,28 +193,24 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		auto ticket = const_cast<Packet*>(&packet);
 		const auto rp = static_cast<SCPacketMoveCharacter*>(ticket);
 
-		auto mit = std::find_if(myLocalInstances.begin()
-			, myLocalInstances.end()
-			, [pid](const GameEntity* entity) -> bool {
-			return (entity->myID == pid);
-		});
+		auto mit = myLocalInstances.find(pid);
 
 		if (myLocalInstances.end() != mit)
 		{
-			auto& inst = *mit;
-			inst->myPosition[0] = rp->x;
-			inst->myPosition[1] = rp->y;
+			auto& instance = mit->second;
+			instance->myPosition[0] = rp->x;
+			instance->myPosition[1] = rp->y;
 
 			InvalidateRect(handle, NULL, TRUE);
 		}
 
 		return true;
 	}
-	else if (PACKET_TYPES::SC_SIGNOUT == packet_type)
+	else if (PACKET_TYPES::SC_STAT_OBJ == packet.Type)
 	{
 		return true;
 	}
-	else if (PACKET_TYPES::CS_MOVE == packet.Type)
+	else if (PACKET_TYPES::SC_SIGNOUT == packet_type)
 	{
 		return true;
 	}
@@ -360,5 +234,4 @@ void SceneGame::OnKeyDown(WPARAM key, LPARAM states)
 }
 
 void SceneGame::OnKeyUp(WPARAM key, LPARAM states)
-{
-}
+{}

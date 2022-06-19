@@ -3,6 +3,8 @@
 #include "Panel.hpp"
 #include "Framework.hpp"
 #include "Network.hpp"
+#include "SceneMain.hpp"
+#include "SceneLoading.hpp"
 #include "GameScenes.hpp"
 
 LRESULT CALLBACK myProcedure(HWND, UINT, WPARAM, LPARAM);
@@ -12,7 +14,7 @@ wchar_t myTitle[MAX_LOADSTRING];
 wchar_t myWindowClass[MAX_LOADSTRING];
 
 Panel myWindow{ CLIENT_W, CLIENT_H };
-Network myNetwork{ CLIENTS_MAX_NUMBER };
+Network myNetwork{ USERS_MAX };
 Framework myFramework{ myNetwork };
 
 int APIENTRY wWinMain(_In_ HINSTANCE hInstance,

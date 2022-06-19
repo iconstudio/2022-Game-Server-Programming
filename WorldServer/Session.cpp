@@ -5,18 +5,18 @@
 #include "SightSector.hpp"
 
 Session::Session(UINT index, PID id, IOCPFramework& framework)
-	: Index(index), ID(id), Nickname(), Socket(NULL)
+	: Index(index), ID(id), myNickname(), Socket(NULL)
 	, Framework(framework)
 	, Status(SESSION_STATES::NONE)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
-	, Instance(nullptr)
+	, myAvatar(nullptr)
 	, mySightSector(nullptr), myViewList()
 	, myLuaMachine(nullptr)
 {
 	ClearOverlap(&recvOverlap);
 
 	recvBuffer.buf = recvCBuffer;
-	recvBuffer.len = BUFSIZ;
+	recvBuffer.len = BUFFSZ;
 	ClearRecvBuffer();
 }
 
@@ -38,6 +38,11 @@ void Session::SetSocket(SOCKET sock)
 void Session::SetID(const PID id)
 {
 	ID.store(id, std::memory_order_relaxed);
+}
+
+void Session::SetAvatar(shared_ptr<GameObject> handle)
+{
+	myAvatar.store(handle, std::memory_order_relaxed);
 }
 
 void Session::AddSight(const PID id)
@@ -86,14 +91,9 @@ concurrent_set<PID>& Session::GetSight()
 	return myViewList;
 }
 
-std::vector<PID> Session::GetLocalSight() const
+std::unordered_set<PID> Session::GetLocalSight() const
 {
-	return std::vector<PID>(myViewList.cbegin(), myViewList.cend());
-}
-
-SESSION_STATES Session::GetStatus() const volatile
-{
-	return Status.load(std::memory_order_relaxed);
+	return std::unordered_set<PID>(myViewList.cbegin(), myViewList.cend());
 }
 
 SESSION_STATES Session::AcquireStatus() const volatile
@@ -101,14 +101,29 @@ SESSION_STATES Session::AcquireStatus() const volatile
 	return Status.load(std::memory_order_acquire);
 }
 
+PID Session::AcquireID() const volatile
+{
+	return ID.load(std::memory_order_acquire);
+}
+
+shared_ptr<GameObject> Session::AcquireAvatar()
+{
+	return myAvatar.load(std::memory_order_acquire);
+}
+
+SESSION_STATES Session::GetStatus() const volatile
+{
+	return Status.load(std::memory_order_relaxed);
+}
+
 PID Session::GetID() const volatile
 {
 	return ID.load(std::memory_order_relaxed);
 }
 
-PID Session::AcquireID() const volatile
+shared_ptr<GameObject> Session::GetAvatar()
 {
-	return ID.load(std::memory_order_acquire);
+	return myAvatar.load(std::memory_order_relaxed);
 }
 
 void Session::ReleaseStatus(SESSION_STATES state)
@@ -121,6 +136,11 @@ void Session::ReleaseID(PID id)
 	ID.store(id, std::memory_order_release);
 }
 
+void Session::ReleaseAvatar(shared_ptr<GameObject> handle)
+{
+	myAvatar.store(handle, std::memory_order_release);
+}
+
 void Session::Cleanup()
 {
 	SetID(-1);
@@ -131,7 +151,7 @@ void Session::Cleanup()
 
 	closesocket(Socket.load(std::memory_order_seq_cst));
 
-	Instance.reset();
+	myAvatar.load(std::memory_order_seq_cst).reset();
 }
 
 void Session::Disconnect()
@@ -141,27 +161,17 @@ void Session::Disconnect()
 
 bool Session::IsConnected() const volatile
 {
-	return false;
+	return (SESSION_STATES::CONNECTED == Status || SESSION_STATES::ACCEPTED == Status);
 }
 
 bool Session::IsDisconnected() const volatile
 {
-	return true;
+	return (SESSION_STATES::NONE == Status);
 }
 
 bool Session::IsAccepted() const volatile
 {
-	return false;
-}
-
-bool Session::IsPlayer() const volatile
-{
-	return true;
-}
-
-bool Session::IsNonPlayer() const volatile
-{
-	return false;
+	return (SESSION_STATES::CONNECTED == Status);
 }
 
 void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
@@ -200,10 +210,10 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 				}
 				else // 클라이언트 수용.
 				{
-					Nickname = result->Nickname;
-					std::cout << ID << "'s Nickname: " << Nickname << ".\n";
+					myNickname = result->Nickname;
+					std::cout << ID << "'s Nickname: " << myNickname << ".\n";
 
-					Instance = std::make_shared<PlayerCharacter>(ID, 100.0f, 100.0f);
+					myAvatar = std::make_shared<PlayerCharacter>(ID, 100.0f, 100.0f);
 
 					Framework.ConnectFrom(Index);
 				}
@@ -226,13 +236,14 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 			case PACKET_TYPES::CS_MOVE:
 			{
 				auto result = reinterpret_cast<CSPacketMove*>(cbuffer);
+				auto avatar = AcquireAvatar();
 
-				if (pid == ID && Instance)
+				if (pid == ID && avatar)
 				{
 					auto key = result->Key;
 					bool moved = TryMove(key);
-					auto px = Instance->myPosition[0];
-					auto py = Instance->myPosition[1];
+					auto px = avatar->myPosition[0];
+					auto py = avatar->myPosition[1];
 
 					if (!moved)
 					{
@@ -255,6 +266,8 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 				else // 잘못된 메시지 받음.
 				{
 				}
+
+				ReleaseAvatar(avatar);
 			}
 			break;
 
@@ -273,7 +286,7 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 		recvBytes -= sz_want;
 		if (0 < recvBytes)
 		{
-			MoveStream(cbuffer, sz_want, BUFSIZ);
+			MoveStream(cbuffer, sz_want, BUFFSZ);
 		}
 	}
 
@@ -319,7 +332,7 @@ int Session::RecvStream(DWORD size, DWORD begin_bytes)
 
 int Session::RecvStream(DWORD begin_bytes)
 {
-	return RecvStream(BUFSIZ, begin_bytes);
+	return RecvStream(BUFFSZ, begin_bytes);
 }
 
 void Session::ClearRecvBuffer()
@@ -371,29 +384,31 @@ shared_ptr<SightSector>& Session::GetSightArea()
 bool Session::TryMove(WPARAM input)
 {
 	bool moved = false;
+	auto avatar = AcquireAvatar();
+
 	switch (input)
 	{
 		case VK_LEFT:
 		{
-			moved = Instance->TryMoveLT();
+			moved = avatar->TryMoveLT(CELL_W);
 		}
 		break;
 
 		case VK_RIGHT:
 		{
-			moved = Instance->TryMoveRT();
+			moved = avatar->TryMoveRT(CELL_W);
 		}
 		break;
 
 		case VK_UP:
 		{
-			moved = Instance->TryMoveUP();
+			moved = avatar->TryMoveUP(CELL_H);
 		}
 		break;
 
 		case VK_DOWN:
 		{
-			moved = Instance->TryMoveDW();
+			moved = avatar->TryMoveDW(CELL_H);
 		}
 		break;
 
@@ -401,5 +416,6 @@ bool Session::TryMove(WPARAM input)
 		break;
 	}
 
+	ReleaseAvatar(avatar);
 	return moved;
 }

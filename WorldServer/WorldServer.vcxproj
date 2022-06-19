@@ -178,6 +178,7 @@
     <ClCompile Include="SightSector.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="Timeline.cpp" />
+    <ClCompile Include="Worker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Commons.hpp" />

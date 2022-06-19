@@ -5,8 +5,10 @@ IOCPFramework framework{};
 
 int main()
 {
-	framework.Init();
+	framework.Awake();
 	framework.Start();
+	framework.Update();
+	framework.Release();
 
 	return 0;
 }
@@ -17,4 +19,14 @@ void IOCPWorker()
 	{
 		framework.Communicate();
 	}
+}
+
+void AIWorker()
+{
+
+}
+
+void TimerWorker()
+{
+
 }

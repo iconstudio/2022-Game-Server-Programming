@@ -155,8 +155,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="..\WorldServer\Commons.hpp" />
     <ClInclude Include="Asynchron.hpp" />
-    <ClInclude Include="Commons.hpp" />
     <ClInclude Include="Draw.hpp" />
     <ClInclude Include="Framework.hpp" />
     <ClInclude Include="GameCamera.hpp" />
@@ -170,8 +170,10 @@
     <ClInclude Include="PlayerCharacter.hpp" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="Scene.hpp" />
+    <ClInclude Include="SceneLoading.hpp" />
+    <ClInclude Include="SceneMain.hpp" />
     <ClInclude Include="Session.hpp" />
-    <ClInclude Include="Sprite.h" />
+    <ClInclude Include="Sprite.hpp" />
     <ClInclude Include="stdafx.hpp" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -190,6 +192,8 @@
     <ClCompile Include="pch.cpp" />
     <ClCompile Include="PlayerCharacter.cpp" />
     <ClCompile Include="Scene.cpp" />
+    <ClCompile Include="SceneLoading.cpp" />
+    <ClCompile Include="SceneMain.cpp" />
     <ClCompile Include="Session.cpp" />
     <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="stdafx.cpp" />
