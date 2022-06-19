@@ -3,5 +3,5 @@
 class GameCamera
 {
 public:
-	XMFLOAT3 myPosition;
+	float myPosition[2];
 };

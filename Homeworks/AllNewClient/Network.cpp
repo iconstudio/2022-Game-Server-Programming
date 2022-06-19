@@ -126,7 +126,7 @@ std::vector<Packet*> Network::OnReceive(DWORD bytes)
 
 			break;
 		}
-
+		else
 		{
 			const auto type = packet->Type;
 			const auto pid = packet->playerID;

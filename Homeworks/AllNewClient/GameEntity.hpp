@@ -14,5 +14,5 @@ public:
 	virtual void Render(HDC surface, float ax, float ay) const override;
 
 	PID myID;
-	XMFLOAT3 myPosition;
+	float myPosition[2];
 };

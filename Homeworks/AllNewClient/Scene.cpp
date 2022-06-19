@@ -79,7 +79,7 @@ void Scene::Render(HDC surface)
 
 		for (auto& instance : myInstances)
 		{
-			instance->Render(surface, -my_cam_pos.x, -my_cam_pos.y);
+			instance->Render(surface, -my_cam_pos[0], -my_cam_pos[1]);
 		}
 	}
 }
@@ -163,28 +163,4 @@ bool Scene::IsCompleted() const
 bool Scene::IsPaused() const
 {
 	return isPaused;
-}
-
-template<typename Type, typename Op, bool>
-Op* Scene::CreateInstance()
-{
-	auto ptr = new Op();
-	AddInstance(ptr);
-	return ptr;
-}
-
-template<>
-GameEntity* Scene::CreateInstance<GameEntity, GameEntity, true>()
-{
-	auto ptr = new GameEntity();
-	AddInstance(ptr);
-	return ptr;
-}
-
-template<>
-PlayerCharacter* Scene::CreateInstance<PlayerCharacter, PlayerCharacter, true>()
-{
-	auto ptr = new PlayerCharacter();
-	AddInstance(ptr);
-	return ptr;
 }

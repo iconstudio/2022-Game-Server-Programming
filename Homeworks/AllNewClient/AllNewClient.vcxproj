@@ -172,6 +172,7 @@
     <ClInclude Include="resource.h" />
     <ClInclude Include="Scene.hpp" />
     <ClInclude Include="Session.hpp" />
+    <ClInclude Include="Sprite.h" />
     <ClInclude Include="stdafx.hpp" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
@@ -192,6 +193,7 @@
     <ClCompile Include="PlayerCharacter.cpp" />
     <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Session.cpp" />
+    <ClCompile Include="Sprite.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>

@@ -9,12 +9,9 @@ public:
 	Scene(Framework& framework, const char* name, size_t instance_count = 0);
 	virtual ~Scene();
 
-	template<typename Type, typename Op = std::remove_cvref_t<Type>, bool = std::is_base_of_v<GameObject, Op>>
+	template<typename Type, typename Op = std::remove_cvref_t<Type>>
+		requires(std::is_base_of_v<GameObject, Op>)
 	Op* CreateInstance();
-	template<>
-	GameEntity* CreateInstance<GameEntity, GameEntity, true>();
-	template<>
-	PlayerCharacter* CreateInstance<PlayerCharacter, PlayerCharacter, true>();
 	void DestroyInstance(GameObject* instance);
 
 	virtual void Awake() = 0;
@@ -53,3 +50,14 @@ protected:
 	bool isCompleted;
 	bool isPaused;
 };
+
+template<typename Type, typename Op>
+	requires(std::is_base_of_v<GameObject, Op>)
+Op* Scene::CreateInstance()
+{
+	auto ptr = new Op();
+	AddInstance(ptr);
+
+	ptr->Start();
+	return ptr;
+}

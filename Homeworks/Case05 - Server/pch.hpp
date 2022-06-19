@@ -37,8 +37,8 @@ constexpr int WORLD_CELLS_CNT_V = 400;
 constexpr float WORLD_W = CELL_W * WORLD_CELLS_CNT_H;
 constexpr float WORLD_H = CELL_H * WORLD_CELLS_CNT_V;
 
-constexpr int SIGHT_CELLS_CNT_H = 11;
-constexpr int SIGHT_CELLS_CNT_V = 11;
+constexpr int SIGHT_CELLS_CNT_H = 15;
+constexpr int SIGHT_CELLS_CNT_V = 15;
 constexpr int SIGHT_CELLS_RAD_H = SIGHT_CELLS_CNT_H / 2;
 constexpr int SIGHT_CELLS_RAD_V = SIGHT_CELLS_CNT_H / 2;
 

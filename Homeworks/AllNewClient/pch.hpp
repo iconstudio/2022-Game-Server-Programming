@@ -1,6 +1,6 @@
 #pragma once
 #include "targetver.h"
-
+#pragma comment(lib, "msimg32.lib")
 #pragma comment(lib, "MSWSock.lib")
 #pragma comment(lib, "Ws2_32.lib")
 #define NOMINMAX
@@ -8,8 +8,10 @@
 #include <WS2tcpip.h>
 #include <MSWSock.h>
 
-#include <DirectXMath.h>
-using DirectX::XMFLOAT3;
+#define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS 일부 CString 생성자는 명시적으로 선언됩니다.
+#include <atlbase.h>
+#include <atlimage.h>
+#include <atlstr.h>
 
 #include <string>
 #include <iostream>
@@ -65,16 +67,65 @@ using weak_atomic_concurrent_vector = concurrent_vector<weak_atomic<Type>>;
 
 constexpr double PI = 3.141592653589793;
 
-template<typename T>
-constexpr T dcos(T value)
+template<typename Ty>
+constexpr Ty dcos(Ty value)
 {
 	return std::cos(value * PI / 180);
 }
 
-template<typename T>
-constexpr T dsin(T value)
+template<typename Ty>
+constexpr Ty dsin(Ty value)
 {
 	return std::sin(value * PI / 180);
+}
+
+template<typename Ty>
+constexpr Ty radtodeg(Ty value)
+{
+	return value / PI * Ty(180.0);
+}
+
+template<typename Ty>
+constexpr Ty degtorad(Ty value)
+{
+	return value * PI / Ty(180.0);
+}
+
+template<typename Ty>
+constexpr Ty lengthdir_x(double length, Ty direction)
+{
+	return std::cos(degtorad<Ty>(direction)) * length;
+}
+
+template<typename Ty>
+constexpr double lengthdir_y(Ty length, Ty direction)
+{
+	return -std::sin(degtorad<Ty>(direction)) * length;
+}
+
+template<typename Ty>
+inline double point_distance(Ty x1, Ty y1, Ty x2, Ty y2)
+{
+	return std::sqrt(pow(x2 - x1, 2) + pow(y2 - y1, 2));
+}
+
+template<typename Ty>
+inline double point_direction(Ty x1, Ty y1, Ty x2, Ty y2)
+{
+	return radtodeg<Ty>(atan2(y1 - y2, x2 - x1));
+}
+
+namespace Render
+{
+	void transform_set(HDC, XFORM&);
+	void transform_set_identity(HDC);
+	void transform_set_rotation(HDC);
+
+	void draw_clear(HDC, int width, int height, COLORREF color = 0);
+	BOOL draw_rectangle(HDC, int, int, int, int);
+	void draw_end(HDC, HGDIOBJ, HGDIOBJ);
+
+	static XFORM transform_identity{ 1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f };
 }
 
 void ErrorAbort(const wchar_t* title, const int errorcode);

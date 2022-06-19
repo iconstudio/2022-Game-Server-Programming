@@ -210,16 +210,26 @@ void SceneGame::Start()
 
 void SceneGame::Update(float time_elapsed)
 {
+	if (myPlayerCharacter) 
+	{
+		const auto& follower_pos = myPlayerCharacter->myPosition;
+
+		myCamera.myPosition[0] = follower_pos[0] - FRAME_W / 2;
+		myCamera.myPosition[1] = follower_pos[1] - FRAME_H / 2;
+	}
 }
 
 void SceneGame::Reset()
 {
-	myCamera.myPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	myCamera.myPosition[0] = 0.0f;
+	myCamera.myPosition[1] = 0.0f;
 }
 
 void SceneGame::Complete()
 {
-	myCamera.myPosition = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	myCamera.myPosition[0] = 0.0f;
+	myCamera.myPosition[1] = 0.0f;
+
 	myLocalInstances.clear();
 
 	Scene::Complete();
@@ -261,18 +271,23 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		{
 			if (inst->myID == pid)
 			{
-				inst->myPosition.x = rp->x;
-				inst->myPosition.y = rp->y;
+				inst->myPosition[0] = rp->x;
+				inst->myPosition[1] = rp->y;
 
 				return true;
 			}
 		}
 
-		// 다른 플레이어의 캐릭터
+		// 플레이어의 캐릭터
 		auto inst = CreateInstance<PlayerCharacter>();
-		inst->myPosition.x = rp->x;
-		inst->myPosition.y = rp->y;
+		inst->myPosition[0] = rp->x;
+		inst->myPosition[1] = rp->y;
 		inst->myID = pid;
+
+		if (!myPlayerCharacter && pid == myFramework.GetMyID())
+		{
+			myPlayerCharacter = inst;
+		}
 
 		myLocalInstances.push_back(inst);
 		InvalidateRect(handle, NULL, TRUE);
@@ -311,7 +326,9 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		if (myLocalInstances.end() != mit)
 		{
 			auto& inst = *mit;
-			inst->myPosition = XMFLOAT3(rp->x, rp->y, 0.00f);
+			inst->myPosition[0] = rp->x;
+			inst->myPosition[1] = rp->y;
+
 			InvalidateRect(handle, NULL, TRUE);
 		}
 

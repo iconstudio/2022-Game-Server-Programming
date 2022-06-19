@@ -261,40 +261,44 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	if (0 < lu_coords.first && 0 < lu_coords.second)
 	{
 		const auto& list = mySightManager.At(lu_coords)->GetSightList();
-		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
-			viewlist_curr.insert(ot_id);
-		});
-		//additions.insert(list.begin(), list.end());
+
+		viewlist_curr.insert(list.begin(), list.end());
+		//std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
+		//	viewlist_curr.insert(ot_id);
+		//});
 	}
 
 	const auto ru_coords = curr_coords + int_pair{ +sgh_w, -sgh_h };
 	if (ru_coords.first < WORLD_CELLS_CNT_H && 0 < ru_coords.second)
 	{
 		const auto& list = mySightManager.At(ru_coords)->GetSightList();
-		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
-			viewlist_curr.insert(ot_id);
-		});
-		//additions.insert(list.begin(), list.end());
+
+		viewlist_curr.insert(list.begin(), list.end());
+		///std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
+		//	viewlist_curr.insert(ot_id);
+		//});
 	}
 
 	const auto ld_coords = curr_coords + int_pair{ -sgh_w, +sgh_h };
 	if (0 < ld_coords.first && ld_coords.second < WORLD_CELLS_CNT_V)
 	{
 		const auto& list = mySightManager.At(ld_coords)->GetSightList();
-		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
-			viewlist_curr.insert(ot_id);
-		});
-		//additions.insert(list.begin(), list.end());
+
+		viewlist_curr.insert(list.begin(), list.end());
+		//std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
+		//	viewlist_curr.insert(ot_id);
+		//});
 	}
 
 	const auto rd_coords = curr_coords + int_pair{ +sgh_w, +sgh_h };
 	if (rd_coords.first < WORLD_CELLS_CNT_H && rd_coords.second < WORLD_CELLS_CNT_V)
 	{
 		const auto& list = mySightManager.At(rd_coords)->GetSightList();
-		std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
-			viewlist_curr.insert(ot_id);
-		});
-		//additions.insert(list.begin(), list.end());
+
+		viewlist_curr.insert(list.begin(), list.end());
+		//std::for_each(list.begin(), list.end(), [&](const PID& ot_id) {
+		//	viewlist_curr.insert(ot_id);
+		//});
 	}
 	curr_sector->Release();
 
@@ -323,11 +327,11 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 		const bool ot_is_player = other != session && other->IsPlayer();
 		const auto& ot_inst = other->Instance;
 		const auto& ot_pos = ot_inst->GetPosition();
-		const bool check = sight_magnitude < SightDistance(my_pos, ot_pos);
+		const bool check_out = sight_magnitude < SightDistance(my_pos, ot_pos);
 
 		const auto pit = std::find(viewlist_prev.cbegin(), viewlist_prev.cend(), cid);
 
-		if (check)
+		if (check_out)
 		{
 			session->RemoveSight(cid);
 			SendDisppearEntity(session, cid);

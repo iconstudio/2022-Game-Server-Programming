@@ -7,15 +7,15 @@ constexpr COLORREF C_GREEN = RGB(0, 128, 0);
 constexpr COLORREF C_GOLD = RGB(223, 130, 20);
 constexpr int CLIENT_W = 800;
 constexpr int CLIENT_H = 600;
-constexpr int FRAME_W = 800;
-constexpr int FRAME_H = 600;
+constexpr float FRAME_W = 800.0f;
+constexpr float FRAME_H = 600.0f;
 
 constexpr int CELL_SIZE = 32;
 
 constexpr int CELL_W = CELL_SIZE;
 constexpr int CELL_H = CELL_SIZE;
-constexpr int CELLS_CNT_H = 400;
-constexpr int CELLS_CNT_V = 400;
+constexpr int CELLS_CNT_H = 2000;
+constexpr int CELLS_CNT_V = 2000;
 constexpr int CELLS_LENGTH = CELLS_CNT_H * CELLS_CNT_V;
 constexpr int WORLD_W = CELL_W * CELLS_CNT_H;
 constexpr int WORLD_H = CELL_H * CELLS_CNT_V;

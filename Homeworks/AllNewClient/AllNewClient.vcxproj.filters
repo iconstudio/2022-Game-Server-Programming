@@ -90,6 +90,9 @@
     <ClInclude Include="GameScenes.hpp">
       <Filter>헤더 파일\Contents</Filter>
     </ClInclude>
+    <ClInclude Include="Sprite.h">
+      <Filter>헤더 파일\System</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -142,6 +145,9 @@
     </ClCompile>
     <ClCompile Include="PlayerCharacter.cpp">
       <Filter>소스 파일\Contents</Filter>
+    </ClCompile>
+    <ClCompile Include="Sprite.cpp">
+      <Filter>소스 파일\System</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
