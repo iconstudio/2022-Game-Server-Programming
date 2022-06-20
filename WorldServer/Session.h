@@ -36,7 +36,7 @@ public:
 	//void ReleaseAvatar(shared_ptr<GameObject> handle);
 
 	virtual void AddSight(const PID id);
-	virtual void RemoveSight(const PID id);
+	virtual void RemoveViewOf(const PID id);
 	void AssignSight(const concurrent_set<PID>& view);
 	void AssignSight(const std::unordered_set<PID>& view);
 	void AssignSight(const std::vector<PID>& view);
@@ -67,15 +67,16 @@ public:
 	const float* GetPosition() const;
 	float* GetPosition();
 
-	PID myID;
-	ENTITY_CATEGORY myCategory;
-	ENTITY_TYPES myType;
-	int myLevel;
-	int myHP, myMaxHP;
-	int myMP, myMaxMP;
-	int myArmour;
+	SCPacketAppearEntity myInfobox;
+	PID& myID;
+	ENTITY_CATEGORY& myCategory;
+	ENTITY_TYPES& myType;
+	int& myLevel;
+	int& myHP, &myMaxHP;
+	int& myMP, myMaxMP;
+	int& myArmour;
+	MOVE_TYPES& myDirection;
 	float myPosition[2];
-	MOVE_TYPES myDirection;
 	RECT myBoundingBox;
 
 	const UINT Index;

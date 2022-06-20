@@ -59,6 +59,10 @@ bool SceneLoading::OnNetwork(const Packet& packet)
 		Complete();
 		return false; // 처리는 안 하지만 종료는 함.
 	}
+	else if (PACKET_TYPES::SC_SIGNIN_FAILED == packet.Type)
+	{
+		return true;
+	}
 	else if (PACKET_TYPES::CS_MOVE == packet.Type)
 	{
 		return true;

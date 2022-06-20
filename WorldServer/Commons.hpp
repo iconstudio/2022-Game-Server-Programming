@@ -49,7 +49,7 @@ enum class CHAT_MSG_TYPES : UCHAR
 enum class ENTITY_CATEGORY : UCHAR
 {
 	NONE = 0
-	, NPC, QUEST_NPC, MOB, BOSS, PLAYER
+	, NPC, MOB, BOSS, PLAYER
 };
 
 // 객체의 하위 종류
@@ -72,9 +72,11 @@ enum class ENTITY_TYPES : UINT
 enum class OVERLAP_OPS : UCHAR
 {
 	NONE = 0,
+	LISTEN,
+	ACCEPT,
 	RECV,
 	SEND,
-	ENTITY_MOVE,
+	ENTITY_MOVE = 100,
 	ENTITY_ATTACK,
 	// 플레이어 평타
 	PLAYER_ATTACK,
@@ -245,6 +247,12 @@ struct SCPacketCreatePlayer : public Packet
 /// </summary>
 struct SCPacketAppearEntity : public Packet
 {
+	SCPacketAppearEntity(PID cid)
+		: Packet(PACKET_TYPES::SC_APPEAR_OBJ, sizeof(SCPacketAppearEntity), cid)
+		, myCategory(), myType()
+		, x(), y()
+	{}
+
 	SCPacketAppearEntity(PID cid, ENTITY_CATEGORY category, ENTITY_TYPES type, float cx, float cy)
 		: Packet(PACKET_TYPES::SC_APPEAR_OBJ, sizeof(SCPacketAppearEntity), cid)
 		, myCategory(category), myType(type)
@@ -254,7 +262,7 @@ struct SCPacketAppearEntity : public Packet
 	ENTITY_CATEGORY myCategory;
 	ENTITY_TYPES myType;
 
-	UCHAR dir = 0;
+	MOVE_TYPES dir = MOVE_TYPES::NONE;
 	int level = 0;
 	int hp = 1, maxhp = 1;
 	int mp = 0, maxmp = 0;

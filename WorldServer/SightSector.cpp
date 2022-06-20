@@ -42,7 +42,7 @@ void SightSector::Remove(const PID id)
 
 std::unordered_set<PID> SightSector::GetSightList() const
 {
-	return std::unordered_set<PID>{ mySight };
+	return mySight;
 }
 
 bool SightSector::operator==(const SightSector& other) const noexcept

@@ -11,6 +11,14 @@ Session::Session(UINT index, PID id, IOCPFramework& framework)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 	, mySightSector(nullptr), myViewList()
 	, myLuaMachine(nullptr)
+	, myInfobox(id)
+	, myID(myInfobox.playerID)
+	, myLevel(myInfobox.level)
+	, myCategory(myInfobox.myCategory), myType(myInfobox.myType)
+	, myHP(myInfobox.hp), myMaxHP(myInfobox.maxhp)
+	, myMP(myInfobox.mp), myMaxMP(myInfobox.maxmp)
+	, myArmour(myInfobox.amour)
+	, myDirection(myInfobox.dir)
 {
 	ClearOverlap(&recvOverlap);
 
@@ -128,25 +136,23 @@ void Session::TryNormalAttack(MOVE_TYPES dir)
 	ReleaseID(my_id);
 }
 
-const float* Session::GetPosition() const
-{
-	return myPosition;
-}
-
-float* Session::GetPosition()
-{
-	return myPosition;
-}
-
-void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
+void Session::ProceedReceived(Asynchron* overlap, DWORD bytes)
 {
 	std::cout << "ProceedReceived (" << ID << ")" << "\n";
+	if (0 == bytes)
+	{
+		ErrorDisplay("ProceedOperations(bytes=0)");
+		return;
+	}
+
+	const auto port = myFramework.GetCompletionPort();
+
 	auto& wbuffer = recvBuffer;
 	auto& cbuffer = wbuffer.buf;
 
-	recvBytes += byte;
-
 	const auto sz_min = sizeof(Packet);
+
+	recvBytes += bytes;
 	while (sz_min <= recvBytes)
 	{
 		auto packet = reinterpret_cast<Packet*>(cbuffer); // 클라이언트 → 서버
@@ -166,21 +172,19 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 		{
 			case PACKET_TYPES::CS_SIGNIN:
 			{
-				auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
-
 				if (IsAccepted()) // 잘못된 메시지 받음. 연결 종료.
 				{
 					Disconnect();
 				}
 				else // 클라이언트 수용.
 				{
-					myNickname = result->Nickname;
-					std::cout << ID << "'s Nickname: " << myNickname << ".\n";
+					auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
 
-					myPosition[0] = 100.0f;
-					myPosition[1] = 100.0f;
+					myFramework.ProceedSignIn(this, result);
 
-					myFramework.ConnectFrom(Index);
+					//auto asyncer = new Asynchron(OVERLAP_OPS::ACCEPT);
+					//asyncer->SetSendBuffer(cbuffer, sz_want);
+					//PostQueuedCompletionStatus(port, DWORD(Index), ULONG_PTR(ID), asyncer);
 				}
 			}
 			break;
@@ -251,25 +255,36 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 	}
 }
 
-void Session::ProceedSent(Asynchron* overlap, DWORD byte)
+void Session::ProceedSent(Asynchron* overlap, DWORD bytes)
 {
-	if (0 == byte)
+	if (0 == bytes)
 	{
-		if (WSA_IO_PENDING != WSAGetLastError())
-		{
-			ErrorDisplay("ProceedSent()");
-			Disconnect();
-		}
+		ErrorDisplay("ProceedSent(bytes=0)");
+
+		delete overlap;
+		return;
 	}
 
 	std::cout << "ProceedSent (" << ID << ")" << "\n";
-	auto& sz_send = overlap->sendSize;
-	auto& tr_send = overlap->sendSzWant;
 
 	delete overlap;
-	//ClearOverlap(overlap);
 }
 
+void Session::Cleanup()
+{
+	SetID(-1);
+	SetStatus(SESSION_STATES::NONE);
+	SetSocket(NULL);
+	mySightSector = nullptr;
+	myViewList.clear();
+
+	closesocket(Socket.load(std::memory_order_seq_cst));
+}
+
+void Session::Disconnect()
+{
+	myFramework.Disconnect(ID);
+}
 
 void Session::SetStatus(SESSION_STATES state)
 {
@@ -291,7 +306,7 @@ void Session::AddSight(const PID id)
 	myViewList.insert(id);
 }
 
-void Session::RemoveSight(const PID id)
+void Session::RemoveViewOf(const PID id)
 {
 	myViewList.unsafe_erase(id);
 }
@@ -367,22 +382,6 @@ void Session::ReleaseID(PID id)
 	ID.store(id, std::memory_order_release);
 }
 
-void Session::Cleanup()
-{
-	SetID(-1);
-	SetStatus(SESSION_STATES::NONE);
-	SetSocket(NULL);
-	mySightSector = nullptr;
-	myViewList.clear();
-
-	closesocket(Socket.load(std::memory_order_seq_cst));
-}
-
-void Session::Disconnect()
-{
-	myFramework.Disconnect(ID);
-}
-
 bool Session::IsConnected() const volatile
 {
 	return (SESSION_STATES::CONNECTED == Status || SESSION_STATES::ACCEPTED == Status);
@@ -395,8 +394,9 @@ bool Session::IsDisconnected() const volatile
 
 bool Session::IsAccepted() const volatile
 {
-	return (SESSION_STATES::CONNECTED == Status);
+	return (SESSION_STATES::ACCEPTED == Status);
 }
+
 int Session::RecvStream(DWORD size, DWORD begin_bytes)
 {
 	recvBuffer.buf = recvCBuffer + begin_bytes;
@@ -454,4 +454,14 @@ const shared_ptr<SightSector>& Session::GetSightArea() const
 shared_ptr<SightSector>& Session::GetSightArea()
 {
 	return mySightSector;
+}
+
+const float* Session::GetPosition() const
+{
+	return myPosition;
+}
+
+float* Session::GetPosition()
+{
+	return myPosition;
 }

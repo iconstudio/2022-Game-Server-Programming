@@ -152,7 +152,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			instance->myPosition[0] = rp->x;
 			instance->myPosition[1] = rp->y;
 
-			if (!myPlayerCharacter && PID(-1) != my_id && pid == my_id)
+			if (!myPlayerCharacter && pid == my_id)
 			{
 				myPlayerCharacter = instance;
 			}
