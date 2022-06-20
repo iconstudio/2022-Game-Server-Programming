@@ -92,6 +92,14 @@ void Scene::Complete()
 	isCompleted = true;
 }
 
+void Scene::UpdateCamera(const GameObject* follower)
+{
+	const auto& follower_pos = follower->myPosition;
+
+	myCamera.myPosition[0] = std::max(std::min(follower_pos[0] - FRAME_W / 2, WORLD_W - FRAME_W / 2), 0.0f);
+	myCamera.myPosition[1] = std::max(std::min(follower_pos[1] - FRAME_H / 2, WORLD_H - FRAME_H / 2), 0.0f);
+}
+
 void Scene::AddInstance(GameObject* instance)
 {
 	myInstances.push_back(shared_ptr<GameObject>(instance));

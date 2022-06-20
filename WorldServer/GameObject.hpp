@@ -40,5 +40,6 @@ public:
 	int myMP, myMaxMP;
 	int myArmour;
 	float myPosition[2];
+	MOVE_TYPES myDirection;
 	RECT myBoundingBox;
 };

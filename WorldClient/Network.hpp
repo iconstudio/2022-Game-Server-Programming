@@ -29,9 +29,10 @@ public:
 
 	int SendSignInMsg();
 	int SendSignOutMsg();
-	int SendKeyMsg(WPARAM key);
+	int SendMoveDir(MOVE_TYPES dir);
+	int SendAttack(MOVE_TYPES dir);
 
-	void AddLocalSession(PID id, const char* nickname);
+	//void AddLocalSession(PID id, const char* nickname);
 	/// <summary>
 	/// 플레이어, NPC, 상호작용 객체 등록
 	/// </summary>

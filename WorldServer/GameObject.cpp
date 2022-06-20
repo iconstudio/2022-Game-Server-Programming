@@ -12,8 +12,9 @@ GameObject::GameObject(PID id, float x, float y)
 	, myLevel(0)
 	, myHP(1), myMaxHP(1)
 	, myMP(0), myMaxMP(0)
-	, myPosition{ x, y }
-	, myBoundingBox()
+	, myArmour(0)
+	, myBoundingBox{ -16, -16, 16, 16 }
+	, myPosition{ x, y }, myDirection(MOVE_TYPES::RIGHT)
 {}
 
 GameObject::GameObject(PID id, float pos[2])
@@ -88,7 +89,7 @@ bool GameObject::CheckCollision(const GameObject* other) const
 
 bool GameObject::TryMoveLT(float distance)
 {
-	if (8.0f < myPosition[0])
+	if (8.0f < myPosition[0] - distance)
 	{
 		myPosition[0] -= distance;
 		return true;
@@ -103,7 +104,7 @@ bool GameObject::TryMoveLT(float distance)
 
 bool GameObject::TryMoveRT(float distance)
 {
-	if (myPosition[0] < WORLD_W - 8.0f)
+	if (myPosition[0] + distance < WORLD_W - 8.0f)
 	{
 		myPosition[0] += distance;
 		return true;
@@ -118,7 +119,7 @@ bool GameObject::TryMoveRT(float distance)
 
 bool GameObject::TryMoveUP(float distance)
 {
-	if (8.0f < myPosition[1])
+	if (8.0f < myPosition[1] - distance)
 	{
 		myPosition[1] -= distance;
 		return true;
@@ -133,7 +134,7 @@ bool GameObject::TryMoveUP(float distance)
 
 bool GameObject::TryMoveDW(float distance)
 {
-	if (myPosition[1] < WORLD_H - 8.0f)
+	if (myPosition[1] + distance < WORLD_H - 8.0f)
 	{
 		myPosition[1] += distance;
 		return true;

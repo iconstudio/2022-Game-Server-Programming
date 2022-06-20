@@ -30,13 +30,15 @@ public:
 	friend void AIWorker();
 	friend void TimerWorker();
 
+	SessionPtr CreateNPC(const UINT index, ENTITY_CATEGORY type, int info_index);
+
+	void CreateSight(shared_ptr<Session> who);
 	/// <summary>
-	/// 특정 플레이어의 시야 목록 갱신
-	/// 특정 플레이어의 현재 시야 목록과 바뀐 시야 목록을 비교해서 전송
+	/// 특정 세션의 시야 목록 갱신
+	/// 현재 시야 목록과 바뀐 시야 목록을 비교해서 전송
 	/// </summary>
 	void UpdateSightOf(const UINT index);
-
-	SessionPtr CreateNPC(const UINT index, ENTITY_CATEGORY type, int info_index);
+	void RemoveSight(const PID id);
 
 	SessionPtr GetClient(const UINT index) const;
 	SessionPtr GetClientByID(const PID id) const;
@@ -49,13 +51,12 @@ public:
 private:
 	void Listen();
 	void ProceedAccept();
+	void ProceedOperations(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
 	void ConnectFrom(const UINT index);
 	void Disconnect(const PID id);
 	void ConnectFrom(const PID) = delete;
 	void Disconnect(const UINT) = delete;
-	void CreateSight(shared_ptr<Session> who);
-	void RemoveSight(const PID id);
 	void RegisterPlayer(const PID id, const UINT place);
 	void DeregisterPlayer(const PID id);
 
@@ -74,8 +75,6 @@ private:
 	void ReleaseClient(const UINT home, shared_ptr<Session>& original);
 	void ReleaseNewbieSocket(const SOCKET n_socket) volatile;
 	void ReleaseNewbieID(const PID next) volatile;
-
-	void ProceedPacket(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
 	/// <summary>
 	/// 클라이언트의 첫 초기화를 위한 정보 전송
@@ -96,6 +95,10 @@ private:
 	/// <param name="id"></param>
 	/// <returns></returns>
 	int SendSignUp(SessionPtr& target, const PID id) const;
+	/// <summary>
+	/// 클라이언트의 접속을 막는다.
+	/// </summary>
+	int SendSignInFailed(SessionPtr& target, LOGIN_ERROR_TYPES type) const;
 	/// <summary>
 	/// 클라이언트에게 새로운 접속을 알리고, 로컬 플레이어 세션을 생성하도록 명령한다.
 	/// </summary>
@@ -129,7 +132,7 @@ private:
 	/// <param name="cid">NPC, 특수 객체, 플레이어의 고유 식별자</param>
 	/// <param name="nx"></param>
 	/// <param name="ny"></param>
-	int SendMoveEntity(SessionPtr& target, PID cid, float nx, float ny) const;
+	int SendMoveEntity(SessionPtr& target, PID cid, float nx, float ny, MOVE_TYPES dir) const;
 
 	bool IsClientsBound(const UINT index) const;
 
@@ -140,13 +143,15 @@ private:
 	const ULONG_PTR serverKey;
 	std::vector<std::jthread> threadWorkers;
 
+	inline const HANDLE GetCompletionPort() const { return completionPort; }
+
 	WSAOVERLAPPED acceptOverlap;
 	DWORD acceptBytes;
 	char acceptCBuffer[BUFFSZ];
 	atomic<SOCKET> acceptNewbie;
 	std::array<shared_atomic<Session>, ENTITIES_MAX_NUMBER>::const_iterator acceptBeginPlace;
 
-	concurrent_vector<Timeline> timerQueue;
+	std::priority_queue<Timeline> timerQueue;
 	std::mutex timerMutex;
 
 	/// <summary>

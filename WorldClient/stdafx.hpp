@@ -8,11 +8,6 @@
 #include <WS2tcpip.h>
 #include <MSWSock.h>
 
-#define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS 일부 CString 생성자는 명시적으로 선언됩니다.
-#include <atlbase.h>
-#include <atlimage.h>
-#include <atlstr.h>
-
 #include <string>
 #include <iostream>
 #include <mutex>
@@ -44,12 +39,19 @@ using std::make_unique;
 using std::uniform_int_distribution;
 using std::uniform_real_distribution;
 using std::default_random_engine;
+using std::min;
+using std::max;
 
 using int_pair = std::pair<int, int>;
 using float_pair = std::pair<float, float>;
 using Clock = std::chrono::system_clock::time_point;
 using Duration = std::chrono::system_clock::duration;
 using Filepath = std::filesystem::path;
+
+#define _ATL_CSTRING_EXPLICIT_CONSTRUCTORS 일부 CString 생성자는 명시적으로 선언됩니다.
+#include <atlbase.h>
+#include <atlimage.h>
+#include <atlstr.h>
 
 template<typename Type>
 using concurrent_vector = Concurrency::concurrent_vector<Type>;

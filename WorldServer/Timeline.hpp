@@ -1,12 +1,10 @@
 #pragma once
 
-enum TIMELINE_EVENTS { EV_MOVE, EV_HEAL, EV_ATTACK };
-
 class Timeline
 {
 public:
 	PID object_id;
-	TIMELINE_EVENTS ev;
+	OVERLAP_OPS ev = OVERLAP_OPS::NONE;
 
 	std::chrono::system_clock::time_point act_time;
 	PID target_id;

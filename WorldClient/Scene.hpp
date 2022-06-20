@@ -39,6 +39,7 @@ protected:
 	virtual void Reset() = 0;
 	virtual void Complete() = 0;
 
+	void UpdateCamera(const GameObject* follower);
 	void AddInstance(GameObject* instance);
 
 	Framework& myFramework;

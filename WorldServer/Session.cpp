@@ -6,7 +6,7 @@
 
 Session::Session(UINT index, PID id, IOCPFramework& framework)
 	: Index(index), ID(id), myNickname(), Socket(NULL)
-	, Framework(framework)
+	, myFramework(framework)
 	, Status(SESSION_STATES::NONE)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
 	, myAvatar(nullptr)
@@ -24,6 +24,192 @@ Session::~Session()
 {
 	closesocket(Socket);
 }
+
+void Session::TryMove(MOVE_TYPES dir)
+{
+	const auto port = myFramework.GetCompletionPort();
+	auto my_id = AcquireID();
+
+	if (IsPlayer(my_id))
+	{
+		auto asyncer = new Asynchron(OVERLAP_OPS::ENTITY_MOVE);
+
+		PostQueuedCompletionStatus(port, static_cast<DWORD>(dir), ULONG_PTR(my_id), asyncer);
+	}
+	else
+	{
+		auto asyncer = new Asynchron(OVERLAP_OPS::ENTITY_MOVE);
+
+		PostQueuedCompletionStatus(port, static_cast<DWORD>(dir), ULONG_PTR(my_id), asyncer);
+	}
+
+	ReleaseID(my_id);
+}
+
+void Session::TryNormalAttack(MOVE_TYPES dir)
+{
+	const auto port = myFramework.GetCompletionPort();
+	auto my_id = AcquireID();
+
+	if (IsPlayer(my_id))
+	{
+		// PLAYER_ATTACK
+		auto asyncer = new Asynchron(OVERLAP_OPS::PLAYER_ATTACK);
+
+		PostQueuedCompletionStatus(port, static_cast<DWORD>(dir), ULONG_PTR(my_id), asyncer);
+	}
+	else
+	{
+		// ENTITY_ATTACK
+		auto asyncer = new Asynchron(OVERLAP_OPS::ENTITY_ATTACK);
+
+		PostQueuedCompletionStatus(port, static_cast<DWORD>(dir), ULONG_PTR(my_id), asyncer);
+	}
+
+	ReleaseID(my_id);
+}
+
+void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
+{
+	std::cout << "ProceedReceived (" << ID << ")" << "\n";
+	auto& wbuffer = recvBuffer;
+	auto& cbuffer = wbuffer.buf;
+
+	recvBytes += byte;
+
+	const auto sz_min = sizeof(Packet);
+	while (sz_min <= recvBytes)
+	{
+		auto packet = reinterpret_cast<Packet*>(cbuffer); // 클라이언트 → 서버
+		auto sz_want = packet->Size;
+		auto type = packet->Type;
+		auto pid = packet->playerID;
+
+		if (recvBytes < sz_want)
+		{
+			auto lack = sz_want - recvBytes;
+			std::cout << "클라이언트 " << ID << "에게 받아온 정보가 "
+				<< lack << " 만큼 모자라서 다시 수신합니다.\n";
+			break;
+		}
+
+		switch (type)
+		{
+			case PACKET_TYPES::CS_SIGNIN:
+			{
+				auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
+
+				if (IsAccepted()) // 잘못된 메시지 받음. 연결 종료.
+				{
+					Disconnect();
+				}
+				else // 클라이언트 수용.
+				{
+					myNickname = result->Nickname;
+					std::cout << ID << "'s Nickname: " << myNickname << ".\n";
+
+					myAvatar = std::make_shared<PlayerCharacter>(ID, 100.0f, 100.0f);
+
+					myFramework.ConnectFrom(Index);
+				}
+			}
+			break;
+
+			case PACKET_TYPES::CS_SIGNOUT:
+			{
+				if (pid == ID && IsAccepted())
+				{
+					Disconnect();
+					return;
+				}
+				else // 잘못된 메시지 받음.
+				{
+				}
+			}
+			break;
+
+			case PACKET_TYPES::CS_MOVE:
+			{
+				auto result = reinterpret_cast<CSPacketMove*>(cbuffer);
+				auto avatar = AcquireAvatar();
+
+				if (pid == ID && avatar)
+				{
+					TryMove(result->myDirection);
+				}
+				else // 잘못된 메시지 받음.
+				{
+				}
+
+				ReleaseAvatar(avatar);
+			}
+			break;
+
+			case PACKET_TYPES::CS_ATTACK_NONTARGET:
+			{
+				auto result = reinterpret_cast<CSPacketAttack*>(cbuffer);
+				auto avatar = AcquireAvatar();
+
+				if (avatar)
+				{
+					TryNormalAttack(result->attackDirection);
+				}
+
+				ReleaseAvatar(avatar);
+			}
+			break;
+
+			default:
+			{
+				ClearRecvBuffer();
+				ClearOverlap(overlap); // recvOverlap
+				ErrorDisplay("ProceedReceived: 잘못된 패킷 받음");
+
+				Disconnect();
+				return;
+			}
+			break;
+		}
+
+		recvBytes -= sz_want;
+		if (0 < recvBytes)
+		{
+			MoveStream(cbuffer, sz_want, BUFFSZ);
+		}
+	}
+
+	// 아무거나 다 받는다.
+	int result = RecvStream(recvBytes);
+	if (SOCKET_ERROR == result)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay("ProceedReceived → RecvStream()");
+			Disconnect();
+			return;
+		}
+	}
+}
+
+void Session::ProceedSent(Asynchron* overlap, DWORD byte)
+{
+	if (0 == byte)
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			ErrorDisplay("ProceedSent()");
+			Disconnect();
+		}
+	}
+
+	std::cout << "ProceedSent (" << ID << ")" << "\n";
+	auto& sz_send = overlap->sendSize;
+	auto& tr_send = overlap->sendSzWant;
+
+	delete overlap;
+	//ClearOverlap(overlap);
+}
+
 
 void Session::SetStatus(SESSION_STATES state)
 {
@@ -156,7 +342,7 @@ void Session::Cleanup()
 
 void Session::Disconnect()
 {
-	Framework.Disconnect(ID);
+	myFramework.Disconnect(ID);
 }
 
 bool Session::IsConnected() const volatile
@@ -173,155 +359,6 @@ bool Session::IsAccepted() const volatile
 {
 	return (SESSION_STATES::CONNECTED == Status);
 }
-
-void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
-{
-	std::cout << "ProceedReceived (" << ID << ")" << "\n";
-	auto& wbuffer = recvBuffer;
-	auto& cbuffer = wbuffer.buf;
-
-	recvBytes += byte;
-
-	const auto sz_min = sizeof(Packet);
-	while (sz_min <= recvBytes)
-	{
-		auto packet = reinterpret_cast<Packet*>(cbuffer); // 클라이언트 → 서버
-		auto sz_want = packet->Size;
-		auto type = packet->Type;
-		auto pid = packet->playerID;
-
-		if (recvBytes < sz_want)
-		{
-			auto lack = sz_want - recvBytes;
-			std::cout << "클라이언트 " << ID << "에게 받아온 정보가 "
-				<< lack << " 만큼 모자라서 다시 수신합니다.\n";
-			break;
-		}
-
-		switch (type)
-		{
-			case PACKET_TYPES::CS_SIGNIN:
-			{
-				auto result = reinterpret_cast<CSPacketSignIn*>(cbuffer);
-
-				if (IsAccepted()) // 잘못된 메시지 받음. 연결 종료.
-				{
-					Disconnect();
-				}
-				else // 클라이언트 수용.
-				{
-					myNickname = result->Nickname;
-					std::cout << ID << "'s Nickname: " << myNickname << ".\n";
-
-					myAvatar = std::make_shared<PlayerCharacter>(ID, 100.0f, 100.0f);
-
-					Framework.ConnectFrom(Index);
-				}
-			}
-			break;
-
-			case PACKET_TYPES::CS_SIGNOUT:
-			{
-				if (pid == ID && IsAccepted())
-				{
-					Disconnect();
-					return;
-				}
-				else // 잘못된 메시지 받음.
-				{
-				}
-			}
-			break;
-
-			case PACKET_TYPES::CS_MOVE:
-			{
-				auto result = reinterpret_cast<CSPacketMove*>(cbuffer);
-				auto avatar = AcquireAvatar();
-
-				if (pid == ID && avatar)
-				{
-					auto key = result->Key;
-					bool moved = TryMove(key);
-					auto px = avatar->myPosition[0];
-					auto py = avatar->myPosition[1];
-
-					if (!moved)
-					{
-						std::cout << "플레이어 " << ID << " - 움직이지 않음.\n";
-					}
-					else
-					{
-						std::cout << "플레이어 " << ID
-							<< " - 위치: ("
-							<< px << ", " << py
-							<< ")\n";
-					}
-
-					if (moved)
-					{
-						Framework.UpdateSightOf(Index);
-						//Framework.SendMoveEntity(Index, px, py);
-					}
-				}
-				else // 잘못된 메시지 받음.
-				{
-				}
-
-				ReleaseAvatar(avatar);
-			}
-			break;
-
-			default:
-			{
-				ClearRecvBuffer();
-				ClearOverlap(overlap); // recvOverlap
-				ErrorDisplay("ProceedReceived: 잘못된 패킷 받음");
-
-				Disconnect();
-				return;
-			}
-			break;
-		}
-
-		recvBytes -= sz_want;
-		if (0 < recvBytes)
-		{
-			MoveStream(cbuffer, sz_want, BUFFSZ);
-		}
-	}
-
-	// 아무거나 다 받는다.
-	int result = RecvStream(recvBytes);
-	if (SOCKET_ERROR == result)
-	{
-		if (WSA_IO_PENDING != WSAGetLastError())
-		{
-			ErrorDisplay("ProceedReceived → RecvStream()");
-			Disconnect();
-			return;
-		}
-	}
-}
-
-void Session::ProceedSent(Asynchron* overlap, DWORD byte)
-{
-	if (0 == byte)
-	{
-		if (WSA_IO_PENDING != WSAGetLastError())
-		{
-			ErrorDisplay("ProceedSent()");
-			Disconnect();
-		}
-	}
-
-	std::cout << "ProceedSent (" << ID << ")" << "\n";
-	auto& sz_send = overlap->sendSize;
-	auto& tr_send = overlap->sendSzWant;
-
-	delete overlap;
-	//ClearOverlap(overlap);
-}
-
 int Session::RecvStream(DWORD size, DWORD begin_bytes)
 {
 	recvBuffer.buf = recvCBuffer + begin_bytes;
@@ -379,43 +416,4 @@ const shared_ptr<SightSector>& Session::GetSightArea() const
 shared_ptr<SightSector>& Session::GetSightArea()
 {
 	return mySightSector;
-}
-
-bool Session::TryMove(WPARAM input)
-{
-	bool moved = false;
-	auto avatar = AcquireAvatar();
-
-	switch (input)
-	{
-		case VK_LEFT:
-		{
-			moved = avatar->TryMoveLT(CELL_W);
-		}
-		break;
-
-		case VK_RIGHT:
-		{
-			moved = avatar->TryMoveRT(CELL_W);
-		}
-		break;
-
-		case VK_UP:
-		{
-			moved = avatar->TryMoveUP(CELL_H);
-		}
-		break;
-
-		case VK_DOWN:
-		{
-			moved = avatar->TryMoveDW(CELL_H);
-		}
-		break;
-
-		default:
-		break;
-	}
-
-	ReleaseAvatar(avatar);
-	return moved;
 }

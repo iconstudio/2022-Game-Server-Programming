@@ -19,11 +19,4 @@ public:
 	DWORD sendSize, sendSzWant;
 };
 
-enum class OVERLAP_OPS : UCHAR
-{
-	NONE = 0,
-	RECV,
-	SEND,
-};
-
 void ClearOverlap(LPWSAOVERLAPPED overlap);

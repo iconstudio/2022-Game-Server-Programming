@@ -69,6 +69,26 @@ enum class ENTITY_TYPES : UINT
 	MOB_GOLEM
 };
 
+enum class OVERLAP_OPS : UCHAR
+{
+	NONE = 0,
+	RECV,
+	SEND,
+	ENTITY_MOVE,
+	ENTITY_ATTACK,
+	// 플레이어 평타
+	PLAYER_ATTACK,
+	ENTITY_ACTION,
+	ENTITY_HEAL,
+	ENTITY_DEAD,
+};
+
+enum class MOVE_TYPES : UCHAR
+{
+	NONE = 0,
+	LEFT, UP, RIGHT, DOWN
+};
+
 #pragma pack(push, 1)
 class Packet
 {
@@ -118,12 +138,12 @@ struct CSPacketSignOut : public Packet
 /// </summary>
 struct CSPacketMove : public Packet
 {
-	CSPacketMove(PID pid, UCHAR dir)
+	CSPacketMove(PID pid, MOVE_TYPES dir)
 		: Packet(PACKET_TYPES::CS_MOVE, sizeof(CSPacketMove), pid)
 		, myDirection(dir)
 	{}
 
-	const UCHAR myDirection;
+	const MOVE_TYPES myDirection;
 };
 
 /// <summary>
@@ -131,12 +151,12 @@ struct CSPacketMove : public Packet
 /// </summary>
 struct CSPacketAttack : public Packet
 {
-	CSPacketAttack(PID pid, UCHAR dir)
+	CSPacketAttack(PID pid, MOVE_TYPES dir)
 		: Packet(PACKET_TYPES::CS_ATTACK_NONTARGET, sizeof(CSPacketAttack), pid)
 		, attackDirection(dir)
 	{}
 
-	const UCHAR attackDirection;
+	const MOVE_TYPES attackDirection;
 };
 
 /// <summary>
@@ -247,13 +267,13 @@ struct SCPacketAppearEntity : public Packet
 /// </summary>
 struct SCPacketMoveCharacter : public Packet
 {
-	SCPacketMoveCharacter(PID cid, float nx, float ny, UCHAR dir)
+	SCPacketMoveCharacter(PID cid, float nx, float ny, MOVE_TYPES dir)
 		: Packet(PACKET_TYPES::SC_MOVE_OBJ, sizeof(SCPacketMoveCharacter), cid)
 		, x(nx), y(ny), placeDirection(dir)
 	{}
 
 	const float x, y;
-	const UCHAR placeDirection;
+	const MOVE_TYPES placeDirection;
 };
 
 /// <summary>

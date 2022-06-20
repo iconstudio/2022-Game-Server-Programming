@@ -30,7 +30,11 @@ SceneGame::SceneGame(Framework& framework)
 }
 
 void SceneGame::Awake()
-{}
+{
+	myWorldImageContext = GetDC(NULL);
+
+	//myWorldImage = CreateCompatipleBitmap(myWorldImageContext);
+}
 
 void SceneGame::Start()
 {}
@@ -39,10 +43,7 @@ void SceneGame::Update(float time_elapsed)
 {
 	if (myPlayerCharacter)
 	{
-		const auto& follower_pos = myPlayerCharacter->myPosition;
-
-		myCamera.myPosition[0] = follower_pos[0] - FRAME_W / 2;
-		myCamera.myPosition[1] = follower_pos[1] - FRAME_H / 2;
+		UpdateCamera(myPlayerCharacter);
 	}
 }
 
@@ -156,8 +157,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			{
 				myPlayerCharacter = instance;
 
-				myCamera.myPosition[0] = rp->x - FRAME_W / 2;
-				myCamera.myPosition[1] = rp->y - FRAME_H / 2;
+				UpdateCamera(myPlayerCharacter);
 			}
 
 			myLocalInstances.try_emplace(pid, instance);
@@ -223,15 +223,57 @@ void SceneGame::OnKeyDown(WPARAM key, LPARAM states)
 	switch (key)
 	{
 		case VK_LEFT:
+		{
+			myFramework.myNetwork.SendMoveDir(MOVE_TYPES::LEFT);
+		}
+		break;
+
 		case VK_RIGHT:
+		{
+			myFramework.myNetwork.SendMoveDir(MOVE_TYPES::RIGHT);
+		}
+		break;
+
 		case VK_UP:
+		{
+			myFramework.myNetwork.SendMoveDir(MOVE_TYPES::UP);
+		}
+		break;
+
 		case VK_DOWN:
 		{
-			myFramework.myNetwork.SendKeyMsg(key);
+			myFramework.myNetwork.SendMoveDir(MOVE_TYPES::DOWN);
 		}
 		break;
 	}
 }
 
 void SceneGame::OnKeyUp(WPARAM key, LPARAM states)
-{}
+{
+	switch (key)
+	{
+		case VK_LEFT:
+		{
+			myFramework.myNetwork.SendAttack(MOVE_TYPES::LEFT);
+		}
+		break;
+
+		case VK_RIGHT:
+		{
+			myFramework.myNetwork.SendAttack(MOVE_TYPES::RIGHT);
+		}
+		break;
+
+		case VK_UP:
+		{
+			myFramework.myNetwork.SendAttack(MOVE_TYPES::UP);
+		}
+		break;
+
+		case VK_DOWN:
+		{
+			myFramework.myNetwork.SendAttack(MOVE_TYPES::DOWN);
+		}
+		break;
+	}
+}

@@ -89,9 +89,14 @@ int Network::SendSignOutMsg()
 	return SendPacket(new CSPacketSignOut(myProfile.myID));
 }
 
-int Network::SendKeyMsg(WPARAM key)
+int Network::SendMoveDir(MOVE_TYPES dir)
 {
-	return SendPacket(new CSPacketMove(myProfile.myID, UCHAR(key)));
+	return SendPacket(new CSPacketMove(myProfile.myID, dir));
+}
+
+int Network::SendAttack(MOVE_TYPES dir)
+{
+	return SendPacket(new CSPacketAttack(myProfile.myID, dir));
 }
 
 bool Network::IsPlayer(PID id) const

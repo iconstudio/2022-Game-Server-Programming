@@ -52,7 +52,11 @@ public:
 	void SetSightArea(shared_ptr<SightSector>&& sector);
 	const shared_ptr<SightSector>& GetSightArea() const;
 	shared_ptr<SightSector>& GetSightArea();
-	bool TryMove(WPARAM input);
+
+	// 이동
+	void TryMove(MOVE_TYPES dir);
+	// 평타 공격
+	void TryNormalAttack(MOVE_TYPES dir);
 
 	void Cleanup();
 	void Disconnect();
@@ -62,9 +66,6 @@ public:
 	shared_atomic<GameObject> myAvatar;
 
 protected:
-	void SetRecvBuffer(const WSABUF& buffer);
-	void SetRecvBuffer(LPWSABUF buffer);
-	void SetRecvBuffer(CHAR* cbuffer, DWORD size);
 	void ClearRecvBuffer();
 
 	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
@@ -78,7 +79,7 @@ protected:
 	char recvCBuffer[BUFFSZ];
 	DWORD recvBytes;
 
-	IOCPFramework& Framework;
+	IOCPFramework& myFramework;
 
 	// 소속된 시야 구역
 	shared_ptr<SightSector> mySightSector;
