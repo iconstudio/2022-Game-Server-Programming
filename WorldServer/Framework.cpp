@@ -2,7 +2,6 @@
 #include "Framework.hpp"
 #include "Asynchron.hpp"
 #include "Session.h"
-#include "PlayingSession.hpp"
 #include "SightManager.hpp"
 #include "SightSector.hpp"
 #include "Timeline.hpp"
@@ -31,8 +30,6 @@ IOCPFramework::IOCPFramework()
 
 	ClearOverlap(&acceptOverlap);
 	ZeroMemory(acceptCBuffer, sizeof(acceptCBuffer));
-
-	BuildSession();
 }
 
 IOCPFramework::~IOCPFramework()
@@ -42,28 +39,27 @@ IOCPFramework::~IOCPFramework()
 	WSACleanup();
 }
 
-void IOCPFramework::BuildSession()
+void IOCPFramework::BuildSessions()
 {
-	// 앞쪽은 비플레이어 세션
-	for (auto i = NPC_ID_BEGIN; i < NPC_ID_END; ++i)
+	PID npc_id = 0;
+	for (UINT i = 0; i < ENTITIES_MAX_NUMBER; i++)
 	{
-		auto& empty = clientsPool.at(i);
-		empty = std::make_shared<Session>(i, -1, *this);
-	}
+		auto& empty_place = clientsPool.at(i);
 
-	// 뒤쪽은 플레이어 세션 (USERS_MAX)
-	for (auto j = USERS_ID_BEGIN; j < USERS_ID_END; ++j)
-	{
-		auto& empty = clientsPool.at(j);
-
-		auto player = std::make_shared<PlayingSession>(j, -1, *this);
-		empty = std::static_pointer_cast<Session>(player);
+		if (NPC_ID_BEGIN <= i && i < NPC_ID_END)
+		{
+			empty_place = std::make_shared<Session>(i, npc_id++, *this);
+		}
+		else
+		{
+			empty_place = std::make_shared<Session>(i, PID(-1), *this);
+		}
 	}
 
 	acceptBeginPlace = clientsPool.cbegin() + CLIENTS_ORDER_BEGIN;
 }
 
-void IOCPFramework::BuildNPC()
+void IOCPFramework::BuildNPCs()
 {
 	for (auto i = NPC_ID_BEGIN; i < NPC_ID_END; ++i)
 	{
@@ -74,11 +70,11 @@ void IOCPFramework::BuildNPC()
 		npc_avatar->myPosition[0] = float(rand() % int(WORLD_W));
 		npc_avatar->myPosition[1] = float(rand() % int(WORLD_H));
 
-		npc->SetAvatar(npc_avatar);
 		npc->myNickname = "M-" + std::to_string(i);
 
 		npc->ReleaseStatus(SESSION_STATES::ACCEPTED);
-		CreateSight(npc);
+
+		//CreateSight(npc);
 
 		ReleaseClient(i, npc);
 	}
@@ -148,7 +144,8 @@ void IOCPFramework::Start()
 
 	acceptNewbie.store(CreateSocket(), std::memory_order_release);
 
-	BuildNPC();
+	BuildSessions();
+	BuildNPCs();
 
 	Listen();
 }
@@ -165,47 +162,6 @@ void IOCPFramework::Update()
 	threadWorkers.emplace_back(::TimerWorker);
 
 	while (true) {}
-}
-
-void IOCPFramework::Release()
-{
-	std::cout << "서버 종료\n";
-}
-
-void IOCPFramework::Communicate()
-{
-	DWORD portBytes = 0;
-	ULONG_PTR portKey = 0;
-	WSAOVERLAPPED* portOverlap = nullptr;
-	const auto port = completionPort;
-
-	auto result = GetQueuedCompletionStatus(port, &portBytes, &portKey, &portOverlap, INFINITE);
-
-	if (TRUE == result)
-	{
-		std::cout << "GQCS: " << portKey << ", Bytes: " << portBytes << "\n";
-
-		if (serverKey == portKey) // AcceptEx
-		{
-			ProceedAccept();
-		}
-
-		else
-		{
-			ProceedOperations(portOverlap, portKey, portBytes);
-		}
-	}
-	else
-	{
-		if (WSA_IO_PENDING != WSAGetLastError())
-		{
-			if (serverKey != portKey)
-			{
-				Disconnect(PID(portKey));
-			}
-			ErrorDisplay("GetQueuedCompletionStatus(2)");
-		}
-	}
 }
 
 void IOCPFramework::Listen()
@@ -227,6 +183,46 @@ void IOCPFramework::Listen()
 			ErrorDisplay("AcceptEx()");
 		}
 	}
+}
+
+void IOCPFramework::Communicate()
+{
+	DWORD portBytes = 0;
+	ULONG_PTR portKey = 0;
+	WSAOVERLAPPED* portOverlap = nullptr;
+	const auto port = completionPort;
+
+	auto result = GetQueuedCompletionStatus(port, &portBytes, &portKey, &portOverlap, INFINITE);
+
+	if (TRUE == result)
+	{
+		std::cout << "GQCS: " << portKey << ", Bytes: " << portBytes << "\n";
+
+		if (serverKey == portKey) // AcceptEx
+		{
+			ProceedAccept();
+		}
+		else
+		{
+			ProceedOperations(portOverlap, portKey, portBytes);
+		}
+	}
+	else
+	{
+		if (WSA_IO_PENDING != WSAGetLastError())
+		{
+			if (serverKey != portKey)
+			{
+				Disconnect(PID(portKey));
+			}
+			ErrorDisplay("GetQueuedCompletionStatus(2)");
+		}
+	}
+}
+
+void IOCPFramework::Release()
+{
+	std::cout << "서버 종료\n";
 }
 
 void IOCPFramework::ProceedAccept()
@@ -346,31 +342,30 @@ void IOCPFramework::ProceedOperations(LPWSAOVERLAPPED overlap, ULONG_PTR key, DW
 			{
 				bool moved = false;
 				auto dir = static_cast<MOVE_TYPES>(bytes);
-				auto avatar = client->AcquireAvatar();
 
 				switch (dir)
 				{
 					case MOVE_TYPES::LEFT:
 					{
-						moved = avatar->TryMoveLT(CELL_W);
+						moved = client->TryMoveLT(CELL_W);
 					}
 					break;
 
 					case MOVE_TYPES::RIGHT:
 					{
-						moved = avatar->TryMoveRT(CELL_W);
+						moved = client->TryMoveRT(CELL_W);
 					}
 					break;
 
 					case MOVE_TYPES::UP:
 					{
-						moved = avatar->TryMoveUP(CELL_H);
+						moved = client->TryMoveUP(CELL_H);
 					}
 					break;
 
 					case MOVE_TYPES::DOWN:
 					{
-						moved = avatar->TryMoveDW(CELL_H);
+						moved = client->TryMoveDW(CELL_H);
 					}
 					break;
 
@@ -382,7 +377,7 @@ void IOCPFramework::ProceedOperations(LPWSAOVERLAPPED overlap, ULONG_PTR key, DW
 				{
 					std::cout << "캐릭터 " << my_id
 						<< " - 위치: ("
-						<< avatar->myPosition[0] << ", " << avatar->myPosition[1]
+						<< client->myPosition[0] << ", " << client->myPosition[1]
 						<< ")\n";
 
 					// 시야 정보 전송
@@ -392,8 +387,6 @@ void IOCPFramework::ProceedOperations(LPWSAOVERLAPPED overlap, ULONG_PTR key, DW
 				{
 					std::cout << "캐릭터 " << my_id << " - 움직이지 않음.\n";
 				}
-
-				client->ReleaseAvatar(avatar);
 			}
 			break;
 
@@ -463,7 +456,7 @@ void IOCPFramework::ProceedOperations(LPWSAOVERLAPPED overlap, ULONG_PTR key, DW
 	ReleaseAvatar(avatar);
 	my_zone->Release();
 */
-
+				int a = 0;
 			}
 			break;
 
@@ -486,8 +479,7 @@ void IOCPFramework::ProceedOperations(LPWSAOVERLAPPED overlap, ULONG_PTR key, DW
 void IOCPFramework::CreateSight(shared_ptr<Session> who)
 {
 	const auto my_id = who->AcquireID();
-	const auto my_character = who->AcquireAvatar();
-	const auto& my_pos = my_character->GetPosition();
+	const auto& my_pos = who->GetPosition();
 
 	const auto curr_coords = mySightManager.PickCoords(my_pos[0], my_pos[1]);
 	auto& curr_sector = mySightManager.At(curr_coords);
@@ -505,8 +497,7 @@ void IOCPFramework::CreateSight(shared_ptr<Session> who)
 		if (other && other->IsAccepted())
 		{
 			const auto other_id = other->AcquireID();
-			const auto other_avatar = other->AcquireAvatar();
-			const auto other_pos = other_avatar->GetPosition();
+			const auto other_pos = other->GetPosition();
 
 			const bool check_out = sight_magnitude < SightDistance(my_pos, other_pos);
 
@@ -521,24 +512,24 @@ void IOCPFramework::CreateSight(shared_ptr<Session> who)
 				if (my_id != other_id)
 				{
 					// 개체로부터 속성 따오기
-					SCPacketAppearEntity other_data{ other_id, other_avatar->myCategory, other_avatar->myType, other_pos[0], other_pos[1] };
+					SCPacketAppearEntity other_data{ other_id, other->myCategory, other->myType, other_pos[0], other_pos[1] };
 
 					who->AddSight(other_id);
 					SendAppearEntity(who, other_id, other_data);
 				}
-				const auto& my_category = my_character->myCategory;
-				const auto& my_type = my_character->myType;
+				const auto& my_category = who->myCategory;
+				const auto& my_type = who->myType;
 
 				// 전송할 나의 속성 만들기
 				myCharacterDatas = SCPacketAppearEntity{ my_id, my_category, my_type, my_pos[0], my_pos[1] };
 				myCharacterDatas.x = my_pos[0];
 				myCharacterDatas.y = my_pos[1];
-				myCharacterDatas.level = my_character->myLevel;
-				myCharacterDatas.hp = my_character->myHP;
-				myCharacterDatas.maxhp = my_character->myMaxHP;
-				myCharacterDatas.mp = my_character->myMP;
-				myCharacterDatas.maxmp = my_character->myMaxMP;
-				myCharacterDatas.amour = my_character->myArmour;
+				myCharacterDatas.level = who->myLevel;
+				myCharacterDatas.hp = who->myHP;
+				myCharacterDatas.maxhp = who->myMaxHP;
+				myCharacterDatas.mp = who->myMP;
+				myCharacterDatas.maxmp = who->myMaxMP;
+				myCharacterDatas.amour = who->myArmour;
 
 				other->AddSight(my_id);
 				SendAppearEntity(other, my_id, myCharacterDatas);
@@ -546,7 +537,7 @@ void IOCPFramework::CreateSight(shared_ptr<Session> who)
 			else
 			{
 				// 개체로부터 속성 따오기
-				SCPacketAppearEntity other_data{ other_id, other_avatar->myCategory, other_avatar->myType, other_pos[0], other_pos[1] };
+				SCPacketAppearEntity other_data{ other_id, other->myCategory, other->myType, other_pos[0], other_pos[1] };
 
 				who->AddSight(other_id);
 				SendAppearEntity(who, other_id, other_data);
@@ -554,7 +545,6 @@ void IOCPFramework::CreateSight(shared_ptr<Session> who)
 				other->AddSight(my_id);
 			}
 
-			other->ReleaseAvatar(other_avatar);
 			other->ReleaseID(other_id);
 			ReleaseClient(other_index, other);
 		}
@@ -562,7 +552,6 @@ void IOCPFramework::CreateSight(shared_ptr<Session> who)
 		ReleaseClient(other_index, other);
 	}
 
-	who->ReleaseAvatar(my_character);
 	who->ReleaseID(my_id);
 }
 
@@ -579,11 +568,9 @@ void IOCPFramework::RemoveSight(const PID id)
 	// 세션이 갖고 있는 시야 목록의 플레이어들에게서 캐릭터 삭제
 	auto viewlist_curr = session->GetLocalSight();
 
-	for (auto& other_id : viewlist_curr)
 	//for (auto other_index = USERS_ID_BEGIN; other_index < USERS_ID_END; other_index++)
+	for (auto& other_id : viewlist_curr)
 	{
-		//auto other = AcquireClient(other_index);
-
 		auto other = AcquireClientByID(other_id);
 
 		if (other && other->IsAccepted())
@@ -616,8 +603,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	// 예전 시야
 	auto viewlist_prev = session->GetLocalSight();
 
-	const auto& my_character = session->AcquireAvatar();
-	const auto& my_pos = my_character->GetPosition();
+	const auto& my_pos = session->GetPosition();
 
 	// 0. 자기 캐릭터가 속한 구역을 갱신한다.
 	const auto curr_pos = float_pair(my_pos[0], my_pos[1]);
@@ -702,19 +688,19 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	}
 	curr_sector->Release();
 
-	const auto& my_category = my_character->myCategory;
-	const auto& my_type = my_character->myType;
+	const auto& my_category = session->myCategory;
+	const auto& my_type = session->myType;
 
 	// 전송할 나의 속성 만들기
 	myCharacterDatas = SCPacketAppearEntity{ my_id, my_category, my_type, my_pos[0], my_pos[1] };
 	myCharacterDatas.x = my_pos[0];
 	myCharacterDatas.y = my_pos[1];
-	myCharacterDatas.level = my_character->myLevel;
-	myCharacterDatas.hp = my_character->myHP;
-	myCharacterDatas.maxhp = my_character->myMaxHP;
-	myCharacterDatas.mp = my_character->myMP;
-	myCharacterDatas.maxmp = my_character->myMaxMP;
-	myCharacterDatas.amour = my_character->myArmour;
+	myCharacterDatas.level = session->myLevel;
+	myCharacterDatas.hp = session->myHP;
+	myCharacterDatas.maxhp = session->myMaxHP;
+	myCharacterDatas.mp = session->myMP;
+	myCharacterDatas.maxmp = session->myMaxMP;
+	myCharacterDatas.amour = session->myArmour;
 
 	// 4. 새로운 시야 목록 할당
 	session->AssignSight(viewlist_curr);
@@ -738,8 +724,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 			continue;
 		}
 
-		const auto& other_avatar = other->AcquireAvatar();
-		const auto& ot_pos = other_avatar->GetPosition();
+		const auto& ot_pos = other->GetPosition();
 		const bool check_out = sight_magnitude < SightDistance(my_pos, ot_pos);
 		const bool ot_is_player = IsPlayer(other_id);
 
@@ -768,7 +753,7 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 				session->AddSight(other_id);
 
 				// 개체로부터 속성 따오기
-				SCPacketAppearEntity other_data{ other_id, other_avatar->myCategory, other_avatar->myType, ot_pos[0], ot_pos[1] };
+				SCPacketAppearEntity other_data{ other_id, other->myCategory, other->myType, ot_pos[0], ot_pos[1] };
 
 				SendAppearEntity(session, other_id, other_data);
 
@@ -790,18 +775,17 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 		else
 		{
 			// Move
-			SendMoveEntity(session, other_id, ot_pos[0], ot_pos[1], other_avatar->myDirection);
+			SendMoveEntity(session, other_id, ot_pos[0], ot_pos[1], other->myDirection);
 
 			if (other_id != my_id && ot_is_player)
 			{
-				SendMoveEntity(other, my_id, my_pos[0], my_pos[1], my_character->myDirection);
+				SendMoveEntity(other, my_id, my_pos[0], my_pos[1], other->myDirection);
 			}
 
 			viewlist_prev.erase(pit);
 			cit++;
 		}
 
-		other->ReleaseAvatar(other_avatar);
 		ReleaseClient(other->Index, other);
 	}
 
@@ -825,7 +809,6 @@ void IOCPFramework::UpdateSightOf(const UINT index)
 	}
 
 	session->ReleaseID(my_id);
-	session->ReleaseAvatar(my_character);
 
 	ReleaseClient(index, session);
 }

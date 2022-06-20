@@ -38,21 +38,28 @@ void TimerWorker()
 	while (true)
 	{
 		mutex.lock();
-		auto& timed_event = queue.top();
-
-		const auto now = std::chrono::system_clock::now();
-		
-		if (timed_event.act_time < now)
+		while (0 < queue.size())
 		{
-			const auto& id = timed_event.object_id;
-			const auto& target_id = timed_event.target_id; // option
-			const auto& ops = timed_event.ev;
+			auto& timed_event = queue.top();
 
-			auto asyncer = new Asynchron(ops);
+			const auto now = std::chrono::system_clock::now();
 
-			PostQueuedCompletionStatus(port, DWORD(target_id), ULONG_PTR(id), asyncer);
+			if (timed_event.act_time < now)
+			{
+				const auto& id = timed_event.object_id;
+				const auto& target_id = timed_event.target_id; // option
+				const auto& ops = timed_event.ev;
 
-			queue.pop();
+				auto asyncer = new Asynchron(ops);
+
+				PostQueuedCompletionStatus(port, DWORD(target_id), ULONG_PTR(id), asyncer);
+
+				queue.pop();
+			}
+			else
+			{
+				break;
+			}
 		}
 		mutex.unlock();
 

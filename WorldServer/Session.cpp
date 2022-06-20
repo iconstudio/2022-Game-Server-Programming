@@ -9,7 +9,6 @@ Session::Session(UINT index, PID id, IOCPFramework& framework)
 	, myFramework(framework)
 	, Status(SESSION_STATES::NONE)
 	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
-	, myAvatar(nullptr)
 	, mySightSector(nullptr), myViewList()
 	, myLuaMachine(nullptr)
 {
@@ -46,6 +45,66 @@ void Session::TryMove(MOVE_TYPES dir)
 	ReleaseID(my_id);
 }
 
+bool Session::TryMoveLT(float distance)
+{
+	if (8.0f < myPosition[0] - distance)
+	{
+		myPosition[0] -= distance;
+		return true;
+	}
+	else if (myPosition[0] != 8.0f)
+	{
+		myPosition[0] = 8.0f;
+		return true;
+	}
+	return false;
+}
+
+bool Session::TryMoveRT(float distance)
+{
+	if (myPosition[0] + distance < WORLD_W - 8.0f)
+	{
+		myPosition[0] += distance;
+		return true;
+	}
+	else if (myPosition[0] != WORLD_W - 8.0f)
+	{
+		myPosition[0] = WORLD_W - 8.0f;
+		return true;
+	}
+	return false;
+}
+
+bool Session::TryMoveUP(float distance)
+{
+	if (8.0f < myPosition[1] - distance)
+	{
+		myPosition[1] -= distance;
+		return true;
+	}
+	else if (myPosition[1] != 8.0f)
+	{
+		myPosition[1] = 8.0f;
+		return true;
+	}
+	return false;
+}
+
+bool Session::TryMoveDW(float distance)
+{
+	if (myPosition[1] + distance < WORLD_H - 8.0f)
+	{
+		myPosition[1] += distance;
+		return true;
+	}
+	else if (myPosition[1] != WORLD_H - 8.0f)
+	{
+		myPosition[1] = WORLD_H - 8.0f;
+		return true;
+	}
+	return false;
+}
+
 void Session::TryNormalAttack(MOVE_TYPES dir)
 {
 	const auto port = myFramework.GetCompletionPort();
@@ -67,6 +126,16 @@ void Session::TryNormalAttack(MOVE_TYPES dir)
 	}
 
 	ReleaseID(my_id);
+}
+
+const float* Session::GetPosition() const
+{
+	return myPosition;
+}
+
+float* Session::GetPosition()
+{
+	return myPosition;
 }
 
 void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
@@ -108,7 +177,8 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 					myNickname = result->Nickname;
 					std::cout << ID << "'s Nickname: " << myNickname << ".\n";
 
-					myAvatar = std::make_shared<PlayerCharacter>(ID, 100.0f, 100.0f);
+					myPosition[0] = 100.0f;
+					myPosition[1] = 100.0f;
 
 					myFramework.ConnectFrom(Index);
 				}
@@ -131,31 +201,21 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD byte)
 			case PACKET_TYPES::CS_MOVE:
 			{
 				auto result = reinterpret_cast<CSPacketMove*>(cbuffer);
-				auto avatar = AcquireAvatar();
-
-				if (pid == ID && avatar)
+				if (pid == ID)
 				{
 					TryMove(result->myDirection);
 				}
 				else // 잘못된 메시지 받음.
 				{
 				}
-
-				ReleaseAvatar(avatar);
 			}
 			break;
 
 			case PACKET_TYPES::CS_ATTACK_NONTARGET:
 			{
 				auto result = reinterpret_cast<CSPacketAttack*>(cbuffer);
-				auto avatar = AcquireAvatar();
 
-				if (avatar)
-				{
-					TryNormalAttack(result->attackDirection);
-				}
-
-				ReleaseAvatar(avatar);
+				TryNormalAttack(result->attackDirection);
 			}
 			break;
 
@@ -226,11 +286,6 @@ void Session::SetID(const PID id)
 	ID.store(id, std::memory_order_relaxed);
 }
 
-void Session::SetAvatar(shared_ptr<GameObject> handle)
-{
-	myAvatar.store(handle, std::memory_order_relaxed);
-}
-
 void Session::AddSight(const PID id)
 {
 	myViewList.insert(id);
@@ -292,11 +347,6 @@ PID Session::AcquireID() const volatile
 	return ID.load(std::memory_order_acquire);
 }
 
-shared_ptr<GameObject> Session::AcquireAvatar()
-{
-	return myAvatar.load(std::memory_order_acquire);
-}
-
 SESSION_STATES Session::GetStatus() const volatile
 {
 	return Status.load(std::memory_order_relaxed);
@@ -305,11 +355,6 @@ SESSION_STATES Session::GetStatus() const volatile
 PID Session::GetID() const volatile
 {
 	return ID.load(std::memory_order_relaxed);
-}
-
-shared_ptr<GameObject> Session::GetAvatar()
-{
-	return myAvatar.load(std::memory_order_relaxed);
 }
 
 void Session::ReleaseStatus(SESSION_STATES state)
@@ -322,11 +367,6 @@ void Session::ReleaseID(PID id)
 	ID.store(id, std::memory_order_release);
 }
 
-void Session::ReleaseAvatar(shared_ptr<GameObject> handle)
-{
-	myAvatar.store(handle, std::memory_order_release);
-}
-
 void Session::Cleanup()
 {
 	SetID(-1);
@@ -336,8 +376,6 @@ void Session::Cleanup()
 	myViewList.clear();
 
 	closesocket(Socket.load(std::memory_order_seq_cst));
-
-	myAvatar.load(std::memory_order_seq_cst).reset();
 }
 
 void Session::Disconnect()

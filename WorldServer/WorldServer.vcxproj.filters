@@ -60,9 +60,6 @@
     <ClCompile Include="GameEvent.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="PlayingSession.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="Timeline.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -103,9 +100,6 @@
     </ClInclude>
     <ClInclude Include="GameEvent.hpp">
       <Filter>헤더 파일\System</Filter>
-    </ClInclude>
-    <ClInclude Include="PlayingSession.hpp">
-      <Filter>헤더 파일\Network</Filter>
     </ClInclude>
     <ClInclude Include="include\lauxlib.h">
       <Filter>헤더 파일\Lua</Filter>

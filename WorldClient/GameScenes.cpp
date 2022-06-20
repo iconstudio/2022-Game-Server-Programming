@@ -41,10 +41,6 @@ void SceneGame::Start()
 
 void SceneGame::Update(float time_elapsed)
 {
-	if (myPlayerCharacter)
-	{
-		UpdateCamera(myPlayerCharacter);
-	}
 }
 
 void SceneGame::Reset()
@@ -77,6 +73,7 @@ void SceneGame::Render(HDC surface)
 	auto m_hBR = CreateSolidBrush(outer_color);
 	auto m_oldhBR = HBRUSH(Draw::Attach(surface, m_hBR));
 
+	Draw::SizedRect(surface, 40-cam_pos[0], 80-cam_pos[1], 300, 300);
 	//Draw::SizedRect(surface, 0, 0, width, height);
 
 	Draw::Detach(surface, m_oldhBR, m_hBR);
@@ -138,6 +135,8 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			// 위치 갱신
 			instance.myPosition[0] = rp->x;
 			instance.myPosition[1] = rp->y;
+
+			instance.Show();
 		}
 		else if (IsPlayer(pid)) // 플레이어의 캐릭터
 		{
@@ -156,15 +155,30 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			if (!myPlayerCharacter && PID(-1) != my_id && pid == my_id)
 			{
 				myPlayerCharacter = instance;
-
-				UpdateCamera(myPlayerCharacter);
 			}
 
 			myLocalInstances.try_emplace(pid, instance);
 		}
 		else // NPC
 		{
+			auto instance = CreateInstance<PlayerCharacter>();
+			instance->myID = pid;
+			instance->myCategory = rp->myCategory;
+			instance->myType = rp->myType;
+			instance->myMaxHP = rp->maxhp;
+			instance->myHP = rp->hp;
+			instance->myMaxMP = rp->maxmp;
+			instance->myMP = rp->mp;
+			instance->myArmour = rp->amour;
+			instance->myPosition[0] = rp->x;
+			instance->myPosition[1] = rp->y;
 
+			myLocalInstances.try_emplace(pid, instance);
+		}
+
+		if (myPlayerCharacter)
+		{
+			UpdateCamera(myPlayerCharacter);
 		}
 
 		InvalidateRect(handle, NULL, TRUE);

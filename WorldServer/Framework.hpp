@@ -19,18 +19,23 @@ public:
 
 	void Awake();
 	void Start();
+	void Listen();
 	void Update();
 	void Communicate();
 	void Release();
 
-	void BuildSession();
-	void BuildNPC();
+	void BuildSessions();
+	void BuildNPCs();
 
 	friend void IOCPWorker();
 	friend void AIWorker();
 	friend void TimerWorker();
 
 	SessionPtr CreateNPC(const UINT index, ENTITY_CATEGORY type, int info_index);
+
+	void InitializeSight(shared_ptr<Session>& who);
+	void UpdateSight(shared_ptr<Session>& who);
+	void CleanSight(shared_ptr<Session>& who);
 
 	void CreateSight(shared_ptr<Session> who);
 	/// <summary>
@@ -49,7 +54,6 @@ public:
 	friend class Session;
 
 private:
-	void Listen();
 	void ProceedAccept();
 	void ProceedOperations(LPWSAOVERLAPPED overlap, ULONG_PTR key, DWORD bytes);
 
