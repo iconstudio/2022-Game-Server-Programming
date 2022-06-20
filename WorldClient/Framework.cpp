@@ -226,13 +226,13 @@ void Framework::Register(shared_ptr<Scene>&& scene)
 
 void Framework::AddTask(Packet* packet)
 {
-	myTasks.insert(myTasks.begin(), unique_ptr<Packet>(packet));
+	myTasks.insert(myTasks.begin(), packet);
 }
 
 Packet* Framework::GetLastTask() const
 {
 	if (0 < myTasks.size())
-		return myTasks.back().get();
+		return myTasks.back();
 	else
 		return nullptr;
 }

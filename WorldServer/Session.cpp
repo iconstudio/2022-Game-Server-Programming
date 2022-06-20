@@ -5,20 +5,20 @@
 #include "SightSector.hpp"
 
 Session::Session(UINT index, PID id, IOCPFramework& framework)
-	: Index(index), ID(id), myNickname(), Socket(NULL)
-	, myFramework(framework)
-	, Status(SESSION_STATES::NONE)
-	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
-	, mySightSector(nullptr), myViewList()
-	, myLuaMachine(nullptr)
+	: Index(index)
+	, myNickname()
 	, myInfobox(id)
-	, myID(myInfobox.playerID)
+	, ID(id), Status(SESSION_STATES::NONE), Socket(NULL)
 	, myLevel(myInfobox.level)
 	, myCategory(myInfobox.myCategory), myType(myInfobox.myType)
 	, myHP(myInfobox.hp), myMaxHP(myInfobox.maxhp)
 	, myMP(myInfobox.mp), myMaxMP(myInfobox.maxmp)
 	, myArmour(myInfobox.amour)
 	, myDirection(myInfobox.dir)
+	, recvOverlap(OVERLAP_OPS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
+	, mySightSector(nullptr), myViewList()
+	, myFramework(framework)
+	, myLuaMachine(nullptr)
 {
 	ClearOverlap(&recvOverlap);
 
@@ -272,13 +272,13 @@ void Session::ProceedSent(Asynchron* overlap, DWORD bytes)
 
 void Session::Cleanup()
 {
+	closesocket(Socket.load(std::memory_order_seq_cst));
+
 	SetID(-1);
 	SetStatus(SESSION_STATES::NONE);
 	SetSocket(NULL);
 	mySightSector = nullptr;
 	myViewList.clear();
-
-	closesocket(Socket.load(std::memory_order_seq_cst));
 }
 
 void Session::Disconnect()
@@ -299,6 +299,7 @@ void Session::SetSocket(SOCKET sock)
 void Session::SetID(const PID id)
 {
 	ID.store(id, std::memory_order_relaxed);
+	myInfobox.playerID = id;
 }
 
 void Session::AddSight(const PID id)
@@ -380,6 +381,7 @@ void Session::ReleaseStatus(SESSION_STATES state)
 void Session::ReleaseID(PID id)
 {
 	ID.store(id, std::memory_order_release);
+	myInfobox.playerID = id;
 }
 
 bool Session::IsConnected() const volatile
@@ -454,6 +456,29 @@ const shared_ptr<SightSector>& Session::GetSightArea() const
 shared_ptr<SightSector>& Session::GetSightArea()
 {
 	return mySightSector;
+}
+
+void Session::SetPosition(float x, float y)
+{
+	myPosition[0] = x;
+	myPosition[1] = y;
+	myInfobox.x = x;
+	myInfobox.y = y;
+}
+
+void Session::SetPosition(const float(&position)[2])
+{
+	myInfobox.x = position[0];
+	myInfobox.y = position[1];
+	*myPosition = *position;
+}
+
+void Session::SetPosition(float_pair position)
+{
+	myPosition[0] = position.first;
+	myPosition[1] = position.second;
+	myInfobox.x = position.first;
+	myInfobox.y = position.second;
 }
 
 const float* Session::GetPosition() const

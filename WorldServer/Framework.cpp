@@ -107,7 +107,6 @@ void IOCPFramework::Start()
 	BuildSessions();
 	BuildNPCs();
 	BuildThreads();
-
 }
 
 void IOCPFramework::Update()
@@ -124,10 +123,6 @@ void IOCPFramework::Update()
 		auto exoverlap = static_cast<Asynchron*>(portOverlap);
 		const auto my_op = exoverlap->Operation;
 		const auto my_id = static_cast<PID>(portKey);
-
-		std::cout << "GQCS (" << static_cast<UCHAR>(my_op) << "): "
-			<< "키 값: " << portKey
-			<< ", 받은 바이트 수: " << portBytes << "\n";
 
 		switch (my_op)
 		{
@@ -149,6 +144,10 @@ void IOCPFramework::Update()
 
 			case OVERLAP_OPS::RECV: // 플레이어
 			{
+				std::cout << "GQCS (" << static_cast<int>(my_op) << "): "
+					<< "키 값: " << portKey
+					<< ", 받은 바이트 수: " << portBytes << "\n";
+
 				auto session = GetClientByID(my_id);
 				session->ProceedReceived(exoverlap, portBytes);
 			}
@@ -314,6 +313,7 @@ void IOCPFramework::Update()
 			{
 				Disconnect(PID(portKey));
 			}
+
 			ErrorDisplay("GetQueuedCompletionStatus(2)");
 		}
 	}
@@ -423,6 +423,7 @@ void IOCPFramework::ProceedSignIn(Session* handle, const CSPacketSignIn* packet)
 
 	if (SESSION_STATES::CONNECTED == status)
 	{
+		std::cout << "클라이언트 " << my_id << "접속함\n";
 		handle->myNickname = packet->Nickname;
 		std::cout << my_id << "'s Nickname: " << handle->myNickname << ".\n";
 
@@ -431,6 +432,7 @@ void IOCPFramework::ProceedSignIn(Session* handle, const CSPacketSignIn* packet)
 
 		// 클라이언트 ID 부여
 		std::cout << "SendSignUp(" << my_id << ")\n";
+		handle->SetID(my_id);
 
 		const auto ticket = CreateTicket<SCPacketSignUp>(my_id, 0, GetClientsNumber());
 		int result = handle->Send(ticket.first, 1, ticket.second);
@@ -587,7 +589,7 @@ void IOCPFramework::UpdateSight(Session* who)
 	// * 현재 있는 개체는, 과거에도 있으면 Move, 없으면 Appear
 	for (auto cit = viewlist_curr.cbegin(); viewlist_curr.cend() != cit;)
 	{
-		PID other_id = *cit;
+		const PID other_id = *cit;
 
 		auto other = AcquireClientByID(other_id);
 		if (!other)
@@ -636,7 +638,7 @@ void IOCPFramework::UpdateSight(Session* who)
 				SendAppearEntity(who, other_id, other_infobox);
 
 				// 상대도 개체 등록
-				if (ot_is_player)
+				if (other_id != my_id && ot_is_player)
 				{
 					other->AddSight(my_id);
 
@@ -674,7 +676,7 @@ void IOCPFramework::UpdateSight(Session* who)
 		++pit)
 	{
 		// Disappear
-		PID other_id = *pit;
+		const PID other_id = *pit;
 
 		if (other_id != my_id) 
 		{
@@ -759,16 +761,19 @@ void IOCPFramework::BuildNPCs()
 		auto npc = AcquireClient(i);
 		auto state = npc->AcquireStatus();
 
-		auto npc_avatar = make_shared<GameObject>(PID(i), 4.0f, 4.0f);
-		npc_avatar->myPosition[0] = float(rand() % int(WORLD_W));
-		npc_avatar->myPosition[1] = float(rand() % int(WORLD_H));
-
-		npc->myNickname = "M-" + std::to_string(i);
-
-		npc->ReleaseStatus(SESSION_STATES::ACCEPTED);
-
+		const auto cx = float(rand()) / float(RAND_MAX) * WORLD_W;
+		const auto cy = float(rand()) / float(RAND_MAX) * WORLD_H;
+		
+		npc->SetID(PID(i));
+		npc->SetPosition(cx, cy);
 		RegisterSight(npc.get());
+		npc->myNickname = "M-" + std::to_string(i);
+		
+		// 등록
+		myClients.insert({ PID(i), i });
 
+		//auto npc_avatar = make_shared<GameObject>(PID(i), cx, cy);
+		npc->ReleaseStatus(SESSION_STATES::ACCEPTED);
 		ReleaseClient(i, npc);
 	}
 }
@@ -835,8 +840,6 @@ void IOCPFramework::Disconnect(const PID id)
 
 			// 원래 클라이언트가 있던 세션 청소
 			session->Cleanup();
-			// 소유권 해제
-			ReleaseClient(index, session);
 		}
 		else if (session->IsConnected())
 		{
@@ -845,9 +848,10 @@ void IOCPFramework::Disconnect(const PID id)
 
 			// 원래 클라이언트가 있던 세션 청소
 			session->Cleanup();
-			// 소유권 해제
-			ReleaseClient(index, session);
 		}
+
+		// 소유권 해제
+		ReleaseClient(index, session);
 	}
 }
 

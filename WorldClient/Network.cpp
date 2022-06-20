@@ -291,7 +291,7 @@ int Network::SendPacket(Packet* packet)
 void Network::MoveStream(CHAR*& buffer, DWORD position, DWORD max_size)
 {
 	MoveMemory(buffer, (buffer + position), max_size - position);
-	ZeroMemory(buffer + max_size - position, position);
+	//ZeroMemory(buffer + max_size - position, position);
 }
 
 inline SOCKET Network::CreateSocket() const

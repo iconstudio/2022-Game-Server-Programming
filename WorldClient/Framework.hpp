@@ -46,7 +46,7 @@ private:
 	shared_ptr<Scene> Pop();
 	shared_ptr<Scene> GetScene(const char* name) const;
 
-	std::vector<unique_ptr<Packet>> myTasks;
+	std::vector<Packet*> myTasks;
 
 	std::unordered_map<string, shared_ptr<Scene>> myScenes;
 	std::vector<shared_ptr<Scene>> myStages;

@@ -40,8 +40,7 @@ void SceneGame::Start()
 {}
 
 void SceneGame::Update(float time_elapsed)
-{
-}
+{}
 
 void SceneGame::Reset()
 {
@@ -66,14 +65,14 @@ void SceneGame::Render(HDC surface)
 	auto old_bk = SetBkMode(surface, TRANSPARENT);
 	Draw::Clear(surface, CLIENT_W, CLIENT_H, C_GREEN);
 
-	constexpr COLORREF outer_color = 0;
+	constexpr COLORREF outer_color = C_WHITE;
 	auto m_hPen = CreatePen(PS_NULL, 1, outer_color);
 	auto m_oldhPen = HPEN(Draw::Attach(surface, m_hPen));
 
 	auto m_hBR = CreateSolidBrush(outer_color);
 	auto m_oldhBR = HBRUSH(Draw::Attach(surface, m_hBR));
 
-	Draw::SizedRect(surface, 40-cam_pos[0], 80-cam_pos[1], 300, 300);
+	Draw::SizedRect(surface, 40 - cam_pos[0], 80 - cam_pos[1], 300, 300);
 	//Draw::SizedRect(surface, 0, 0, width, height);
 
 	Draw::Detach(surface, m_oldhBR, m_hBR);
@@ -196,9 +195,9 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			//DestroyInstance(rit->second);
 
 			myLocalInstances.erase(rit);
-
-			InvalidateRect(handle, NULL, TRUE);
 		}
+
+		InvalidateRect(handle, NULL, TRUE);
 
 		return true;
 	}
@@ -214,9 +213,9 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			auto& instance = mit->second;
 			instance->myPosition[0] = rp->x;
 			instance->myPosition[1] = rp->y;
-
-			InvalidateRect(handle, NULL, TRUE);
 		}
+
+		InvalidateRect(handle, NULL, TRUE);
 
 		return true;
 	}
@@ -224,7 +223,27 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	{
 		return true;
 	}
-	else if (PACKET_TYPES::SC_SIGNIN_FAILED == packet_type)
+	else if (PACKET_TYPES::CS_ATTACK_NONTARGET == packet_type)
+	{
+		return true;
+	}
+	else if (PACKET_TYPES::CS_ATTACK_TARGET == packet_type)
+	{
+		return true;
+	}
+	else if (PACKET_TYPES::CS_ATTACK_PLACE == packet_type)
+	{
+		return true;
+	}
+	else if (PACKET_TYPES::CS_SKILL_0 == packet_type)
+	{
+		return true;
+	}
+	else if (PACKET_TYPES::CS_SKILL_1 == packet_type)
+	{
+		return true;
+	}
+	else if (PACKET_TYPES::CS_CHAT == packet_type)
 	{
 		return true;
 	}

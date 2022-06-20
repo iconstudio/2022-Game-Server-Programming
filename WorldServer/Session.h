@@ -54,6 +54,12 @@ public:
 	virtual bool IsDisconnected() const volatile;
 	virtual bool IsAccepted() const volatile;
 
+	void SetPosition(float x, float y);
+	void SetPosition(const float(&position)[2]);
+	void SetPosition(float_pair position);
+	const float* GetPosition() const;
+	float* GetPosition();
+
 	// 이동
 	virtual void TryMove(MOVE_TYPES dir);
 	virtual bool TryMoveLT(float distance);
@@ -64,11 +70,10 @@ public:
 	// 평타 공격
 	void TryNormalAttack(MOVE_TYPES dir);
 
-	const float* GetPosition() const;
-	float* GetPosition();
-
 	SCPacketAppearEntity myInfobox;
-	PID& myID;
+	atomic<SESSION_STATES> Status;
+	atomic<PID> ID;
+	atomic<SOCKET> Socket;
 	ENTITY_CATEGORY& myCategory;
 	ENTITY_TYPES& myType;
 	int& myLevel;
@@ -87,10 +92,6 @@ protected:
 	void MoveStream(CHAR*& buffer, DWORD position, DWORD max_size);
 
 	IOCPFramework& myFramework;
-
-	atomic<SESSION_STATES> Status;
-	atomic<PID> ID;
-	atomic<SOCKET> Socket;
 
 	Asynchron recvOverlap;
 	WSABUF recvBuffer;
