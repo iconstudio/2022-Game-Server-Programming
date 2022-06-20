@@ -51,6 +51,8 @@ public:
 		PID myID = -1;
 	} myProfile;
 
+	LOGIN_ERROR_TYPES  myFailedReason;
+
 private:
 	int Receive(DWORD begin_bytes = 0);
 	int Send(LPWSABUF datas, UINT count, Asynchron* asynchron);

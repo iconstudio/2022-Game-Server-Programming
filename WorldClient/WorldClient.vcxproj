@@ -200,6 +200,8 @@
   </ItemGroup>
   <ItemGroup>
     <Image Include="large.ico" />
+    <Image Include="resource\player.png" />
+    <Image Include="resource\UI_Minimap.png" />
     <Image Include="small.ico" />
   </ItemGroup>
   <ItemGroup>

@@ -5,6 +5,7 @@
 Network::Network(const ULONG max_clients)
 	: clientsMax(max_clients), myLocalClients()
 	, myStatus(NETWORK_STATES::CLOSED), myProfile()
+	, myFailedReason(LOGIN_ERROR_TYPES::NONE)
 	, serverIP(), serverPort(PORT), mySemaphore(false)
 	, mySocket(NULL), serverAddress(), serverAddressSize(0)
 	, recvOverlap(ASYNC_OPERATIONS::RECV), recvBuffer(), recvCBuffer(), recvBytes(0)
@@ -157,6 +158,25 @@ std::vector<Packet*> Network::OnReceive(DWORD bytes)
 					else
 					{
 						RemovePlayer(pid);
+					}
+				}
+				break;
+
+				case PACKET_TYPES::SC_SIGNIN_FAILED:
+				{
+					auto rp = reinterpret_cast<SCPacketSignInFailed*>(cbuffer);
+					result.push_back(new SCPacketSignInFailed(*rp));
+
+					const auto reason = rp->myReason;
+					myFailedReason = reason;
+
+					switch (reason)
+					{
+						//
+
+						default:
+						{}
+						break;
 					}
 				}
 				break;

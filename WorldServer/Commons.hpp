@@ -5,23 +5,44 @@ using PID = long long;
 enum class PACKET_TYPES : UCHAR
 {
 	NONE = 0,
-	CS_SIGNIN,
+	CS_SIGNIN = 1,
 	CS_SIGNOUT,
 	CS_MOVE,
 	CS_ATTACK_TARGET,
 	CS_ATTACK_NONTARGET,
 	CS_ATTACK_PLACE,
+	CS_SKILL_0,
+	CS_SKILL_1,
+	CS_SKILL_2,
 	CS_CHAT,
 
-	SC_SIGNUP,
-	SC_CREATE_PLAYER,
+	SC_SIGNUP = 50,
 	SC_SIGNOUT,
+	SC_CREATE_PLAYER,
+	SC_SIGNIN_FAILED,
 	SC_CHAT,
 
-	SC_APPEAR_OBJ,
+	SC_APPEAR_OBJ = 150,
 	SC_DISAPPEAR_OBJ,
 	SC_MOVE_OBJ,
 	SC_STAT_OBJ,
+	SC_UPDATE_PLAYER,
+};
+
+enum class LOGIN_ERROR_TYPES : UCHAR
+{
+	NONE = 0,
+	SUCEED,
+	USERS_LIMITED, 
+	BANNED,
+	NETWORK_ERROR
+};
+
+enum class CHAT_MSG_TYPES : UCHAR
+{
+	NONE = 0,
+	PLAIN, ONE_ON_ONE, SHOUT,
+	SYSTEM, 
 };
 
 // 객체의 범주
@@ -97,12 +118,39 @@ struct CSPacketSignOut : public Packet
 /// </summary>
 struct CSPacketMove : public Packet
 {
-	CSPacketMove(PID pid, UCHAR key)
+	CSPacketMove(PID pid, UCHAR dir)
 		: Packet(PACKET_TYPES::CS_MOVE, sizeof(CSPacketMove), pid)
-		, Key(key)
+		, myDirection(dir)
 	{}
 
-	const UCHAR Key;
+	const UCHAR myDirection;
+};
+
+/// <summary>
+/// 서버에 기본 공격의 동작 알림
+/// </summary>
+struct CSPacketAttack : public Packet
+{
+	CSPacketAttack(PID pid, UCHAR dir)
+		: Packet(PACKET_TYPES::CS_ATTACK_NONTARGET, sizeof(CSPacketAttack), pid)
+		, attackDirection(dir)
+	{}
+
+	const UCHAR attackDirection;
+};
+
+/// <summary>
+/// 서버에 대상 지정 공격의 동작 알림
+/// </summary>
+struct CSPacketAttackTarget : public Packet
+{
+	CSPacketAttackTarget(PID pid, PID target_id, UCHAR attack_type)
+		: Packet(PACKET_TYPES::CS_ATTACK_TARGET, sizeof(CSPacketAttackTarget), pid)
+		, attackTarget(target_id), attackType(attack_type)
+	{}
+
+	const PID attackTarget;
+	const UCHAR attackType;
 };
 
 /// <summary>
@@ -110,22 +158,26 @@ struct CSPacketMove : public Packet
 /// </summary>
 struct CSPacketChatMessage : public Packet
 {
-	CSPacketChatMessage(PID fid, PID tid, const WCHAR* msg, size_t length)
+	CSPacketChatMessage(PID fid, PID tid, CHAT_MSG_TYPES type, const WCHAR* msg, size_t length)
 		: Packet(PACKET_TYPES::CS_CHAT, sizeof(CSPacketChatMessage), fid)
-		, Caption(), targetID(tid)
+		, myType(type)
+		, Caption()
+		, targetID(tid)
 	{
 		auto wstr = lstrcpyn(Caption, msg, int(length));
 	}
 
-	CSPacketChatMessage(PID fid, PID tid, const WCHAR msg[])
+	CSPacketChatMessage(PID fid, PID tid, CHAT_MSG_TYPES type, const WCHAR msg[])
 		: Packet(PACKET_TYPES::CS_CHAT, sizeof(CSPacketChatMessage), fid)
+		, myType(type)
 		, Caption()
 		, targetID(0)
 	{
 		lstrcpy(Caption, msg);
 	}
 
-	PID targetID;
+	const CHAT_MSG_TYPES myType;
+	PID targetID = -1;
 	WCHAR Caption[100];
 };
 
@@ -141,6 +193,16 @@ struct SCPacketSignUp : public Packet
 	{}
 
 	UINT usersCurrent, usersMax;
+};
+
+/// <summary>
+/// 특정 플레이어의 접속 종료 알림
+/// </summary>
+struct SCPacketSignOut : public Packet
+{
+	SCPacketSignOut(PID pid)
+		: Packet(PACKET_TYPES::SC_SIGNOUT, sizeof(SCPacketSignUp), pid)
+	{}
 };
 
 /// <summary>
@@ -172,6 +234,7 @@ struct SCPacketAppearEntity : public Packet
 	ENTITY_CATEGORY myCategory;
 	ENTITY_TYPES myType;
 
+	UCHAR dir = 0;
 	int level = 0;
 	int hp = 1, maxhp = 1;
 	int mp = 0, maxmp = 0;
@@ -184,12 +247,13 @@ struct SCPacketAppearEntity : public Packet
 /// </summary>
 struct SCPacketMoveCharacter : public Packet
 {
-	SCPacketMoveCharacter(PID cid, float nx, float ny)
+	SCPacketMoveCharacter(PID cid, float nx, float ny, UCHAR dir)
 		: Packet(PACKET_TYPES::SC_MOVE_OBJ, sizeof(SCPacketMoveCharacter), cid)
-		, x(nx), y(ny)
+		, x(nx), y(ny), placeDirection(dir)
 	{}
 
-	float x, y;
+	const float x, y;
+	const UCHAR placeDirection;
 };
 
 /// <summary>
@@ -203,45 +267,50 @@ struct SCPacketDisppearCharacter : public Packet
 };
 
 /// <summary>
-/// 대화 메시지, 대상이 -1이면 모두에게 보낸다.
+/// 대화 메시지
 /// </summary>
 struct SCPacketChatMessage : public Packet
 {
-	SCPacketChatMessage(PID tid, const WCHAR* msg, size_t length)
+	SCPacketChatMessage(PID tid, CHAT_MSG_TYPES type, const WCHAR* msg, size_t length)
 		: Packet(PACKET_TYPES::SC_CHAT, sizeof(SCPacketChatMessage), tid)
+		, myType(type)
 		, Caption()
 	{
 		auto wstr = lstrcpyn(Caption, msg, int(length));
 	}
 
-	SCPacketChatMessage(PID tid, const WCHAR msg[])
+	SCPacketChatMessage(PID tid, CHAT_MSG_TYPES type, const WCHAR msg[])
 		: Packet(PACKET_TYPES::SC_CHAT, sizeof(SCPacketChatMessage), tid)
+		, myType(type)
 		, Caption()
 	{
 		lstrcpy(Caption, msg);
 	}
 
+	const CHAT_MSG_TYPES myType;
 	WCHAR Caption[100];
 };
 
 /// <summary>
 /// 로그인 실패
 /// </summary>
-struct SCPacketSignOut : public Packet
+struct SCPacketSignInFailed : public Packet
 {
-	SCPacketSignOut(PID pid, UINT users)
-		: Packet(PACKET_TYPES::SC_SIGNOUT, sizeof(SCPacketSignOut), pid)
+	SCPacketSignInFailed(PID pid, LOGIN_ERROR_TYPES reason, UINT users)
+		: Packet(PACKET_TYPES::SC_SIGNIN_FAILED, sizeof(SCPacketSignInFailed), pid)
+		, myReason(reason)
 		, usersCurrent(users)
 	{}
 
-	UINT usersCurrent;
+	const LOGIN_ERROR_TYPES myReason;
+	const UINT usersCurrent;
 };
 #pragma pack(pop)
 
 constexpr int CLIENT_W = 800;
 constexpr int CLIENT_H = 600;
-constexpr float FRAME_W = 800.0f;
-constexpr float FRAME_H = 600.0f;
+constexpr float FRAME_W = float(CLIENT_W);
+constexpr float FRAME_H = float(CLIENT_H);
 
 constexpr USHORT PORT = 6000;
 constexpr size_t BUFFSZ = 256;

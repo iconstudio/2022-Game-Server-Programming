@@ -210,7 +210,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 	{
 		return true;
 	}
-	else if (PACKET_TYPES::SC_SIGNOUT == packet_type)
+	else if (PACKET_TYPES::SC_SIGNIN_FAILED == packet_type)
 	{
 		return true;
 	}
