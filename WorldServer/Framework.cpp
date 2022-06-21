@@ -116,6 +116,8 @@ void IOCPFramework::Update()
 	WSAOVERLAPPED* portOverlap = nullptr;
 	const auto port = completionPort;
 
+	RECT tempBoundingBox{};
+
 	auto result = GetQueuedCompletionStatus(port, &portBytes, &portKey, &portOverlap, INFINITE);
 
 	if (TRUE == result)
@@ -217,80 +219,142 @@ void IOCPFramework::Update()
 			case OVERLAP_OPS::ENTITY_ATTACK: // NPC
 			{
 				auto session = GetClientByID(my_id);
+				const auto dir = static_cast<MOVE_TYPES>(portBytes);
+
+				if (session)
+				{
+					bool attacked = false;
+					const auto place = session->GetPosition();
+
+					const auto& my_zone = mySightManager.AtByPosition(place[0], place[1]);
+					my_zone->Acquire();
+
+					const auto& sight_list = session->GetSight();
+					my_zone->Release();
+
+					if (1 < sight_list.size()) // 자기 자신도 포함
+					{
+						switch (dir)
+						{
+							case MOVE_TYPES::LEFT:
+							{
+								tempBoundingBox;
+							}
+							break;
+
+							case MOVE_TYPES::RIGHT:
+							{
+
+							}
+							break;
+
+							case MOVE_TYPES::UP:
+							{
+
+							}
+							break;
+
+							case MOVE_TYPES::DOWN:
+							{
+
+							}
+							break;
+
+							default:
+							break;
+						}
+
+						const auto& packet_handle = exoverlap->sendBuffer->buf;
+						const auto result = reinterpret_cast<CSPacketChatMessage*>(packet_handle);
+
+						for (const auto& pid : sight_list)
+						{
+							if (pid == my_id)
+							{
+								continue;
+							}
+
+							auto other = AcquireClientByID(pid);
+							auto other_id = other->AcquireID();
 
 
-				/*
-	bool attacked = false;
-	auto avatar = AcquireAvatar();
-	const auto place = avatar->GetPosition();
 
-	const auto& my_zone = myFramework.mySightManager.AtByPosition(place[0], place[1]);
-	my_zone->Acquire();
-
-	const auto& sight_list = GetSight();
-
-	if (1 < sight_list.size()) // 자기 자신도 포함
-	{
-		for (const auto& pid : sight_list)
-		{
-			if (pid == ID)
-			{
-				continue;
-			}
-
-			auto other = myFramework.AcquireClientByID(pid);
-			auto other_id = other->AcquireID();
-			auto other_avatar = other->AcquireAvatar();
-
-
-
-			other->ReleaseAvatar(other_avatar);
-			other->ReleaseID(other_id);
-			myFramework.ReleaseClient(other->Index, other);
-		}
-	}
-
-	switch (dir)
-	{
-		case MOVE_TYPES::LEFT:
-		{
-			attacked = avatar->TryMoveLT(CELL_W);
-		}
-		break;
-
-		case MOVE_TYPES::RIGHT:
-		{
-			attacked = avatar->TryMoveRT(CELL_W);
-		}
-		break;
-
-		case MOVE_TYPES::UP:
-		{
-			attacked = avatar->TryMoveUP(CELL_H);
-		}
-		break;
-
-		case MOVE_TYPES::DOWN:
-		{
-			attacked = avatar->TryMoveDW(CELL_H);
-		}
-		break;
-
-		default:
-		break;
-	}
-
-	ReleaseAvatar(avatar);
-	my_zone->Release();
-*/
+							other->ReleaseID(other_id);
+							ReleaseClient(other->Index, other);
+						}
+					}
+				}
 			}
 			break;
 
 			case OVERLAP_OPS::PLAYER_ATTACK: // 플레이어 평타
 			{
 				auto session = GetClientByID(my_id);
+				const auto dir = static_cast<MOVE_TYPES>(portBytes);
+
+				if (session)
+				{
+					bool attacked = false;
+					const auto place = session->GetPosition();
+
+					const auto& my_zone = mySightManager.AtByPosition(place[0], place[1]);
+					my_zone->Acquire();
+
+					const auto& sight_list = session->GetSight();
+					my_zone->Release();
+
+					if (1 < sight_list.size()) // 자기 자신도 포함
+					{
+						switch (dir)
+						{
+							case MOVE_TYPES::LEFT:
+							{
+								tempBoundingBox;
+							}
+							break;
+
+							case MOVE_TYPES::RIGHT:
+							{
+
+							}
+							break;
+
+							case MOVE_TYPES::UP:
+							{
+
+							}
+							break;
+
+							case MOVE_TYPES::DOWN:
+							{
+
+							}
+							break;
+
+							default:
+							break;
+						}
+
+						const auto& packet_handle = exoverlap->sendBuffer->buf;
+						const auto result = reinterpret_cast<CSPacketChatMessage*>(packet_handle);
+
+						for (const auto& pid : sight_list)
+						{
+							if (pid == my_id)
+							{
+								continue;
+							}
+
+							auto other = AcquireClientByID(pid);
+							auto other_id = other->AcquireID();
 
 
+
+							other->ReleaseID(other_id);
+							ReleaseClient(other->Index, other);
+						}
+					}
+				}
 			}
 			break;
 
@@ -591,7 +655,8 @@ void IOCPFramework::UpdateSight(Session* who)
 	{
 		const PID other_id = *cit;
 
-		auto other = AcquireClientByID(other_id);
+		// AcquireClientByID
+		auto other = GetClientByID(other_id);
 		if (!other)
 		{
 			std::cout << who << "의 시야에서 세션 " << other_id << "를 찾을 수 없었음.\n";
@@ -610,25 +675,10 @@ void IOCPFramework::UpdateSight(Session* who)
 		// 이전 시야 목록에 other가 있었는지 확인
 		const auto pit = viewlist_prev.find(other_id);
 
-		if (check_out) // * 밖으로 나간 개체는 Disappear
-		{
-			who->RemoveViewOf(other_id);
-
-			SendDisppearEntity(who, other_id);
-
-			if (other_id != my_id && ot_is_player)
-			{
-				other->RemoveViewOf(my_id);
-
-				SendDisppearEntity(other.get(), my_id);
-			}
-
-			cit++;
-		}
-		else if (viewlist_prev.cend() == pit) // * 현재 있는 개체는 예전에 없었으면 Appear
+		if (viewlist_prev.cend() == pit) // * 현재 있는 개체는 예전에 없었으면 Appear
 		{
 			// Appear: 새로운 개체 등록
-			if (other_id != my_id)
+			if (other_id != my_id && !check_out)
 			{
 				who->AddSight(other_id);
 
@@ -653,7 +703,24 @@ void IOCPFramework::UpdateSight(Session* who)
 
 			cit++;
 		}
-		else // * 현재 있는 개체는 과거에도 있었으면 Move
+		else if (check_out) // * 밖으로 나간 개체는 Disappear
+		{
+			who->RemoveViewOf(other_id);
+
+			SendDisppearEntity(who, other_id);
+
+			if (other_id != my_id && ot_is_player)
+			{
+				other->RemoveViewOf(my_id);
+
+				SendDisppearEntity(other.get(), my_id);
+			}
+
+			// 이미 처리했으므로 제거
+			viewlist_prev.erase(pit);
+			cit++;
+		}
+		else  // * 현재 있는 개체는 과거에도 있었으면 Move
 		{
 			// Move
 			SendMoveEntity(who, other_id, ot_pos[0], ot_pos[1], other->myDirection);
@@ -668,8 +735,9 @@ void IOCPFramework::UpdateSight(Session* who)
 			cit++;
 		}
 
-		ReleaseClient(other->Index, other);
+		//ReleaseClient(other->Index, other);
 	}
+	who->ReleaseID(my_id);
 
 	 // * 현재 없는 개체는 Disappear
 	for (auto pit = viewlist_prev.cbegin(); viewlist_prev.cend() != pit;
@@ -678,9 +746,10 @@ void IOCPFramework::UpdateSight(Session* who)
 		// Disappear
 		const PID other_id = *pit;
 
-		if (other_id != my_id) 
+		if (other_id != my_id)
 		{
-			auto other = AcquireClientByID(other_id);
+			// AcquireClientByID
+			auto other = GetClientByID(other_id);
 			const bool ot_is_player = IsPlayer(other_id);
 
 			who->RemoveViewOf(other_id);
@@ -694,11 +763,9 @@ void IOCPFramework::UpdateSight(Session* who)
 				SendDisppearEntity(other.get(), my_id);
 			}
 
-			ReleaseClient(other->Index, other);
+			//ReleaseClient(other->Index, other);
 		}
 	}
-
-	who->ReleaseID(my_id);
 }
 
 void IOCPFramework::CleanupSight(Session* who)
@@ -763,12 +830,12 @@ void IOCPFramework::BuildNPCs()
 
 		const auto cx = float(rand()) / float(RAND_MAX) * WORLD_W;
 		const auto cy = float(rand()) / float(RAND_MAX) * WORLD_H;
-		
+
 		npc->SetID(PID(i));
 		npc->SetPosition(cx, cy);
 		RegisterSight(npc.get());
 		npc->myNickname = "M-" + std::to_string(i);
-		
+
 		// 등록
 		myClients.insert({ PID(i), i });
 

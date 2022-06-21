@@ -41,8 +41,10 @@ public:
 	void AssignSight(const std::unordered_set<PID>& view);
 	void AssignSight(const std::vector<PID>& view);
 	void AssignSight(std::vector<PID>&& view);
-	const concurrent_set<PID>& GetSight() const;
-	concurrent_set<PID>& GetSight();
+	//const concurrent_set<PID>& GetSight() const;
+	//concurrent_set<PID>& GetSight();
+	const std::unordered_set<PID>& GetSight() const;
+	std::unordered_set<PID>& GetSight();
 	std::unordered_set<PID> GetLocalSight() const;
 
 	void SetSightArea(const shared_ptr<SightSector>& sector);
@@ -59,6 +61,10 @@ public:
 	void SetPosition(float_pair position);
 	const float* GetPosition() const;
 	float* GetPosition();
+
+	bool CheckCollision(const Session& other) const;
+	bool CheckCollision(const Session* other) const;
+	bool CheckCollision(const RECT& other) const;
 
 	// 捞悼
 	virtual void TryMove(MOVE_TYPES dir);
@@ -101,7 +107,8 @@ protected:
 	// 家加等 矫具 备开
 	shared_ptr<SightSector> mySightSector;
 	// 矫具 格废 (侥喊磊父 历厘)
-	concurrent_set<PID> myViewList;
+	std::unordered_set<PID> myViewList;
+	//concurrent_set<PID> myViewList;
 
 	lua_State* myLuaMachine;
 };

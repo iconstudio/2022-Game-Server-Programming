@@ -223,6 +223,20 @@ void Session::ProceedReceived(Asynchron* overlap, DWORD bytes)
 			}
 			break;
 
+			case PACKET_TYPES::CS_ATTACK_TARGET:
+			{}
+			break;
+
+			case PACKET_TYPES::CS_CHAT:
+			{
+				//auto result = reinterpret_cast<CSPacketChatMessage*>(cbuffer);
+
+				auto asyncer = new Asynchron(OVERLAP_OPS::ACCEPT);
+				asyncer->SetSendBuffer(cbuffer, sz_want);
+				PostQueuedCompletionStatus(port, 1, ULONG_PTR(ID), asyncer);
+			}
+			break;
+
 			default:
 			{
 				ClearRecvBuffer();
@@ -309,13 +323,14 @@ void Session::AddSight(const PID id)
 
 void Session::RemoveViewOf(const PID id)
 {
-	myViewList.unsafe_erase(id);
+	//myViewList.unsafe_erase(id);
+	myViewList.erase(id);
 }
 
 void Session::AssignSight(const concurrent_set<PID>& view)
 {
-	myViewList.clear();
-	myViewList = (view);
+	//myViewList.clear();
+	//myViewList = (view);
 }
 
 void Session::AssignSight(const std::unordered_set<PID>& view)
@@ -327,9 +342,7 @@ void Session::AssignSight(const std::unordered_set<PID>& view)
 void Session::AssignSight(const std::vector<PID>& view)
 {
 	myViewList.clear();
-	std::for_each(view.begin(), view.end(), [&](const PID id) {
-		myViewList.insert(id);
-	});
+	myViewList.insert(view.begin(), view.end());
 }
 
 void Session::AssignSight(std::vector<PID>&& view)
@@ -338,6 +351,16 @@ void Session::AssignSight(std::vector<PID>&& view)
 	AssignSight(list);
 }
 
+const std::unordered_set<PID>& Session::GetSight() const
+{
+	return myViewList;
+}
+
+std::unordered_set<PID>& Session::GetSight()
+{
+	return myViewList;
+}
+/*
 const concurrent_set<PID>& Session::GetSight() const
 {
 	return myViewList;
@@ -347,7 +370,7 @@ concurrent_set<PID>& Session::GetSight()
 {
 	return myViewList;
 }
-
+*/
 std::unordered_set<PID> Session::GetLocalSight() const
 {
 	return std::unordered_set<PID>(myViewList.cbegin(), myViewList.cend());
@@ -489,4 +512,19 @@ const float* Session::GetPosition() const
 float* Session::GetPosition()
 {
 	return myPosition;
+}
+
+bool Session::CheckCollision(const Session& other) const
+{
+	return false;
+}
+
+bool Session::CheckCollision(const Session* other) const
+{
+	return false;
+}
+
+bool Session::CheckCollision(const RECT& other) const
+{
+	return false;
 }

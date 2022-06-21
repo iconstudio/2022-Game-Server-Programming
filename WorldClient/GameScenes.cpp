@@ -60,6 +60,11 @@ void SceneGame::Complete()
 
 void SceneGame::Render(HDC surface)
 {
+	if (myPlayerCharacter)
+	{
+		UpdateCamera(myPlayerCharacter);
+	}
+
 	const auto cam_pos = myCamera.myPosition;
 
 	auto old_bk = SetBkMode(surface, TRANSPARENT);
@@ -175,11 +180,6 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			myLocalInstances.try_emplace(pid, instance);
 		}
 
-		if (myPlayerCharacter)
-		{
-			UpdateCamera(myPlayerCharacter);
-		}
-
 		InvalidateRect(handle, NULL, TRUE);
 
 		return true;
@@ -285,25 +285,25 @@ void SceneGame::OnKeyUp(WPARAM key, LPARAM states)
 {
 	switch (key)
 	{
-		case VK_LEFT:
+		case 'A':
 		{
 			myFramework.myNetwork.SendAttack(MOVE_TYPES::LEFT);
 		}
 		break;
 
-		case VK_RIGHT:
+		case 'D':
 		{
 			myFramework.myNetwork.SendAttack(MOVE_TYPES::RIGHT);
 		}
 		break;
 
-		case VK_UP:
+		case 'W':
 		{
 			myFramework.myNetwork.SendAttack(MOVE_TYPES::UP);
 		}
 		break;
 
-		case VK_DOWN:
+		case 'S':
 		{
 			myFramework.myNetwork.SendAttack(MOVE_TYPES::DOWN);
 		}
