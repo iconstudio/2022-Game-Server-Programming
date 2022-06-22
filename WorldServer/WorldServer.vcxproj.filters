@@ -125,4 +125,9 @@
       <Filter>헤더 파일\Lua</Filter>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Library Include="lib\lua54.lib">
+      <Filter>리소스 파일</Filter>
+    </Library>
+  </ItemGroup>
 </Project>

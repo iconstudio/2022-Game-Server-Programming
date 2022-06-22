@@ -98,14 +98,19 @@ void IOCPFramework::Start()
 		return;
 	}
 
-	std::cout << "서버 시작\n";
-
 	acceptNewbie.store(CreateSocket(), std::memory_order_release);
 
+	std::cout << "세션 구축 중...";
+	BuildSessions();
+	std::cout << " 완료!\n";
+
+	std::cout << "NPC 구축 중...";
+	BuildNPCs();
+	std::cout << " 완료!\n";
+
+	std::cout << "서버 시작\n";
 	Listen();
 
-	BuildSessions();
-	BuildNPCs();
 	BuildThreads();
 }
 
@@ -265,7 +270,6 @@ void IOCPFramework::Update()
 						}
 
 						const auto& packet_handle = exoverlap->sendBuffer->buf;
-						const auto result = reinterpret_cast<CSPacketChatMessage*>(packet_handle);
 
 						for (const auto& pid : sight_list)
 						{
@@ -284,6 +288,8 @@ void IOCPFramework::Update()
 						}
 					}
 				}
+
+				delete exoverlap;
 			}
 			break;
 
@@ -335,9 +341,6 @@ void IOCPFramework::Update()
 							break;
 						}
 
-						const auto& packet_handle = exoverlap->sendBuffer->buf;
-						const auto result = reinterpret_cast<CSPacketChatMessage*>(packet_handle);
-
 						for (const auto& pid : sight_list)
 						{
 							if (pid == my_id)
@@ -348,13 +351,18 @@ void IOCPFramework::Update()
 							auto other = AcquireClientByID(pid);
 							auto other_id = other->AcquireID();
 
-
+							if (session->CheckCollision(other.get()))
+							{
+								session->RemoveViewOf(other_id);
+							}
 
 							other->ReleaseID(other_id);
 							ReleaseClient(other->Index, other);
 						}
 					}
 				}
+
+				delete exoverlap;
 			}
 			break;
 
@@ -460,7 +468,6 @@ void IOCPFramework::ProceedSignUp()
 void IOCPFramework::ProceedLoginFailed(SOCKET sock, LOGIN_ERROR_TYPES reason)
 {
 	std::cout << "새로운 클라이언트 " << sock << "가 접속에 실패했습니다.\n";
-	closesocket(sock);
 
 	switch (reason)
 	{
@@ -477,7 +484,26 @@ void IOCPFramework::ProceedLoginFailed(SOCKET sock, LOGIN_ERROR_TYPES reason)
 		break;
 	}
 
-	//SendSignInFailed()
+	auto packet = new SCPacketSignInFailed(0, reason, GetClientsNumber());
+
+	auto wbuffer = new WSABUF{};
+	wbuffer->buf = reinterpret_cast<char*>(packet);
+	wbuffer->len = packet->Size;
+
+	auto overlap = new Asynchron{ OVERLAP_OPS::SEND };
+	overlap->Type = packet->Type;
+	overlap->SetSendBuffer(wbuffer);
+
+	std::cout << sock << " → SendSignInFailed()\n";
+	int result = WSASend(sock, wbuffer, 1, NULL, 0, overlap, NULL);
+	if (SOCKET_ERROR == result)
+	{
+		int error_code = WSAGetLastError();
+		if (WSA_IO_PENDING != error_code)
+		{
+			std::cout << "소켓 " << sock << "의 연결 실패 전송이 실패함!\n";
+		}
+	}
 }
 
 void IOCPFramework::ProceedSignIn(Session* handle, const CSPacketSignIn* packet)
@@ -810,11 +836,17 @@ void IOCPFramework::BuildSessions()
 
 		if (NPC_ID_BEGIN <= i && i < NPC_ID_END)
 		{
-			empty_place = std::make_shared<Session>(i, npc_id++, *this);
+			auto session = std::make_shared<Session>(i, npc_id++, *this);
+			session->SetBoundingBox(-16, -16, 16, 16);
+
+			empty_place = session;	
 		}
 		else
 		{
-			empty_place = std::make_shared<Session>(i, PID(-1), *this);
+			auto session = std::make_shared<Session>(i, PID(-1), *this);
+			session->SetBoundingBox(-16, -16, 16, 16);
+
+			empty_place = session;
 		}
 	}
 
@@ -825,23 +857,15 @@ void IOCPFramework::BuildNPCs()
 {
 	for (auto i = NPC_ID_BEGIN; i < NPC_ID_END; ++i)
 	{
-		auto npc = AcquireClient(i);
-		auto state = npc->AcquireStatus();
+		auto npc = CreateNPC(i, ENTITY_CATEGORY::MOB);
 
 		const auto cx = float(rand()) / float(RAND_MAX) * WORLD_W;
 		const auto cy = float(rand()) / float(RAND_MAX) * WORLD_H;
 
-		npc->SetID(PID(i));
 		npc->SetPosition(cx, cy);
 		RegisterSight(npc.get());
+
 		npc->myNickname = "M-" + std::to_string(i);
-
-		// 등록
-		myClients.insert({ PID(i), i });
-
-		//auto npc_avatar = make_shared<GameObject>(PID(i), cx, cy);
-		npc->ReleaseStatus(SESSION_STATES::ACCEPTED);
-		ReleaseClient(i, npc);
 	}
 }
 
@@ -880,9 +904,27 @@ void IOCPFramework::Listen()
 	}
 }
 
-SessionPtr IOCPFramework::CreateNPC(const UINT index, ENTITY_CATEGORY type, int info_index)
+SessionPtr IOCPFramework::CreateNPC(const UINT index, ENTITY_CATEGORY type)
 {
-	return SessionPtr();
+	const auto npc_id = PID(index);
+
+	auto npc = AcquireClient(index);
+	auto state = npc->AcquireStatus();
+
+	npc->SetID(npc_id);
+	npc->myCategory = type;
+
+	//auto my_lua = luaL_newstate();
+	//npc->myLuaMachine = my_lua;
+	//luaL_openlibs(my_lua);
+
+	// 등록
+	myClients.insert({ npc_id, index });
+
+	npc->ReleaseStatus(SESSION_STATES::ACCEPTED);
+	ReleaseClient(index, npc);
+
+	return npc;
 }
 
 void IOCPFramework::Disconnect(const PID id)
@@ -955,14 +997,6 @@ std::pair<LPWSABUF, Asynchron*> IOCPFramework::CreateTicket(Ty&&... args) const
 	overlap->SetSendBuffer(wbuffer);
 
 	return std::make_pair(wbuffer, overlap);
-}
-
-int IOCPFramework::SendSignInFailed(Session* target, LOGIN_ERROR_TYPES type) const
-{
-	std::cout << target->GetID() << " → SendSignInFailed()\n";
-
-	const auto ticket = CreateTicket<SCPacketSignInFailed>(target->GetID(), type, GetClientsNumber());
-	return target->Send(ticket.first, 1, ticket.second);
 }
 
 int IOCPFramework::SendPlayerCreate(Session* target, const PID who, char* nickname) const

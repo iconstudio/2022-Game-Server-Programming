@@ -62,6 +62,15 @@ public:
 	const float* GetPosition() const;
 	float* GetPosition();
 
+	void SetBoundingBox(const RECT& box);
+	void SetBoundingBox(RECT&& box);
+	void SetBoundingBox(long left, long top, long right, long bottom);
+
+	float GetBoundingLeft() const;
+	float GetBoundingTop() const;
+	float GetBoundingRight() const;
+	float GetBoundingBottom() const;
+
 	bool CheckCollision(const Session& other) const;
 	bool CheckCollision(const Session* other) const;
 	bool CheckCollision(const RECT& other) const;
@@ -76,7 +85,10 @@ public:
 	// 평타 공격
 	void TryNormalAttack(MOVE_TYPES dir);
 
+	const UINT Index;
+
 	SCPacketAppearEntity myInfobox;
+	string myNickname;
 	atomic<SESSION_STATES> Status;
 	atomic<PID> ID;
 	atomic<SOCKET> Socket;
@@ -90,8 +102,7 @@ public:
 	float myPosition[2];
 	RECT myBoundingBox;
 
-	const UINT Index;
-	string myNickname;
+	lua_State* myLuaMachine;
 
 protected:
 	void ClearRecvBuffer();
@@ -109,8 +120,6 @@ protected:
 	// 시야 목록 (식별자만 저장)
 	std::unordered_set<PID> myViewList;
 	//concurrent_set<PID> myViewList;
-
-	lua_State* myLuaMachine;
 };
 
 enum class SESSION_STATES

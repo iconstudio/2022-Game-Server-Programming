@@ -26,6 +26,7 @@ public:
 	void BuildNPCs();
 	void BuildThreads();
 	void Listen();
+	SessionPtr CreateNPC(const UINT index, ENTITY_CATEGORY type);
 
 	friend void IOCPWorker();
 	friend void AIWorker();
@@ -51,8 +52,6 @@ private:
 	SessionPtr GetClient(const PID) const = delete;
 	SessionPtr GetClientByID(const UINT) const = delete;
 	UINT GetClientsNumber() const volatile;
-
-	SessionPtr CreateNPC(const UINT index, ENTITY_CATEGORY type, int info_index);
 
 	void Disconnect(const PID id);
 	void ConnectFrom(const PID) = delete;
@@ -82,10 +81,6 @@ private:
 	template<typename MY_PACKET, typename ...Ty>
 		requires std::is_base_of_v<Packet, MY_PACKET>
 	std::pair<LPWSABUF, Asynchron*> CreateTicket(Ty&&... args) const;
-	/// <summary>
-	/// 클라이언트의 접속을 막는다.
-	/// </summary>
-	int SendSignInFailed(Session* target, LOGIN_ERROR_TYPES type) const;
 	/// <summary>
 	/// 클라이언트에게 새로운 접속을 알리고, 로컬 플레이어 세션을 생성하도록 명령한다.
 	/// </summary>

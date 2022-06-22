@@ -516,15 +516,59 @@ float* Session::GetPosition()
 
 bool Session::CheckCollision(const Session& other) const
 {
-	return false;
+	return !(other.GetBoundingRight() <= GetBoundingLeft()
+		|| other.GetBoundingBottom() <= GetBoundingTop()
+		|| GetBoundingRight() < other.GetBoundingLeft()
+		|| GetBoundingBottom() < other.GetBoundingTop());
 }
 
 bool Session::CheckCollision(const Session* other) const
 {
-	return false;
+	return !(other->GetBoundingRight() <= GetBoundingLeft()
+		|| other->GetBoundingBottom() <= GetBoundingTop()
+		|| GetBoundingRight() < other->GetBoundingLeft()
+		|| GetBoundingBottom() < other->GetBoundingTop());
 }
 
 bool Session::CheckCollision(const RECT& other) const
 {
 	return false;
+}
+
+void Session::SetBoundingBox(const RECT& box)
+{
+	myBoundingBox = box;
+}
+
+void Session::SetBoundingBox(RECT&& box)
+{
+	myBoundingBox = std::forward<RECT>(box);
+}
+
+void Session::SetBoundingBox(long left, long top, long right, long bottom)
+{
+	myBoundingBox.left = left;
+	myBoundingBox.top = top;
+	myBoundingBox.right = right;
+	myBoundingBox.bottom = bottom;
+}
+
+float Session::GetBoundingLeft() const
+{
+	return myPosition[0] + static_cast<float>(myBoundingBox.left);
+}
+
+float Session::GetBoundingTop() const
+{
+	return myPosition[1] + static_cast<float>(myBoundingBox.top);
+}
+
+float Session::GetBoundingRight() const
+{
+	return myPosition[0] + static_cast<float>(myBoundingBox.right);
+}
+
+float Session::GetBoundingBottom() const
+{
+	return myPosition[1] + static_cast<float>(myBoundingBox.bottom);
 }
