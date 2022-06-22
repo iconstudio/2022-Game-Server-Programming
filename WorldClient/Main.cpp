@@ -72,8 +72,6 @@ void CallbackRecv(DWORD error, DWORD bytes, LPWSAOVERLAPPED overlap, DWORD flags
 		if (WSA_IO_PENDING != code)
 		{
 			ErrorDisplay(L"CallbackRecv()", code);
-
-			throw code;
 		}
 	}
 

@@ -704,21 +704,33 @@ void IOCPFramework::UpdateSight(Session* who)
 		if (viewlist_prev.cend() == pit) // * 현재 있는 개체는 예전에 없었으면 Appear
 		{
 			// Appear: 새로운 개체 등록
-			if (other_id != my_id && !check_out)
+			if (other_id != my_id)
 			{
-				who->AddSight(other_id);
-
-				// 개체로부터 속성 따오기
-				const auto& other_infobox = other->myInfobox;
-
-				SendAppearEntity(who, other_id, other_infobox);
-
-				// 상대도 개체 등록
-				if (other_id != my_id && ot_is_player)
+				if (check_out)
 				{
-					other->AddSight(my_id);
+					who->RemoveViewOf(other_id);
 
-					SendAppearEntity(other.get(), my_id, my_infobox);
+					if (ot_is_player)
+					{
+						other->RemoveViewOf(my_id);
+					}
+				}
+				else
+				{
+					who->AddSight(other_id);
+
+					// 개체로부터 속성 따오기
+					const auto& other_infobox = other->myInfobox;
+
+					SendAppearEntity(who, other_id, other_infobox);
+
+					// 상대도 개체 등록
+					if (ot_is_player)
+					{
+						other->AddSight(my_id);
+
+						SendAppearEntity(other.get(), my_id, my_infobox);
+					}
 				}
 			}
 			else
