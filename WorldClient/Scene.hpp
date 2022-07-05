@@ -59,6 +59,5 @@ Op* Scene::CreateInstance()
 	auto ptr = new Op();
 	AddInstance(ptr);
 
-	ptr->Start();
 	return ptr;
 }

@@ -30,6 +30,7 @@ extern "C" {
 #include <unordered_set>
 #include <unordered_map>
 #include <algorithm>
+#include <random>
 
 using std::string;
 using std::array;

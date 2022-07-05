@@ -14,6 +14,4 @@ void ErrorDisplay(const char* title)
 
 	std::cout << title << " ¡æ ¿À·ù: ";
 	wprintf(L"%s\n", msgBuffer);
-
-	LocalFree(msgBuffer);
 }

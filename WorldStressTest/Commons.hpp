@@ -35,7 +35,7 @@ enum class LOGIN_ERROR_TYPES : unsigned char
 {
 	NONE = 0,
 	SUCEED,
-	USERS_LIMITED,
+	USERS_LIMITED, 
 	BANNED,
 	NETWORK_ERROR
 };
@@ -44,7 +44,7 @@ enum class CHAT_MSG_TYPES : unsigned char
 {
 	NONE = 0,
 	PLAIN, ONE_ON_ONE, SHOUT,
-	SYSTEM,
+	SYSTEM, 
 };
 
 // 객체의 범주
@@ -64,9 +64,11 @@ enum class ENTITY_TYPES : unsigned int
 	NPC_SHOPKEEPER = 1000,
 	NPC_GUARD,
 	MOB_SLIME_1 = 10000,
+	MOB_SLIME_2,
+	MOB_MUSHROOM,
+	MOB_BEE,
 	MOB_DEMON,
-	MOB_SKELETON,
-	MOB_SKELETON_KING
+	MOB_GOLEM
 };
 
 enum class OVERLAP_OPS : unsigned char
@@ -78,6 +80,7 @@ enum class OVERLAP_OPS : unsigned char
 	SEND,
 	ENTITY_MOVE = 100,
 	ENTITY_ATTACK,
+	// 플레이어 평타
 	PLAYER_ATTACK,
 	ENTITY_ACTION,
 	ENTITY_HEAL,

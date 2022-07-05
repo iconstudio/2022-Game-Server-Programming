@@ -143,7 +143,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\chess_client\Server_sample\protocol.h" />
+    <ClInclude Include="Commons.hpp" />
     <ClInclude Include="NetworkModule.h" />
   </ItemGroup>
   <ItemGroup>

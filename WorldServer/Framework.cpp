@@ -155,68 +155,73 @@ void IOCPFramework::Update()
 					<< "키 값: " << portKey
 					<< ", 받은 바이트 수: " << portBytes << "\n";
 
-				auto session = GetClientByID(my_id);
-				session->ProceedReceived(exoverlap, portBytes);
+				if (auto session = GetClientByID(my_id); session)
+				{
+					session->ProceedReceived(exoverlap, portBytes);
+				}
 			}
 			break;
 
 			case OVERLAP_OPS::SEND: // 플레이어
 			{
-				auto session = GetClientByID(my_id);
-				session->ProceedSent(exoverlap, portBytes);
+				if (auto session = GetClientByID(my_id); session)
+				{
+					session->ProceedSent(exoverlap, portBytes);
+				}
 			}
 			break;
 
 			case OVERLAP_OPS::ENTITY_MOVE: // 플레이어 또는 NPC
 			{
-				auto session = GetClientByID(my_id);
-
-				bool moved = false;
-				auto dir = static_cast<MOVE_TYPES>(portBytes);
-
-				switch (dir)
+				if (auto session = GetClientByID(my_id); session)
 				{
-					case MOVE_TYPES::LEFT:
+					bool moved = false;
+					auto dir = static_cast<MOVE_TYPES>(portBytes);
+
+					switch (dir)
 					{
-						moved = session->TryMoveLT(CELL_W);
-					}
-					break;
+						case MOVE_TYPES::LEFT:
+						{
+							moved = session->TryMoveLT(CELL_W);
+						}
+						break;
 
-					case MOVE_TYPES::RIGHT:
+						case MOVE_TYPES::RIGHT:
+						{
+							moved = session->TryMoveRT(CELL_W);
+						}
+						break;
+
+						case MOVE_TYPES::UP:
+						{
+							moved = session->TryMoveUP(CELL_H);
+						}
+						break;
+
+						case MOVE_TYPES::DOWN:
+						{
+							moved = session->TryMoveDW(CELL_H);
+						}
+						break;
+
+						default:
+						break;
+					}
+
+					if (moved)
 					{
-						moved = session->TryMoveRT(CELL_W);
-					}
-					break;
+						std::cout << "캐릭터 " << my_id
+							<< " - 위치: ("
+							<< session->myPosition[0] << ", " << session->myPosition[1]
+							<< ")\n";
 
-					case MOVE_TYPES::UP:
+						// 시야 정보 전송
+						UpdateSight(session.get());
+					}
+					else
 					{
-						moved = session->TryMoveUP(CELL_H);
+						std::cout << "캐릭터 " << my_id << " - 움직이지 않음.\n";
 					}
-					break;
-
-					case MOVE_TYPES::DOWN:
-					{
-						moved = session->TryMoveDW(CELL_H);
-					}
-					break;
-
-					default:
-					break;
-				}
-
-				if (moved)
-				{
-					std::cout << "캐릭터 " << my_id
-						<< " - 위치: ("
-						<< session->myPosition[0] << ", " << session->myPosition[1]
-						<< ")\n";
-
-					// 시야 정보 전송
-					UpdateSight(session.get());
-				}
-				else
-				{
-					std::cout << "캐릭터 " << my_id << " - 움직이지 않음.\n";
 				}
 			}
 			break;
@@ -306,7 +311,7 @@ void IOCPFramework::Update()
 					const auto& my_zone = mySightManager.AtByPosition(place[0], place[1]);
 					my_zone->Acquire();
 
-					const auto& sight_list = session->GetSight();
+					const auto sight_list = session->GetLocalSight();
 					my_zone->Release();
 
 					if (1 < sight_list.size()) // 자기 자신도 포함
@@ -353,7 +358,9 @@ void IOCPFramework::Update()
 
 							if (session->CheckCollision(other.get()))
 							{
-								session->RemoveViewOf(other_id);
+								auto asyncer = new Asynchron(OVERLAP_OPS::ENTITY_DEAD);
+
+								PostQueuedCompletionStatus(port, 1, ULONG_PTR(other_id), asyncer);
 							}
 
 							other->ReleaseID(other_id);
@@ -368,7 +375,16 @@ void IOCPFramework::Update()
 
 			case OVERLAP_OPS::ENTITY_DEAD:
 			{
+				if (auto session = AcquireClientByID(my_id); session)
+				{
+					session->SetStatus(SESSION_STATES::NONE);
 
+					CleanupSight(session.get());
+
+					ReleaseClient(session->Index, session);
+				}
+
+				delete exoverlap;
 			}
 			break;
 
@@ -614,12 +630,13 @@ void IOCPFramework::UpdateSight(Session* who)
 
 	// 2. 시야 사각형에 닿는 구역들을 찾는다.
 
-	constexpr auto sgh_w = SIGHT_CELLS_RAD_H;
-	constexpr auto sgh_h = SIGHT_CELLS_RAD_V;
+	constexpr auto sgh_w = SIGHT_RAD_W;
+	constexpr auto sgh_h = SIGHT_RAD_H;
 
 	// 3. 각 구역의 시야 목록을 더한다.
 
-	const auto lu_coords = curr_coords + int_pair{ -sgh_w, -sgh_h };
+	const auto lu_pos = float_pair{ my_pos[0] - sgh_w, my_pos[1] - sgh_h };
+	const auto lu_coords = mySightManager.PickCoords(lu_pos);
 	if (0 < lu_coords.first && 0 < lu_coords.second)
 	{
 		auto& sector = mySightManager.At(lu_coords);
@@ -630,7 +647,8 @@ void IOCPFramework::UpdateSight(Session* who)
 		sector->Release();
 	}
 
-	const auto ru_coords = curr_coords + int_pair{ +sgh_w, -sgh_h };
+	const auto ru_pos = float_pair{ my_pos[0] + sgh_w, my_pos[1] - sgh_h };
+	const auto ru_coords = mySightManager.PickCoords(ru_pos);
 	if (ru_coords.first < WORLD_CELLS_CNT_H && 0 < ru_coords.second)
 	{
 		auto& sector = mySightManager.At(ru_coords);
@@ -641,7 +659,8 @@ void IOCPFramework::UpdateSight(Session* who)
 		sector->Release();
 	}
 
-	const auto ld_coords = curr_coords + int_pair{ -sgh_w, +sgh_h };
+	const auto ld_pos = float_pair{ my_pos[0] - sgh_w, my_pos[1] + sgh_h };
+	const auto ld_coords = mySightManager.PickCoords(ld_pos);
 	if (0 < ld_coords.first && ld_coords.second < WORLD_CELLS_CNT_V)
 	{
 		auto& sector = mySightManager.At(ld_coords);
@@ -652,7 +671,8 @@ void IOCPFramework::UpdateSight(Session* who)
 		sector->Release();
 	}
 
-	const auto rd_coords = curr_coords + int_pair{ +sgh_w, +sgh_h };
+	const auto rd_pos = float_pair{ my_pos[0] + sgh_w, my_pos[1] + sgh_h };
+	const auto rd_coords = mySightManager.PickCoords(rd_pos);
 	if (rd_coords.first < WORLD_CELLS_CNT_H && rd_coords.second < WORLD_CELLS_CNT_V)
 	{
 		auto& sector = mySightManager.At(rd_coords);
@@ -710,7 +730,7 @@ void IOCPFramework::UpdateSight(Session* who)
 				{
 					who->RemoveViewOf(other_id);
 
-					if (ot_is_player)
+					//if (ot_is_player)
 					{
 						other->RemoveViewOf(my_id);
 					}
@@ -724,11 +744,11 @@ void IOCPFramework::UpdateSight(Session* who)
 
 					SendAppearEntity(who, other_id, other_infobox);
 
+					other->AddSight(my_id);
+
 					// 상대도 개체 등록
 					if (ot_is_player)
 					{
-						other->AddSight(my_id);
-
 						SendAppearEntity(other.get(), my_id, my_infobox);
 					}
 				}
@@ -747,11 +767,15 @@ void IOCPFramework::UpdateSight(Session* who)
 
 			SendDisppearEntity(who, other_id);
 
-			if (other_id != my_id && ot_is_player)
+			if (other_id != my_id)
 			{
 				other->RemoveViewOf(my_id);
 
-				SendDisppearEntity(other.get(), my_id);
+				if (ot_is_player)
+				{
+
+					SendDisppearEntity(other.get(), my_id);
+				}
 			}
 
 			// 이미 처리했으므로 제거
@@ -761,7 +785,7 @@ void IOCPFramework::UpdateSight(Session* who)
 		else  // * 현재 있는 개체는 과거에도 있었으면 Move
 		{
 			// Move
-			SendMoveEntity(who, other_id, ot_pos[0], ot_pos[1], other->myDirection);
+			//SendMoveEntity(who, other_id, ot_pos[0], ot_pos[1], other->myDirection);
 
 			if (ot_is_player)
 			{
@@ -786,22 +810,24 @@ void IOCPFramework::UpdateSight(Session* who)
 
 		if (other_id != my_id)
 		{
-			// AcquireClientByID
-			auto other = GetClientByID(other_id);
+			auto other = AcquireClientByID(other_id);
 			const bool ot_is_player = IsPlayer(other_id);
 
 			who->RemoveViewOf(other_id);
 
 			SendDisppearEntity(who, other_id);
 
-			if (ot_is_player)
+			if (other)
 			{
 				other->RemoveViewOf(my_id);
 
-				SendDisppearEntity(other.get(), my_id);
-			}
+				if (ot_is_player)
+				{
+					SendDisppearEntity(other.get(), my_id);
+				}
 
-			//ReleaseClient(other->Index, other);
+				ReleaseClient(other->Index, other);
+			}
 		}
 	}
 }
@@ -825,17 +851,20 @@ void IOCPFramework::CleanupSight(Session* who)
 
 		auto other = AcquireClientByID(other_id);
 
-		if (other && other->IsAccepted())
+		if (other)
 		{
-			other->RemoveViewOf(my_id);
-
-			if (IsPlayer(other_id))
+			if (other->IsAccepted())
 			{
-				SendDisppearEntity(other.get(), my_id);
-			}
-		}
+				other->RemoveViewOf(my_id);
 
-		ReleaseClient(other->Index, other);
+				if (IsPlayer(other_id))
+				{
+					SendDisppearEntity(other.get(), my_id);
+				}
+			}
+
+			ReleaseClient(other->Index, other);
+		}
 	}
 }
 
@@ -851,12 +880,14 @@ void IOCPFramework::BuildSessions()
 			auto session = std::make_shared<Session>(i, npc_id++, *this);
 			session->SetBoundingBox(-16, -16, 16, 16);
 
-			empty_place = session;	
+			empty_place = session;
 		}
 		else
 		{
 			auto session = std::make_shared<Session>(i, PID(-1), *this);
 			session->SetBoundingBox(-16, -16, 16, 16);
+
+			session->myCategory = ENTITY_CATEGORY::PLAYER;
 
 			empty_place = session;
 		}
@@ -867,6 +898,9 @@ void IOCPFramework::BuildSessions()
 
 void IOCPFramework::BuildNPCs()
 {
+	std::default_random_engine rand_engine{ 0 };
+	std::uniform_real_distribution<float> rand_distribution{ 0.0f, 1.0f };
+
 	for (auto i = NPC_ID_BEGIN; i < NPC_ID_END; ++i)
 	{
 		auto npc = CreateNPC(i, ENTITY_CATEGORY::MOB);
@@ -877,6 +911,21 @@ void IOCPFramework::BuildNPCs()
 		npc->SetPosition(cx, cy);
 		RegisterSight(npc.get());
 
+		npc->myCategory = ENTITY_CATEGORY::MOB;
+
+		const auto percent = rand_distribution(rand_engine);
+		if (percent < 0.5f)
+		{
+			npc->myType = ENTITY_TYPES::MOB_DEMON;
+		}
+		else if (percent < 0.9f)
+		{
+			npc->myType = ENTITY_TYPES::MOB_SKELETON;
+		}
+		else
+		{
+			npc->myType = ENTITY_TYPES::MOB_SKELETON_KING;
+		}
 		npc->myNickname = "M-" + std::to_string(i);
 	}
 }

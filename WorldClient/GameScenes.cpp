@@ -135,6 +135,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			instance.myMaxMP = rp->maxmp;
 			instance.myMP = rp->mp;
 			instance.myArmour = rp->amour;
+			instance.Start();
 
 			// 위치 갱신
 			instance.myPosition[0] = rp->x;
@@ -155,6 +156,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			instance->myArmour = rp->amour;
 			instance->myPosition[0] = rp->x;
 			instance->myPosition[1] = rp->y;
+			instance->Start();
 
 			if (!myPlayerCharacter && pid == my_id)
 			{
@@ -165,7 +167,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 		}
 		else // NPC
 		{
-			auto instance = CreateInstance<PlayerCharacter>();
+			auto instance = CreateInstance<GameEntity>();
 			instance->myID = pid;
 			instance->myCategory = rp->myCategory;
 			instance->myType = rp->myType;
@@ -176,6 +178,7 @@ bool SceneGame::OnNetwork(const Packet& packet)
 			instance->myArmour = rp->amour;
 			instance->myPosition[0] = rp->x;
 			instance->myPosition[1] = rp->y;
+			instance->Start();
 
 			myLocalInstances.try_emplace(pid, instance);
 		}

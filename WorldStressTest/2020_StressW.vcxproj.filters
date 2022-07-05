@@ -18,7 +18,7 @@
     <ClInclude Include="NetworkModule.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\chess_client\Server_sample\protocol.h">
+    <ClInclude Include="Commons.hpp">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

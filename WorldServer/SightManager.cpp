@@ -114,8 +114,8 @@ int_pair SightManager::ClampCoords(const float(&position)[2]) const
 
 int_pair SightManager::PickCoords(float x, float y) const
 {
-	const int index_x = std::clamp(static_cast<int>(x / sizeSectorH), 0, WORLD_CELLS_CNT_H);
-	const int index_y = std::clamp(static_cast<int>(y / sizeSectorV), 0, WORLD_CELLS_CNT_V);
+	const int index_x = std::clamp(static_cast<int>(x / sizeSectorH), 0, WORLD_CELLS_CNT_H - 1);
+	const int index_y = std::clamp(static_cast<int>(y / sizeSectorV), 0, WORLD_CELLS_CNT_V - 1);
 
 	return std::make_pair(index_y, index_x);
 }

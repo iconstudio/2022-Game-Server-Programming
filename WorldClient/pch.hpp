@@ -27,4 +27,9 @@ class GameEntity;
 class PlayerCharacter;
 class NonPlayerable;
 
+constexpr COLORREF C_BLACK = RGB(0, 0, 0);
+constexpr COLORREF C_WHITE = RGB(255, 255, 255);
+constexpr COLORREF C_GREEN = RGB(0, 128, 0);
+constexpr COLORREF C_GOLD = RGB(223, 130, 20);
+
 #endif

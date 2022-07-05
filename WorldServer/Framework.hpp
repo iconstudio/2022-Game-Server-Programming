@@ -26,6 +26,7 @@ public:
 	void BuildNPCs();
 	void BuildThreads();
 	void Listen();
+
 	SessionPtr CreateNPC(const UINT index, ENTITY_CATEGORY type);
 
 	friend void IOCPWorker();

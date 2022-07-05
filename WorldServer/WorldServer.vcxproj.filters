@@ -117,7 +117,7 @@
       <Filter>헤더 파일\Lua</Filter>
     </ClInclude>
     <ClInclude Include="Timeline.hpp">
-      <Filter>헤더 파일</Filter>
+      <Filter>헤더 파일\System</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
