@@ -341,7 +341,7 @@ constexpr int CLIENT_H = 600;
 constexpr float FRAME_W = float(CLIENT_W);
 constexpr float FRAME_H = float(CLIENT_H);
 
-constexpr unsigned short PORT = 6000;
+constexpr unsigned short PORT = 9000;
 constexpr size_t BUFFSZ = 256;
 
 constexpr unsigned int USERS_MAX = 10000;
